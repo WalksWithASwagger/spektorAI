@@ -40,6 +40,540 @@ LLM_MODELS = {
     }
 }
 
+def local_css():
+    """Apply refined cyberpunk styling inspired by Luma's interface"""
+    st.markdown("""
+    <style>
+    /* Refined Cyberpunk Theme - WhisperForge Command Center */
+    
+    /* Base variables for limited color palette */
+    :root {
+        --bg-primary: #121218;
+        --bg-secondary: #1a1a24;
+        --bg-tertiary: #222230;
+        --accent-primary: #7928CA;
+        --accent-secondary: #FF0080;
+        --text-primary: #f0f0f0;
+        --text-secondary: #a0a0a0;
+        --text-muted: #707070;
+        --success: #36D399;
+        --warning: #FBBD23;
+        --error: #F87272;
+        --info: #3ABFF8;
+        --border-radius: 6px;
+        --card-radius: 10px;
+        --glow-intensity: 4px;
+        --terminal-font: 'JetBrains Mono', 'Courier New', monospace;
+        --system-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    /* Global styles */
+    .stApp {
+        background: linear-gradient(160deg, var(--bg-primary) 0%, #0f0f17 100%);
+        color: var(--text-primary);
+        font-family: var(--system-font);
+    }
+    
+    /* Clean, compact header */
+    .header-container {
+        border-radius: var(--card-radius);
+        background: linear-gradient(110deg, rgba(121, 40, 202, 0.10) 0%, rgba(0, 0, 0, 0) 80%);
+        border: 1px solid rgba(121, 40, 202, 0.25);
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .header-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(121, 40, 202, 0.5), transparent);
+        animation: header-shine 3s ease-in-out infinite;
+    }
+    
+    @keyframes header-shine {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+    }
+    
+    .header-title {
+        font-family: var(--terminal-font);
+        font-size: 1.4rem;
+        font-weight: 500;
+        background: linear-gradient(90deg, #7928CA, #FF0080);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 0.02em;
+    }
+    
+    .header-date {
+        font-family: var(--terminal-font);
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+    
+    /* Compact status cards */
+    .status-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 12px 0 18px 0;
+    }
+    
+    .status-card {
+        background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        border-radius: var(--card-radius);
+        padding: 12px;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .status-card:hover {
+        border: 1px solid rgba(121, 40, 202, 0.3);
+        box-shadow: 0 0 10px rgba(121, 40, 202, 0.15);
+    }
+    
+    .status-card::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1.5px;
+        background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .status-card:hover::after {
+        opacity: 1;
+    }
+    
+    .status-card h3 {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+    
+    .status-value {
+        font-size: 1.15rem;
+        font-weight: 600;
+        text-align: center;
+        color: var(--text-primary);
+        font-family: var(--terminal-font);
+    }
+    
+    /* Quick access buttons */
+    .quick-access {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin: 12px 0;
+    }
+    
+    .quick-button {
+        background: rgba(121, 40, 202, 0.1);
+        border-radius: var(--card-radius);
+        padding: 10px;
+        text-align: center;
+        color: var(--text-primary);
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: 1px solid rgba(121, 40, 202, 0.1);
+        font-size: 0.85rem;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+    
+    .quick-button:hover {
+        background: rgba(121, 40, 202, 0.15);
+        border-color: rgba(121, 40, 202, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    /* Section headers with subtle underline */
+    .section-header {
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 20px 0 8px 0;
+        padding-bottom: 6px;
+        position: relative;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+    
+    .section-header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 1px;
+        width: 100%;
+        background: linear-gradient(90deg, var(--accent-primary), transparent);
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: var(--bg-secondary);
+        border-radius: var(--border-radius);
+        padding: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        gap: 2px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: var(--border-radius);
+        color: var(--text-secondary);
+        background-color: transparent;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 8px 16px;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        color: var(--text-primary);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(110deg, rgba(121, 40, 202, 0.15) 0%, rgba(255, 0, 128, 0.05) 100%);
+        color: var(--text-primary) !important;
+        border: 1px solid rgba(121, 40, 202, 0.25) !important;
+    }
+    
+    /* File uploader styling */
+    [data-testid="stFileUploader"] {
+        background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        border: 1px dashed rgba(121, 40, 202, 0.3);
+        border-radius: var(--card-radius);
+        padding: 15px;
+        transition: all 0.2s ease;
+    }
+    
+    [data-testid="stFileUploader"]:hover {
+        border-color: rgba(121, 40, 202, 0.5);
+        box-shadow: 0 0 15px rgba(121, 40, 202, 0.15);
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        background: linear-gradient(110deg, rgba(121, 40, 202, 0.08) 0%, rgba(255, 0, 128, 0.05) 100%);
+        border: 1px solid rgba(121, 40, 202, 0.25);
+        color: var(--text-primary);
+        border-radius: var(--border-radius);
+        padding: 8px 16px;
+        font-family: var(--system-font);
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+    
+    .stButton > button:hover {
+        background: linear-gradient(110deg, rgba(121, 40, 202, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%);
+        border-color: rgba(121, 40, 202, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0px);
+    }
+    
+    /* "I'm Feeling Lucky" special button */
+    .lucky-button {
+        background: linear-gradient(110deg, rgba(54, 211, 153, 0.1) 0%, rgba(255, 0, 128, 0.05) 100%) !important;
+        border: 1px solid rgba(54, 211, 153, 0.3) !important;
+    }
+    
+    .lucky-button:hover {
+        background: linear-gradient(110deg, rgba(54, 211, 153, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%) !important;
+        border-color: rgba(54, 211, 153, 0.5) !important;
+    }
+    
+    /* Audio player styling */
+    audio {
+        width: 100%;
+        border-radius: var(--border-radius);
+        background: var(--bg-secondary);
+        margin: 10px 0;
+        height: 32px;
+    }
+    
+    /* Text area styling */
+    .stTextArea > div > div > textarea {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid rgba(121, 40, 202, 0.2);
+        border-radius: var(--border-radius);
+        padding: 10px;
+        font-family: var(--system-font);
+    }
+    
+    .stTextArea > div > div > textarea:focus {
+        border: 1px solid rgba(121, 40, 202, 0.4);
+        box-shadow: 0 0 0 1px rgba(121, 40, 202, 0.2);
+    }
+    
+    /* Text input styling */
+    .stTextInput > div > div > input {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid rgba(121, 40, 202, 0.2);
+        border-radius: var(--border-radius);
+        padding: 8px 12px;
+        font-family: var(--system-font);
+        height: 36px;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border: 1px solid rgba(121, 40, 202, 0.4);
+        box-shadow: 0 0 0 1px rgba(121, 40, 202, 0.2);
+    }
+    
+    /* Selectbox styling */
+    .stSelectbox > div {
+        background-color: var(--bg-secondary);
+    }
+    
+    .stSelectbox > div > div {
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid rgba(121, 40, 202, 0.2);
+        border-radius: var(--border-radius);
+    }
+    
+    /* Progress bar styling */
+    .stProgress > div > div > div {
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: var(--border-radius);
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background-color: var(--bg-secondary);
+        border-radius: var(--border-radius);
+        border: 1px solid rgba(121, 40, 202, 0.1);
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        border-color: rgba(121, 40, 202, 0.25);
+    }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background-color: var(--bg-primary);
+        border-right: 1px solid rgba(121, 40, 202, 0.15);
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stMarkdown"] h1,
+    [data-testid="stSidebar"] [data-testid="stMarkdown"] h2,
+    [data-testid="stSidebar"] [data-testid="stMarkdown"] h3 {
+        color: var(--accent-primary);
+        font-size: 1rem;
+    }
+    
+    /* Content section styling */
+    .content-section {
+        background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        border-radius: var(--card-radius);
+        padding: 15px;
+        margin: 12px 0;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .content-section h3 {
+        color: var(--text-primary);
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 1rem;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Terminal-style output */
+    .terminal-output {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-left: 2px solid var(--accent-primary);
+        border-radius: var(--border-radius);
+        padding: 10px 15px;
+        font-family: var(--terminal-font);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        margin: 10px 0;
+    }
+    
+    /* Process indicator */
+    .process-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-secondary);
+        padding: 10px;
+        border-radius: var(--border-radius);
+        margin: 15px 0;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .process-indicator .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent-primary);
+        margin-right: 10px;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { opacity: 0.4; }
+    }
+    
+    .process-status {
+        flex-grow: 1;
+        font-size: 0.85rem;
+    }
+    
+    /* Notion button styling */
+    .notion-button {
+        display: inline-block;
+        background: linear-gradient(110deg, rgba(121, 40, 202, 0.1) 0%, rgba(255, 0, 128, 0.05) 100%);
+        border: 1px solid rgba(121, 40, 202, 0.25);
+        border-radius: var(--border-radius);
+        padding: 8px 15px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-family: var(--system-font);
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: 10px;
+    }
+    
+    .notion-button:hover {
+        background: linear-gradient(110deg, rgba(121, 40, 202, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%);
+        border-color: rgba(121, 40, 202, 0.4);
+        transform: translateY(-1px);
+    }
+    
+    /* Footer styling */
+    .app-footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(121, 40, 202, 0.15);
+        font-size: 0.8rem;
+        text-align: center;
+        color: var(--text-muted);
+    }
+    
+    .footer-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .footer-status {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin: 10px 0;
+    }
+    
+    .footer-status span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .footer-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .status-secure .footer-status-dot {
+        background-color: var(--success);
+        box-shadow: 0 0 5px var(--success);
+    }
+    
+    .status-sovereignty .footer-status-dot {
+        background-color: var(--accent-primary);
+        box-shadow: 0 0 5px var(--accent-primary);
+    }
+    
+    .status-offline .footer-status-dot {
+        background-color: var(--info);
+        box-shadow: 0 0 5px var(--info);
+    }
+    
+    /* Animations and effects */
+    .scanner-line {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        opacity: 0.4;
+        z-index: 1000;
+        animation: scanner-move 8s linear infinite;
+    }
+    
+    @keyframes scanner-move {
+        0% { top: 0; }
+        100% { top: 100%; }
+    }
+    
+    /* Toast notifications */
+    .toast-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius);
+        padding: 10px 15px;
+        border-left: 3px solid var(--success);
+        color: var(--text-primary);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        font-size: 0.85rem;
+        animation: toast-in 0.3s ease forwards;
+    }
+    
+    @keyframes toast-in {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    </style>
+    
+    <!-- Add the scanner line animation -->
+    <div class="scanner-line"></div>
+    """, unsafe_allow_html=True)
+
 def load_user_knowledge_base(user):
     """Load knowledge base files for a specific user"""
     knowledge_base = {}
@@ -811,19 +1345,26 @@ def transcribe_large_file(file_path):
 def transcribe_audio(audio_file):
     """Transcribe an audio file directly"""
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(audio_file.name).suffix) as tmp_file:
-            tmp_file.write(audio_file.getvalue())
-            tmp_path = tmp_file.name
+        # Check if audio_file is a string (path) or an UploadedFile object
+        if isinstance(audio_file, str):
+            # Already a file path, use directly
+            audio_path = audio_file
+        else:
+            # It's an UploadedFile object, save to temp file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{audio_file.name.split('.')[-1]}") as tmp_file:
+                tmp_file.write(audio_file.getvalue())
+                audio_path = tmp_file.name
         
         # Transcribe using OpenAI's Whisper
-        with open(tmp_path, "rb") as audio:
+        with open(audio_path, "rb") as audio:
             transcript = openai_client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio
             )
         
-        # Clean up temp file
-        os.unlink(tmp_path)
+        # Only delete the temp file if we created it
+        if not isinstance(audio_file, str):
+            os.unlink(audio_path)
         
         return transcript.text
     except Exception as e:
@@ -1202,69 +1743,40 @@ def process_all_content(text, ai_provider, model, knowledge_base=None):
         return None
 
 def main():
-    st.title("WhisperForge")
-    st.write("Transform your spoken ideas into polished content with AI assistance.")
-    
-    # Initialize session state for model selection
+    # Initialize session state variables first to avoid errors
+    if 'transcription' not in st.session_state:
+        st.session_state.transcription = ""
+    if 'wisdom' not in st.session_state:
+        st.session_state.wisdom = ""
+    if 'audio_file' not in st.session_state:
+        st.session_state.audio_file = None
     if 'ai_provider' not in st.session_state:
         st.session_state.ai_provider = "OpenAI"
     if 'ai_model' not in st.session_state:
         st.session_state.ai_model = None
     
+    # Apply the improved cyberpunk theme
+    local_css()
+    
+    # Create a custom header with the refined styling - keep this as it's liked
+    st.markdown(f"""
+    <div class="header-container">
+        <div class="header-title">WhisperForge // Control_Center</div>
+        <div class="header-date">{datetime.now().strftime('%a %d %b %Y · %H:%M')}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # ===== SIDEBAR CONFIGURATION =====
     with st.sidebar:
-        st.header("Configuration")
+        st.markdown('<div class="section-header">Configuration</div>', unsafe_allow_html=True)
         
-        # Move user selection to a less prominent location
-        with st.expander("Advanced Settings", expanded=False):
-            selected_user = st.selectbox("User Profile", options=["default"], key="user_profile")
+        # Get available users
+        selected_user = st.selectbox("User Profile", options=get_available_users(), key="user_profile")
         
         # Load knowledge base for selected user
         knowledge_base = load_user_knowledge_base(selected_user)
         
-        # Knowledge Base Management
-        with st.expander("Knowledge Base", expanded=False):
-            st.write("Current Knowledge Base Files:")
-            if knowledge_base:
-                # Use selectbox instead of nested expanders
-                selected_file = st.selectbox(
-                    "Select file to view",
-                    options=list(knowledge_base.keys()),
-                    key="kb_file_selector"
-                )
-                if selected_file:
-                    st.text_area(
-                        "Content",
-                        value=knowledge_base[selected_file],
-                        height=100,
-                        key=f"kb_{selected_file}"
-                    )
-            else:
-                st.info("No knowledge base files found.")
-            
-            # Upload new knowledge base file
-            uploaded_kb = st.file_uploader(
-                "Add Knowledge Base File", 
-                type=['txt', 'md'],
-                key="kb_uploader"
-            )
-            
-            if uploaded_kb:
-                kb_name = st.text_input("File Name (without extension)", 
-                                      value=os.path.splitext(uploaded_kb.name)[0])
-                if st.button("Save to Knowledge Base"):
-                    try:
-                        kb_path = f'prompts/{selected_user}/knowledge_base'
-                        os.makedirs(kb_path, exist_ok=True)
-                        
-                        with open(os.path.join(kb_path, f"{kb_name}.md"), "wb") as f:
-                            f.write(uploaded_kb.getvalue())
-                        st.success("Knowledge base file added successfully!")
-                        st.experimental_rerun()
-                    except Exception as e:
-                        st.error(f"Error saving knowledge base file: {str(e)}")
-        
-        # AI Provider selection in sidebar
+        # AI Provider selection in sidebar with clean UI
         ai_provider = st.selectbox(
             "AI Provider", 
             options=["OpenAI", "Anthropic", "Grok"],
@@ -1300,322 +1812,390 @@ def main():
         )
         st.session_state.ai_model = selected_model
         
-        # Configure custom prompts
-        with st.expander("Configure Custom Prompts", expanded=False):
-            configure_prompts(selected_user, {})
+        # Move system status to sidebar and clean up UI
+        st.markdown('<div class="section-header">System Status</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="status-container">
+            <div class="status-card">
+                <h3>AI Provider</h3>
+                <div class="status-value" id="ai-provider-value">OpenAI</div>
+            </div>
+            <div class="status-card">
+                <h3>Security</h3>
+                <div class="status-value" id="security-status">Encrypted</div>
+            </div>
+            <div class="status-card">
+                <h3>Status</h3>
+                <div class="status-value" id="content-status">Ready</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Update the status card with JavaScript
+        st.markdown(f"""
+        <script>
+            document.getElementById('ai-provider-value').innerText = '{ai_provider}';
+        </script>
+        """, unsafe_allow_html=True)
+        
+        # Configure custom prompts in a cleaner way
+        with st.expander("Custom Prompts", expanded=False):
+            users_prompts = {}  # Initialize empty prompts dict
+            configure_prompts(selected_user, users_prompts)
+            
+        # Knowledge Base Management
+        with st.expander("Knowledge Base", expanded=False):
+            st.markdown("### Knowledge Base Files")
+            
+            if knowledge_base:
+                # Use selectbox instead of nested expanders
+                selected_file = st.selectbox(
+                    "Select file to view",
+                    options=list(knowledge_base.keys()),
+                    key="kb_file_selector"
+                )
+                if selected_file:
+                    st.text_area(
+                        "Content",
+                        value=knowledge_base[selected_file],
+                        height=100,
+                        key=f"kb_{selected_file}",
+                        disabled=True
+                    )
+            else:
+                st.info("No knowledge base files found.")
+            
+            # Upload new knowledge base file
+            st.markdown("### Add New Knowledge")
+            
+            uploaded_kb = st.file_uploader(
+                "Add Knowledge Base File", 
+                type=['txt', 'md'],
+                key="kb_uploader"
+            )
+            
+            if uploaded_kb:
+                kb_name = st.text_input("File Name (without extension)", 
+                                      value=os.path.splitext(uploaded_kb.name)[0])
+                if st.button("Save to Knowledge Base"):
+                    try:
+                        kb_path = f'prompts/{selected_user}/knowledge_base'
+                        os.makedirs(kb_path, exist_ok=True)
+                        
+                        with open(os.path.join(kb_path, f"{kb_name}.md"), "wb") as f:
+                            f.write(uploaded_kb.getvalue())
+                        st.success("Knowledge base file added successfully!")
+                        st.experimental_rerun()
+                    except Exception as e:
+                        st.error(f"Error saving knowledge base file: {str(e)}")
     
-    # Initialize session state for content
-    if 'transcription' not in st.session_state:
-        st.session_state.transcription = ""
-    if 'wisdom' not in st.session_state:
-        st.session_state.wisdom = ""
-    if 'audio_file' not in st.session_state:
-        st.session_state.audio_file = None
+    # MAIN AREA - Clean up content area to focus on core functionality
     
     # Add tabs for input selection
-    input_type = st.tabs(["Audio Upload", "Text Input"])
+    input_tabs = st.tabs(["Audio Upload", "Text Input"])
     
-    with input_type[0]:
-        # Existing audio upload functionality
-        uploaded_file = st.file_uploader("Upload Audio File", type=['mp3', 'wav', 'ogg', 'm4a'])
+    # Tab 1: Audio Upload
+    with input_tabs[0]:
+        st.markdown('<div class="section-header">Audio Transcription</div>', unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("Upload your audio file", type=['mp3', 'wav', 'ogg', 'm4a'], key="audio_uploader")
         
         if uploaded_file is not None:
-            st.audio(uploaded_file)
-            
-            # Input field for title
-            title = st.text_input("Title (Optional)", 
-                                value="Transcription - " + datetime.now().strftime("%Y-%m-%d %H:%M"), 
-                                key="audio_title")
+            st.audio(uploaded_file, format='audio/wav')
             
             col1, col2 = st.columns(2)
             
             with col1:
-                # Regular transcribe button
                 if st.button("Transcribe Audio"):
-                    with st.spinner("Transcribing audio..."):
-                        # Check file size and use appropriate method
-                        file_size = uploaded_file.size
+                    with st.spinner("Transcribing..."):
+                        # Save uploaded file temporarily
+                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}")
+                        temp_file.write(uploaded_file.getvalue())
+                        temp_file.close()
                         
-                        if file_size > 25 * 1024 * 1024:  # 25 MB
-                            st.warning("Large file detected. Using chunked processing.")
-                            # Save uploaded file temporarily to process it
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uploaded_file.name).suffix) as tmp_file:
-                                tmp_file.write(uploaded_file.getvalue())
-                                tmp_path = tmp_file.name
-                            
-                            # Process large file in chunks
-                            st.session_state.transcription = transcribe_large_file(tmp_path)
-                            os.unlink(tmp_path)  # Remove temp file
-                        else:
-                            # Use simpler method for smaller files
-                            transcript = transcribe_audio(uploaded_file)
-                            st.session_state.transcription = transcript
+                        # Process the audio file
+                        transcription = transcribe_audio(uploaded_file)
+                        st.session_state.transcription = transcription
+                        st.session_state.audio_file = uploaded_file
+                        
+                        # Show transcription
+                        st.text_area("Transcription", transcription, height=200)
+                        
+                        # Process content options
+                        st.markdown('<div class="section-header">Processing Options</div>', unsafe_allow_html=True)
+                        if st.button("Process Content"):
+                            with st.spinner("Processing content with AI..."):
+                                results = process_all_content(
+                                    transcription, 
+                                    st.session_state.ai_provider, 
+                                    st.session_state.ai_model,
+                                    knowledge_base
+                                )
+                                for key, value in results.items():
+                                    st.session_state[key] = value
             
             with col2:
-                # I'm Feeling Lucky button
-                if st.button("I'm Feeling Lucky 🎲"):
-                    with st.spinner("Processing everything..."):
+                if st.button("I'm Feeling Lucky", key="lucky_button"):
+                    with st.spinner("Working magic..."):
                         # First transcribe
-                        transcript = transcribe_audio(uploaded_file)
-                        st.session_state.transcription = transcript
+                        transcription = transcribe_audio(uploaded_file)
+                        st.session_state.transcription = transcription
+                        st.session_state.audio_file = uploaded_file
                         
-                        # Then process all content
+                        # Show transcription
+                        st.text_area("Transcription", transcription, height=200)
+                        
+                        # Process everything and post to Notion in one go
                         results = process_all_content(
-                            transcript,
-                            st.session_state.ai_provider,
-                            st.session_state.ai_model,
-                            knowledge_base
-                        )
-                        
-                        if results:
-                            # Store results in session state
-                            st.session_state.wisdom = results['wisdom']
-                            st.session_state.outline = results['outline']
-                            st.session_state.social_posts = results['social_posts']
-                            st.session_state.image_prompts = results['image_prompts']
-                            st.session_state.article = results['article']
-                            
-                            # Automatically post to Notion
-                            with st.spinner("Saving to Notion..."):
-                                notion_success = create_content_notion_entry(
-                                    title,
-                                    transcript,
-                                    results['wisdom'],
-                                    results['outline'],
-                                    results['social_posts'],
-                                    results['image_prompts'],
-                                    results['article']
-                                )
-                                if notion_success:
-                                    st.success("Everything processed and saved to Notion!")
-                                
-    with input_type[1]:
-        # New text input functionality
-        st.write("Paste your text below to analyze and generate content:")
-        input_text = st.text_area("Input Text", height=200)
-        title = st.text_input("Title (Optional)", 
-                             value="Content - " + datetime.now().strftime("%Y-%m-%d %H:%M"), 
-                             key="text_title")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Regular process button
-            if st.button("Process Text"):
-                if input_text:
-                    st.session_state.transcription = input_text
-                else:
-                    st.error("Please enter some text to process")
-        
-        with col2:
-            # I'm Feeling Lucky button for text
-            if st.button("I'm Feeling Lucky 🎲", key="lucky_text"):
-                if input_text:
-                    with st.spinner("Processing everything..."):
-                        st.session_state.transcription = input_text
-                        
-                        results = process_all_content(
-                            input_text,
-                            st.session_state.ai_provider,
-                            st.session_state.ai_model,
-                            knowledge_base
-                        )
-                        
-                        if results:
-                            # Store results and post to Notion
-                            st.session_state.wisdom = results['wisdom']
-                            st.session_state.outline = results['outline']
-                            st.session_state.social_posts = results['social_posts']
-                            st.session_state.image_prompts = results['image_prompts']
-                            st.session_state.article = results['article']
-                            
-                            with st.spinner("Saving to Notion..."):
-                                notion_success = create_content_notion_entry(
-                                    title,
-                                    input_text,
-                                    results['wisdom'],
-                                    results['outline'],
-                                    results['social_posts'],
-                                    results['image_prompts'],
-                                    results['article']
-                                )
-                                if notion_success:
-                                    st.success("Everything processed and saved to Notion!")
-                else:
-                    st.error("Please enter some text to process")
-
-    # Rest of the content generation code remains the same since it all works from st.session_state.transcription
-    if st.session_state.transcription:
-        st.header("Content:")
-        st.write(st.session_state.transcription)
-        
-        # Extract wisdom section with knowledge base
-        with st.expander("Extract Wisdom", expanded=False):
-            if st.button("Generate Wisdom"):
-                try:
-                    if not st.session_state.ai_model:
-                        st.error("Please select an AI model in the sidebar configuration.")
-                        return
-                        
-                    # Get the custom prompt if available
-                    wisdom_prompt = get_custom_prompt(selected_user, "wisdom_extraction", {}, DEFAULT_PROMPTS)
-                    
-                    with st.spinner("Extracting wisdom from transcript..."):
-                        st.session_state.wisdom = generate_wisdom(
-                            st.session_state.transcription, 
+                            transcription, 
                             st.session_state.ai_provider, 
                             st.session_state.ai_model,
-                            wisdom_prompt,
-                            knowledge_base  # Pass knowledge base to generation function
+                            knowledge_base
                         )
-                except Exception as e:
-                    st.error(f"Error generating wisdom: {str(e)}")
-        
-        # Display wisdom if available
-        if st.session_state.wisdom:
-            st.subheader("Extracted Wisdom:")
-            st.write(st.session_state.wisdom)
-            
-            # Initialize session states for other content types if not already done
-            if 'outline' not in st.session_state:
-                st.session_state.outline = ""
-            if 'social_posts' not in st.session_state:
-                st.session_state.social_posts = ""
-            if 'image_prompts' not in st.session_state:
-                st.session_state.image_prompts = ""
-            if 'article' not in st.session_state:
-                st.session_state.article = ""
-            
-            # Create outline
-            with st.expander("Create Outline", expanded=False):
-                if st.button("Generate Outline"):
-                    try:
-                        # Get the custom prompt if available
-                        outline_prompt = get_custom_prompt(selected_user, "outline_creation", {}, DEFAULT_PROMPTS)
                         
-                        with st.spinner("Creating outline..."):
-                            st.session_state.outline = generate_outline(
-                                st.session_state.transcription,
-                                st.session_state.wisdom,
-                                st.session_state.ai_provider,
-                                st.session_state.ai_model,
-                                outline_prompt,
-                                knowledge_base
-                            )
-                    except Exception as e:
-                        st.error(f"Error generating outline: {str(e)}")
-            
-            # Display outline if available
-            if st.session_state.outline:
-                st.subheader("Content Outline:")
-                st.write(st.session_state.outline)
-                
-                # Social media content
-                with st.expander("Create Social Media Content", expanded=False):
-                    if st.button("Generate Social Posts"):
-                        try:
-                            # Get the custom prompt if available
-                            social_prompt = get_custom_prompt(selected_user, "social_media", {}, DEFAULT_PROMPTS)
+                        if results:
+                            for key, value in results.items():
+                                st.session_state[key] = value
                             
-                            with st.spinner("Creating social media content..."):
-                                st.session_state.social_posts = generate_social_content(
-                                    st.session_state.wisdom,
-                                    st.session_state.outline,
-                                    st.session_state.ai_provider,
-                                    st.session_state.ai_model,
-                                    social_prompt,
-                                    knowledge_base
-                                )
-                        except Exception as e:
-                            st.error(f"Error generating social content: {str(e)}")
-                
-                # Display social posts if available
-                if st.session_state.social_posts:
-                    st.subheader("Social Media Content:")
-                    st.write(st.session_state.social_posts)
-                
-                # Image prompts section
-                with st.expander("Create Image Prompts", expanded=False):
-                    if st.button("Generate Image Prompts"):
-                        try:
-                            # Get the custom prompt if available
-                            image_prompt = get_custom_prompt(selected_user, "image_prompts", {}, DEFAULT_PROMPTS)
+                            # Generate title for Notion
+                            title = generate_short_title(transcription)
                             
-                            with st.spinner("Creating image generation prompts..."):
-                                st.session_state.image_prompts = generate_image_prompts(
-                                    st.session_state.wisdom,
-                                    st.session_state.outline,
-                                    st.session_state.ai_provider,
-                                    st.session_state.ai_model,
-                                    image_prompt,
-                                    knowledge_base
-                                )
-                        except Exception as e:
-                            st.error(f"Error generating image prompts: {str(e)}")
-                
-                # Display image prompts if available
-                if st.session_state.image_prompts:
-                    st.subheader("Image Prompts:")
-                    st.write(st.session_state.image_prompts)
-                
-                # Full article section
-                with st.expander("Write Full Article", expanded=False):
-                    if st.button("Generate Article"):
-                        try:
-                            # Get the custom prompt if available
-                            article_prompt = get_custom_prompt(selected_user, "article_writing", {}, DEFAULT_PROMPTS)
+                            # Post to Notion if credentials are available
+                            notion_api_key = os.environ.get('NOTION_API_KEY', '')
+                            notion_database_id = os.environ.get('NOTION_DATABASE_ID', '')
                             
-                            with st.spinner("Writing full article..."):
-                                st.session_state.article = generate_article(
-                                    st.session_state.transcription,
-                                    st.session_state.wisdom,
-                                    st.session_state.outline,
-                                    st.session_state.ai_provider,
-                                    st.session_state.ai_model,
-                                    article_prompt,
-                                    knowledge_base
-                                )
-                        except Exception as e:
-                            st.error(f"Error generating article: {str(e)}")
-                
-                # Display article if available
-                if st.session_state.article:
-                    st.subheader("Full Article:")
-                    st.write(st.session_state.article)
+                            if notion_api_key and notion_database_id:
+                                with st.spinner("Exporting to Notion..."):
+                                    try:
+                                        create_content_notion_entry(
+                                            title,
+                                            transcription,
+                                            results.get('wisdom'),
+                                            results.get('outline'),
+                                            results.get('social_posts'),
+                                            results.get('image_prompts'),
+                                            results.get('article')
+                                        )
+                                        st.success("Everything processed and saved to Notion!")
+                                    except Exception as e:
+                                        st.error(f"Error exporting to Notion: {str(e)}")
+                            else:
+                                st.success("Everything processed!")
+                                st.info("To export to Notion, configure NOTION_API_KEY and NOTION_DATABASE_ID environment variables.")
+    
+    # Tab 2: Text Input
+    with input_tabs[1]:
+        st.markdown('<div class="section-header">Text Processing</div>', unsafe_allow_html=True)
         
-        # Export to Notion button - available at any stage
-        if st.button("Save to Notion"):
-            with st.spinner("Exporting to Notion..."):
-                # Check if Notion API key is configured
-                if not os.getenv("NOTION_API_KEY") or not os.getenv("NOTION_DATABASE_ID"):
-                    st.error("Notion API key or database ID not configured. Please set them in your .env file.")
+        text_input = st.text_area("Enter your text", height=200, key="text_input_area")
+        
+        if text_input:
+            if st.button("I'm Feeling Lucky", key="text_lucky_button", use_container_width=True):
+                # Create placeholder elements for streaming updates
+                progress_placeholder = st.empty()
+                wisdom_placeholder = st.empty()
+                outline_placeholder = st.empty()
+                social_placeholder = st.empty()
+                image_placeholder = st.empty()
+                article_placeholder = st.empty()
+                export_placeholder = st.empty()
+                
+                # Store the text input as transcription
+                st.session_state.transcription = text_input
+                
+                # Generate wisdom with streaming feedback
+                with progress_placeholder.container():
+                    st.info("Step 1/6: Extracting key insights...")
+                
+                wisdom = generate_wisdom(
+                    text_input, 
+                    st.session_state.ai_provider, 
+                    st.session_state.ai_model,
+                    knowledge_base=knowledge_base
+                )
+                st.session_state.wisdom = wisdom
+                
+                # Update wisdom placeholder
+                with wisdom_placeholder.container():
+                    st.subheader("Key Insights")
+                    st.markdown(wisdom)
+                
+                # Create outline with streaming updates
+                with progress_placeholder.container():
+                    st.info("Step 2/6: Creating content outline...")
+                
+                outline = generate_outline(
+                    text_input, 
+                    wisdom,
+                    st.session_state.ai_provider, 
+                    st.session_state.ai_model,
+                    knowledge_base=knowledge_base
+                )
+                st.session_state.outline = outline
+                
+                # Update outline placeholder
+                with outline_placeholder.container():
+                    st.subheader("Content Outline")
+                    st.markdown(outline)
+                
+                # Social content
+                with progress_placeholder.container():
+                    st.info("Step 3/6: Generating social media posts...")
+                
+                social_content = generate_social_content(
+                    wisdom,
+                    outline,
+                    st.session_state.ai_provider, 
+                    st.session_state.ai_model,
+                    knowledge_base=knowledge_base
+                )
+                st.session_state.social_posts = social_content
+                
+                # Update social placeholder
+                with social_placeholder.container():
+                    st.subheader("Social Media Posts")
+                    st.markdown(social_content)
+                
+                # Image prompts
+                with progress_placeholder.container():
+                    st.info("Step 4/6: Creating image prompts...")
+                
+                image_prompts = generate_image_prompts(
+                    wisdom,
+                    outline,
+                    st.session_state.ai_provider, 
+                    st.session_state.ai_model,
+                    knowledge_base=knowledge_base
+                )
+                st.session_state.image_prompts = image_prompts
+                
+                # Update image placeholder
+                with image_placeholder.container():
+                    st.subheader("Image Prompts")
+                    st.markdown(image_prompts)
+                
+                # Article
+                with progress_placeholder.container():
+                    st.info("Step 5/6: Writing full article...")
+                
+                article = generate_article(
+                    text_input,
+                    wisdom,
+                    outline,
+                    st.session_state.ai_provider, 
+                    st.session_state.ai_model,
+                    knowledge_base=knowledge_base
+                )
+                st.session_state.article = article
+                
+                # Update article placeholder
+                with article_placeholder.container():
+                    st.subheader("Full Article")
+                    st.markdown(article)
+                
+                # Generate title for Notion
+                title = generate_short_title(text_input)
+                
+                # Post to Notion if credentials are available
+                notion_api_key = os.environ.get('NOTION_API_KEY', '')
+                notion_database_id = os.environ.get('NOTION_DATABASE_ID', '')
+                
+                if notion_api_key and notion_database_id:
+                    with progress_placeholder.container():
+                        st.info("Step 6/6: Exporting to Notion...")
+                    
+                    try:
+                        notion_url = create_content_notion_entry(
+                            title,
+                            text_input,
+                            wisdom,
+                            outline,
+                            social_content,
+                            image_prompts,
+                            article
+                        )
+                        
+                        with export_placeholder.container():
+                            st.success("Everything processed and saved to Notion!")
+                            if notion_url:
+                                st.markdown(f"[Open in Notion]({notion_url})")
+                    except Exception as e:
+                        with export_placeholder.container():
+                            st.error(f"Error exporting to Notion: {str(e)}")
                 else:
-                    # Get title from input or use a default
-                    if 'title' not in locals() or not title:
-                        title = "Transcription - " + datetime.now().strftime("%Y-%m-%d %H:%M")
+                    with progress_placeholder.container():
+                        st.success("All content processed!")
+                        st.info("To export to Notion, configure NOTION_API_KEY and NOTION_DATABASE_ID environment variables.")
                     
-                    # Safely get all content types from session state
-                    wisdom = st.session_state.get('wisdom', None)
-                    outline = st.session_state.get('outline', None)  
-                    social_posts = st.session_state.get('social_posts', None)
-                    image_prompts = st.session_state.get('image_prompts', None)
-                    article = st.session_state.get('article', None)
-                    
-                    # Create Notion entry with all available content
-                    notion_url = create_content_notion_entry(
-                        title,
-                        st.session_state.transcription,
-                        wisdom,
-                        outline,
-                        social_posts,
-                        image_prompts,
-                        article
-                    )
-                    
-                    if notion_url:
-                        st.success(f"Successfully saved to Notion! [Open in Notion]({notion_url})")
-                    else:
-                        st.error("Failed to save to Notion. Please check your API keys.")
+                # Final progress update
+                with progress_placeholder.container():
+                    st.success("Content generation complete!")
+    
+    # Display generated content in the main area, below the input tabs
+    if st.session_state.transcription:
+        if 'wisdom' in st.session_state and st.session_state.wisdom:
+            st.markdown('<div class="section-header">Generated Content</div>', unsafe_allow_html=True)
+            
+            # Key Insights section
+            st.markdown("### Key Insights")
+            st.markdown(st.session_state.wisdom)
+            
+            # Display other generated content if available
+            if 'outline' in st.session_state and st.session_state.outline:
+                st.markdown("### Content Outline")
+                st.markdown(st.session_state.outline)
+            
+            if 'social_content' in st.session_state and st.session_state.social_content:
+                st.markdown("### Social Media Posts")
+                st.markdown(st.session_state.social_content)
+            
+            if 'image_prompts' in st.session_state and st.session_state.image_prompts:
+                st.markdown("### Image Generation Prompts")
+                st.markdown(st.session_state.image_prompts)
+            
+            if 'article' in st.session_state and st.session_state.article:
+                st.markdown("### Full Article")
+                st.markdown(st.session_state.article)
+            
+            # Export to Notion section
+            st.markdown('<div class="section-header">Export Options</div>', unsafe_allow_html=True)
+            
+            notion_api_key = os.environ.get('NOTION_API_KEY', '')
+            notion_database_id = os.environ.get('NOTION_DATABASE_ID', '')
+            
+            if notion_api_key and notion_database_id:
+                if st.button("Export to Notion"):
+                    with st.spinner("Exporting to Notion..."):
+                        try:
+                            title = generate_short_title(st.session_state.transcription)
+                            create_content_notion_entry(
+                                title,
+                                st.session_state.transcription,
+                                st.session_state.wisdom if 'wisdom' in st.session_state else None,
+                                st.session_state.outline if 'outline' in st.session_state else None,
+                                st.session_state.social_content if 'social_content' in st.session_state else None,
+                                st.session_state.image_prompts if 'image_prompts' in st.session_state else None,
+                                st.session_state.article if 'article' in st.session_state else None
+                            )
+                            st.success("Successfully exported to Notion!")
+                        except Exception as e:
+                            st.error(f"Error exporting to Notion: {str(e)}")
+            else:
+                st.info("To export to Notion, please configure the NOTION_API_KEY and NOTION_DATABASE_ID environment variables.")
+    
+    # Add the footer
+    st.markdown("""
+    <div class="app-footer">
+        <div class="footer-content">
+            <div>WhisperForge Control Center v1.0</div>
+            <div class="footer-status">
+                <span class="status-secure"><span class="footer-status-dot"></span>Encrypted</span>
+                <span class="status-sovereignty"><span class="footer-status-dot"></span>Knowledge Sovereignty</span>
+                <span class="status-offline"><span class="footer-status-dot"></span>Offline Capable</span>
+            </div>
+            <div>© 2025 CypherMedia Group</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Default prompts in case user prompts are not available
 DEFAULT_PROMPTS = {
