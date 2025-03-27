@@ -704,36 +704,58 @@ Original Prompt:
         st.error(f"Analysis error with {provider} {model}: {str(e)}")
         return None
 
-def chunk_audio(audio_path, target_size_mb=20):
+def chunk_audio(audio_path, target_size_mb=25):
     """Split audio file into chunks of approximately target_size_mb"""
     try:
         audio = AudioSegment.from_file(audio_path)
         
-        # Ensure minimum chunk length (1 second)
-        MIN_CHUNK_LENGTH_MS = 1000
-        
-        # Calculate number of chunks needed
+        # Calculate optimal chunk size based on file size
         file_size = os.path.getsize(audio_path)
-        num_chunks = math.ceil(file_size / (target_size_mb * 1024 * 1024))
-        chunk_length_ms = max(len(audio) // num_chunks, MIN_CHUNK_LENGTH_MS)
+        total_chunks = math.ceil(file_size / (target_size_mb * 1024 * 1024))
         
+        # Ensure minimum chunk length (5 seconds) and maximum chunks (20)
+        MIN_CHUNK_LENGTH_MS = 5000
+        MAX_CHUNKS = 20
+        
+        if total_chunks > MAX_CHUNKS:
+            target_size_mb = math.ceil(file_size / (MAX_CHUNKS * 1024 * 1024))
+            total_chunks = MAX_CHUNKS
+        
+        chunk_length_ms = max(len(audio) // total_chunks, MIN_CHUNK_LENGTH_MS)
+        
+        # Create temporary directory for chunks
+        temp_dir = tempfile.mkdtemp(prefix='whisperforge_chunks_')
         chunks = []
+        
+        # Show chunking progress
+        progress_text = st.empty()
+        progress_bar = st.progress(0)
+        
         for i in range(0, len(audio), chunk_length_ms):
             chunk = audio[i:i + chunk_length_ms]
-            # Skip chunks that are too short
             if len(chunk) < MIN_CHUNK_LENGTH_MS:
                 continue
-            with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
-                chunk.export(temp_file.name, format='mp3')
-                chunks.append(temp_file.name)
+                
+            # Save chunk with index in filename
+            chunk_path = os.path.join(temp_dir, f'chunk_{i//chunk_length_ms}.mp3')
+            chunk.export(chunk_path, format='mp3')
+            chunks.append(chunk_path)
+            
+            # Update progress
+            progress = (i + chunk_length_ms) / len(audio)
+            progress_bar.progress(min(progress, 1.0))
+            progress_text.text(f"Chunking audio: {min(int(progress * 100), 100)}%")
         
-        return chunks
+        progress_text.empty()
+        progress_bar.empty()
+        
+        return chunks, temp_dir
     except Exception as e:
         st.error(f"Error chunking audio: {str(e)}")
-        return []
+        return [], None
 
 def transcribe_chunk(chunk_path, i, total_chunks):
-    """Transcribe a single chunk with error handling"""
+    """Transcribe a single chunk with error handling and progress tracking"""
     try:
         with open(chunk_path, "rb") as audio:
             transcript = openai_client.audio.transcriptions.create(
@@ -744,12 +766,6 @@ def transcribe_chunk(chunk_path, i, total_chunks):
     except Exception as e:
         st.warning(f"Warning: Failed to transcribe part {i+1} of {total_chunks}: {str(e)}")
         return ""
-    finally:
-        # Clean up chunk file
-        try:
-            os.remove(chunk_path)
-        except:
-            pass
 
 def generate_title(transcript):
     """Generate a descriptive 5-7 word title based on the transcript"""
@@ -1308,65 +1324,95 @@ def configure_prompts(selected_user, users_prompts):
 
 def transcribe_large_file(file_path):
     """Process a large audio file by chunking it and transcribing each chunk"""
-    st.info("Processing large audio file in chunks...")
-    
-    # Create progress bar
-    progress_text = "Chunking audio file..."
-    progress_bar = st.progress(0)
-    
-    # Split audio into chunks
-    chunks = chunk_audio(file_path)
-    if not chunks:
-        st.error("Failed to chunk audio file.")
-        return ""
-    
-    # Update progress bar
-    progress_text = "Transcribing chunks..."
-    
-    # Process each chunk
-    transcriptions = []
-    for i, chunk_path in enumerate(chunks):
-        # Update progress
-        progress = (i + 1) / len(chunks)
-        progress_bar.progress(progress)
+    try:
+        st.info("Processing large audio file in chunks...")
         
-        # Transcribe this chunk
-        chunk_text = transcribe_chunk(chunk_path, i, len(chunks))
-        transcriptions.append(chunk_text)
-    
-    # Combine all transcriptions
-    full_transcript = " ".join(transcriptions)
-    
-    # Complete progress
-    progress_bar.progress(1.0)
-    
-    return full_transcript
+        # Split audio into chunks
+        chunks, temp_dir = chunk_audio(file_path)
+        if not chunks:
+            st.error("Failed to chunk audio file.")
+            return ""
+        
+        # Create progress indicators
+        progress_text = st.empty()
+        progress_bar = st.progress(0)
+        
+        # Process each chunk
+        transcriptions = []
+        for i, chunk_path in enumerate(chunks):
+            # Update progress
+            progress = (i + 1) / len(chunks)
+            progress_bar.progress(progress)
+            progress_text.text(f"Transcribing part {i+1} of {len(chunks)}...")
+            
+            # Transcribe chunk
+            chunk_text = transcribe_chunk(chunk_path, i, len(chunks))
+            transcriptions.append(chunk_text)
+            
+            # Clean up chunk file
+            try:
+                os.remove(chunk_path)
+            except:
+                pass
+        
+        # Clean up temporary directory
+        if temp_dir:
+            try:
+                shutil.rmtree(temp_dir)
+            except:
+                pass
+        
+        # Combine all transcriptions with proper spacing
+        full_transcript = " ".join(transcriptions)
+        
+        # Clear progress indicators
+        progress_text.empty()
+        progress_bar.empty()
+        
+        return full_transcript
+        
+    except Exception as e:
+        st.error(f"Error processing large file: {str(e)}")
+        return ""
 
 def transcribe_audio(audio_file):
-    """Transcribe an audio file directly"""
+    """Transcribe an audio file with size-based handling"""
     try:
         # Check if audio_file is a string (path) or an UploadedFile object
         if isinstance(audio_file, str):
-            # Already a file path, use directly
             audio_path = audio_file
+            file_size = os.path.getsize(audio_path)
         else:
-            # It's an UploadedFile object, save to temp file
+            # Save uploaded file temporarily
             with tempfile.NamedTemporaryFile(delete=False, suffix=f".{audio_file.name.split('.')[-1]}") as tmp_file:
                 tmp_file.write(audio_file.getvalue())
                 audio_path = tmp_file.name
+                file_size = os.path.getsize(audio_path)
         
-        # Transcribe using OpenAI's Whisper
-        with open(audio_path, "rb") as audio:
-            transcript = openai_client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio
-            )
+        # Size threshold for chunking (20MB)
+        CHUNK_THRESHOLD = 20 * 1024 * 1024
         
-        # Only delete the temp file if we created it
+        if file_size > CHUNK_THRESHOLD:
+            # Process large file in chunks
+            transcript = transcribe_large_file(audio_path)
+        else:
+            # Process small file directly
+            with open(audio_path, "rb") as audio:
+                response = openai_client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio
+                )
+                transcript = response.text
+        
+        # Clean up temporary file if we created it
         if not isinstance(audio_file, str):
-            os.unlink(audio_path)
+            try:
+                os.remove(audio_path)
+            except:
+                pass
         
-        return transcript.text
+        return transcript
+        
     except Exception as e:
         st.error(f"Transcription error: {str(e)}")
         return ""
@@ -1758,7 +1804,7 @@ def main():
     # Apply the improved cyberpunk theme
     local_css()
     
-    # Create a custom header with the refined styling - keep this as it's liked
+    # Create a custom header with the refined styling
     st.markdown(f"""
     <div class="header-container">
         <div class="header-title">WhisperForge // Control_Center</div>
@@ -1766,7 +1812,7 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # ===== SIDEBAR CONFIGURATION =====
+    # Sidebar configuration
     with st.sidebar:
         st.markdown('<div class="section-header">Configuration</div>', unsafe_allow_html=True)
         
@@ -1889,29 +1935,62 @@ def main():
                     except Exception as e:
                         st.error(f"Error saving knowledge base file: {str(e)}")
     
-    # MAIN AREA - Clean up content area to focus on core functionality
-    
     # Add tabs for input selection
     input_tabs = st.tabs(["Audio Upload", "Text Input"])
     
     # Tab 1: Audio Upload
     with input_tabs[0]:
         st.markdown('<div class="section-header">Audio Transcription</div>', unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Upload your audio file", type=['mp3', 'wav', 'ogg', 'm4a'], key="audio_uploader")
         
+        # Update the file uploader with clear message about 500MB limit
+        uploaded_file = st.file_uploader(
+            "Upload your audio file", 
+            type=['mp3', 'wav', 'ogg', 'm4a'],
+            key="audio_uploader",
+            help="Files up to 500MB are supported. Large files will be automatically chunked for processing."
+        )
+        
+        # Add custom message about large file support
+        st.markdown("""
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: -15px; margin-bottom: 15px;">
+            Large files (up to 500MB) are automatically chunked for optimal processing.
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Display the audio player if a file is uploaded
         if uploaded_file is not None:
             st.audio(uploaded_file, format='audio/wav')
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Transcribe Audio"):
+        
+        # Always display the buttons and disable if no file
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            transcribe_disabled = uploaded_file is None
+            transcribe_button = st.button(
+                "Transcribe Audio", 
+                key="transcribe_button", 
+                use_container_width=True,
+                disabled=transcribe_disabled
+            )
+        
+        with col2:
+            lucky_disabled = uploaded_file is None
+            lucky_button = st.button(
+                "I'm Feeling Lucky", 
+                key="lucky_button", 
+                use_container_width=True,
+                disabled=lucky_disabled
+            )
+        
+        # Display a helpful message when no file is uploaded
+        if uploaded_file is None:
+            st.info("👆 Upload an audio file to begin transcription and processing")
+        
+        # Process based on which button was clicked
+        if uploaded_file is not None:
+            if transcribe_button:
+                try:
                     with st.spinner("Transcribing..."):
-                        # Save uploaded file temporarily
-                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}")
-                        temp_file.write(uploaded_file.getvalue())
-                        temp_file.close()
-                        
                         # Process the audio file
                         transcription = transcribe_audio(uploaded_file)
                         st.session_state.transcription = transcription
@@ -1920,9 +1999,9 @@ def main():
                         # Show transcription
                         st.text_area("Transcription", transcription, height=200)
                         
-                        # Process content options
-                        st.markdown('<div class="section-header">Processing Options</div>', unsafe_allow_html=True)
-                        if st.button("Process Content"):
+                        # Add a process content button after transcription
+                        process_button = st.button("Process Content", key="process_after_transcribe", use_container_width=True)
+                        if process_button:
                             with st.spinner("Processing content with AI..."):
                                 results = process_all_content(
                                     transcription, 
@@ -1932,10 +2011,13 @@ def main():
                                 )
                                 for key, value in results.items():
                                     st.session_state[key] = value
+                except Exception as e:
+                    st.error(f"Transcription error: {str(e)}")
+                    st.error("Please make sure your audio file is in a supported format and not corrupted.")
             
-            with col2:
-                if st.button("I'm Feeling Lucky", key="lucky_button"):
-                    with st.spinner("Working magic..."):
+            elif lucky_button:
+                try:
+                    with st.spinner("Working magic - transcribing and processing audio..."):
                         # First transcribe
                         transcription = transcribe_audio(uploaded_file)
                         st.session_state.transcription = transcription
@@ -1944,28 +2026,28 @@ def main():
                         # Show transcription
                         st.text_area("Transcription", transcription, height=200)
                         
-                        # Process everything and post to Notion in one go
-                        results = process_all_content(
-                            transcription, 
-                            st.session_state.ai_provider, 
-                            st.session_state.ai_model,
-                            knowledge_base
-                        )
-                        
-                        if results:
-                            for key, value in results.items():
-                                st.session_state[key] = value
+                        # Now process everything and post to Notion in one go
+                        with st.spinner("Generating content..."):
+                            results = process_all_content(
+                                transcription, 
+                                st.session_state.ai_provider, 
+                                st.session_state.ai_model,
+                                knowledge_base
+                            )
                             
-                            # Generate title for Notion
-                            title = generate_short_title(transcription)
-                            
-                            # Post to Notion if credentials are available
-                            notion_api_key = os.environ.get('NOTION_API_KEY', '')
-                            notion_database_id = os.environ.get('NOTION_DATABASE_ID', '')
-                            
-                            if notion_api_key and notion_database_id:
-                                with st.spinner("Exporting to Notion..."):
-                                    try:
+                            if results:
+                                for key, value in results.items():
+                                    st.session_state[key] = value
+                                
+                                # Generate title for Notion
+                                title = generate_short_title(transcription)
+                                
+                                # Post to Notion if credentials are available
+                                notion_api_key = os.environ.get('NOTION_API_KEY', '')
+                                notion_database_id = os.environ.get('NOTION_DATABASE_ID', '')
+                                
+                                if notion_api_key and notion_database_id:
+                                    with st.spinner("Exporting to Notion..."):
                                         create_content_notion_entry(
                                             title,
                                             transcription,
@@ -1976,11 +2058,12 @@ def main():
                                             results.get('article')
                                         )
                                         st.success("Everything processed and saved to Notion!")
-                                    except Exception as e:
-                                        st.error(f"Error exporting to Notion: {str(e)}")
-                            else:
-                                st.success("Everything processed!")
-                                st.info("To export to Notion, configure NOTION_API_KEY and NOTION_DATABASE_ID environment variables.")
+                                else:
+                                    st.success("Everything processed!")
+                                    st.info("To export to Notion, configure NOTION_API_KEY and NOTION_DATABASE_ID environment variables.")
+                except Exception as e:
+                    st.error(f"Processing error: {str(e)}")
+                    st.error("Please make sure your audio file is in a supported format and not corrupted.")
     
     # Tab 2: Text Input
     with input_tabs[1]:
