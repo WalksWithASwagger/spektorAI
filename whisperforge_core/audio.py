@@ -27,6 +27,11 @@ from .config import (
     OPENAI_API_KEY,
     TRANSCRIPTION_BACKEND,
     WHISPER_MODEL,
+    WHISPERX_COMPUTE,
+    WHISPERX_DEVICE,
+    WHISPERX_DIARIZATION,
+    WHISPERX_HF_TOKEN,
+    WHISPERX_MODEL,
 )
 from .logging import get_logger
 
@@ -192,6 +197,92 @@ def _transcribe_chunk_mlx(chunk_path: str | Path) -> str:
     return result.get("text", "").strip()
 
 
+# WhisperX is heavy to load (whisper model + alignment model + maybe pyannote).
+# Cache the loaded models per-process so repeated calls don't pay startup cost.
+_WHISPERX_CACHE: dict = {}
+
+
+def _transcribe_chunk_whisperx(chunk_path: str | Path) -> str:
+    """Transcribe with faster-whisper + wav2vec2 forced alignment via WhisperX.
+
+    When WHISPERX_DIARIZATION=1 AND WHISPERX_HF_TOKEN is set, also runs
+    pyannote speaker diarization and prefixes each segment with the speaker
+    label (``[SPEAKER_00] text``). Without diarization, returns plain text.
+    """
+    import whisperx  # lazy-load; adds ~5s to cold start
+
+    device = WHISPERX_DEVICE
+    compute = WHISPERX_COMPUTE if WHISPERX_COMPUTE != "default" else (
+        "float16" if device == "cuda" else "int8"
+    )
+
+    # 1. Load (and cache) the ASR model.
+    asr_model = _WHISPERX_CACHE.get(("asr", WHISPERX_MODEL, device, compute))
+    if asr_model is None:
+        asr_model = whisperx.load_model(WHISPERX_MODEL, device, compute_type=compute)
+        _WHISPERX_CACHE[("asr", WHISPERX_MODEL, device, compute)] = asr_model
+
+    audio_array = whisperx.load_audio(str(chunk_path))
+    result = asr_model.transcribe(audio_array, batch_size=8)
+
+    # 2. Align for word-level timestamps (improves downstream use, but we
+    # currently use only speaker labels in the text output).
+    lang = result.get("language") or "en"
+    align_key = ("align", lang, device)
+    align_entry = _WHISPERX_CACHE.get(align_key)
+    if align_entry is None:
+        try:
+            model_a, meta = whisperx.load_align_model(language_code=lang, device=device)
+            align_entry = (model_a, meta)
+            _WHISPERX_CACHE[align_key] = align_entry
+        except Exception as e:
+            logger.warning("whisperx align model load failed for %s: %s", lang, e)
+            align_entry = None
+
+    if align_entry is not None:
+        try:
+            model_a, meta = align_entry
+            result = whisperx.align(
+                result["segments"], model_a, meta, audio_array, device,
+                return_char_alignments=False,
+            )
+        except Exception as e:
+            logger.warning("whisperx align failed: %s", e)
+
+    # 3. Optional speaker diarization via pyannote.
+    if WHISPERX_DIARIZATION and WHISPERX_HF_TOKEN:
+        try:
+            diar = _WHISPERX_CACHE.get(("diar", device))
+            if diar is None:
+                diar = whisperx.DiarizationPipeline(
+                    use_auth_token=WHISPERX_HF_TOKEN, device=device,
+                )
+                _WHISPERX_CACHE[("diar", device)] = diar
+            diarize_segments = diar(audio_array)
+            result = whisperx.assign_word_speakers(diarize_segments, result)
+        except Exception as e:
+            logger.warning("whisperx diarization failed: %s", e)
+
+    # Assemble output. With diarization, prefix each segment with its speaker.
+    segments = result.get("segments", []) if isinstance(result, dict) else result
+    if WHISPERX_DIARIZATION and segments and any("speaker" in s for s in segments):
+        out_lines = []
+        prev = None
+        for seg in segments:
+            spk = seg.get("speaker") or "SPEAKER_??"
+            text = (seg.get("text") or "").strip()
+            if not text:
+                continue
+            if spk != prev:
+                out_lines.append(f"[{spk}] {text}")
+                prev = spk
+            else:
+                out_lines[-1] += f" {text}"
+        return "\n".join(out_lines)
+
+    return " ".join((s.get("text") or "").strip() for s in segments).strip()
+
+
 def _transcribe_chunk_whisper_cpp(chunk_path: str | Path) -> str:
     # Shells out to the whisper.cpp `whisper-cli` binary, which writes a txt
     # file next to the input. Assumes whisper-cli is on PATH.
@@ -234,6 +325,8 @@ def transcribe_chunk(chunk_path: str | Path) -> str:
     try:
         if backend == "mlx":
             return _transcribe_chunk_mlx(chunk_path)
+        if backend == "whisperx":
+            return _transcribe_chunk_whisperx(chunk_path)
         if backend == "whisper_cpp":
             return _transcribe_chunk_whisper_cpp(chunk_path)
         return _transcribe_chunk_openai(chunk_path)

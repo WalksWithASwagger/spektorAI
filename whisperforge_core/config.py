@@ -44,6 +44,22 @@ MLX_WHISPER_MODEL = os.getenv(
     "MLX_WHISPER_MODEL", "mlx-community/whisper-medium-mlx"
 )
 
+# WhisperX backend knobs.
+#   WHISPERX_MODEL: faster-whisper model name (tiny/base/small/medium/large-v3)
+#   WHISPERX_DEVICE: cpu (default) or cuda. Apple Silicon falls back to cpu.
+#   WHISPERX_COMPUTE: float16 on GPU, int8 on CPU. "default" lets whisperx pick.
+#   WHISPERX_DIARIZATION: "1" turns on pyannote speaker labels. Needs HF token.
+#   WHISPERX_HF_TOKEN: huggingface token with pyannote model access
+#     (create at https://huggingface.co/settings/tokens after accepting the
+#     pyannote/speaker-diarization-3.1 license page).
+WHISPERX_MODEL = os.getenv("WHISPERX_MODEL", "small")
+WHISPERX_DEVICE = os.getenv("WHISPERX_DEVICE", "cpu")
+WHISPERX_COMPUTE = os.getenv("WHISPERX_COMPUTE", "default")
+WHISPERX_DIARIZATION = os.getenv("WHISPERX_DIARIZATION", "").lower() in (
+    "1", "true", "yes", "on",
+)
+WHISPERX_HF_TOKEN = os.getenv("WHISPERX_HF_TOKEN") or os.getenv("HF_TOKEN")
+
 # --- Paths -----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROMPTS_DIR = PROJECT_ROOT / "prompts"

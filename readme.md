@@ -244,7 +244,11 @@ tests/smoke.sh            # boots streamlit, hits /_stcore/health
 | `WHISPERFORGE_LOG_LEVEL` | `DEBUG` / `INFO` / `WARNING` (default INFO) | no          |
 | `WHISPERFORGE_CACHE_DIR` | Cache location (default `.cache/`)          | no            |
 | `WHISPERFORGE_CACHE`     | `1` to enable the transcription/LLM cache    | no            |
-| `TRANSCRIPTION_BACKEND`  | `openai` (default) \| `mlx` \| `whisper_cpp` | no            |
+| `TRANSCRIPTION_BACKEND`  | `openai` (default) \| `mlx` \| `whisper_cpp` \| `whisperx` | no |
+| `WHISPERX_MODEL`         | faster-whisper model size (`tiny`\|`base`\|`small`\|`medium`\|`large-v3`; default `small`) | no |
+| `WHISPERX_DEVICE`        | `cpu` (default) or `cuda`                    | no            |
+| `WHISPERX_DIARIZATION`   | `1` to label speakers via pyannote           | no            |
+| `WHISPERX_HF_TOKEN`      | HuggingFace token (required when diarization is on) | diar only |
 | `WHISPER_MODEL`          | Cloud Whisper model (default `gpt-4o-mini-transcribe`; also `gpt-4o-transcribe` or `whisper-1`) | no |
 | `MLX_WHISPER_MODEL`      | HF repo for mlx-whisper (default whisper-medium-mlx) | no    |
 | `WHISPER_CPP_MODEL`      | Path to ggml bin for `whisper_cpp` backend   | whisper_cpp only |
