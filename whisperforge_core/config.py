@@ -26,6 +26,19 @@ TRANSCRIPTION_URL = os.getenv("TRANSCRIPTION_URL", "http://transcription:8000")
 PROCESSING_URL = os.getenv("PROCESSING_URL", "http://processing:8000")
 STORAGE_URL = os.getenv("STORAGE_URL", "http://storage:8000")
 
+# --- Local model runtimes --------------------------------------------------
+# Ollama exposes an OpenAI-compatible API on localhost by default.
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+
+# Transcription backend: "openai" (cloud Whisper API), "mlx" (local Apple
+# Silicon via mlx-whisper), or "whisper_cpp" (local via whisper.cpp binary).
+TRANSCRIPTION_BACKEND = os.getenv("TRANSCRIPTION_BACKEND", "openai")
+# HF repo or local path for mlx-whisper — "-base-mlx" is tiny/fast,
+# "-medium-mlx" is the accuracy sweet spot, "-large-v3-turbo-mlx" is best.
+MLX_WHISPER_MODEL = os.getenv(
+    "MLX_WHISPER_MODEL", "mlx-community/whisper-medium-mlx"
+)
+
 # --- Paths -----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROMPTS_DIR = PROJECT_ROOT / "prompts"
@@ -45,6 +58,13 @@ LLM_MODELS = {
         "Claude 3 Opus": "claude-3-opus-20240229",
         "Claude 3 Sonnet": "claude-3-sonnet-20240229",
         "Claude 3 Haiku": "claude-3-haiku-20240307",
+    },
+    # Ollama provider — OpenAI-compatible local inference. The model list is
+    # populated dynamically by llm.discover_ollama_models() when the UI loads,
+    # so new models you `ollama pull` show up without code changes. This dict
+    # is a fallback/default for when Ollama is offline.
+    "Ollama (local)": {
+        "Llama 3": "llama3:latest",
     },
 }
 

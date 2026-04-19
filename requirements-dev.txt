@@ -2,3 +2,7 @@
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 httpx>=0.25.0
+
+# Optional: local model backends. Install on Apple Silicon if you want to run
+# Whisper without the cloud API. See readme.md "Running fully local".
+# mlx-whisper>=0.4.3; platform_system == "Darwin" and platform_machine == "arm64"

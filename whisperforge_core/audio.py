@@ -20,7 +20,13 @@ from openai import OpenAI
 from pydub import AudioSegment
 
 from . import cache
-from .config import DEFAULT_CHUNK_TARGET_MB, OPENAI_API_KEY, WHISPER_MODEL
+from .config import (
+    DEFAULT_CHUNK_TARGET_MB,
+    MLX_WHISPER_MODEL,
+    OPENAI_API_KEY,
+    TRANSCRIPTION_BACKEND,
+    WHISPER_MODEL,
+)
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -77,14 +83,72 @@ def chunk_audio(
     return chunks, temp_dir
 
 
-def transcribe_chunk(chunk_path: str | Path) -> str:
-    """Send one audio chunk to Whisper, return transcript text (empty on error)."""
+def _transcribe_chunk_openai(chunk_path: str | Path) -> str:
+    with open(chunk_path, "rb") as f:
+        result = _openai().audio.transcriptions.create(model=WHISPER_MODEL, file=f)
+    return result.text
+
+
+def _transcribe_chunk_mlx(chunk_path: str | Path) -> str:
+    # Imported lazily so the cloud path doesn't pay mlx startup cost.
+    import mlx_whisper
+
+    result = mlx_whisper.transcribe(
+        str(chunk_path),
+        path_or_hf_repo=MLX_WHISPER_MODEL,
+    )
+    return result.get("text", "").strip()
+
+
+def _transcribe_chunk_whisper_cpp(chunk_path: str | Path) -> str:
+    # Shells out to the whisper.cpp `whisper-cli` binary, which writes a txt
+    # file next to the input. Assumes whisper-cli is on PATH.
+    import subprocess
+
+    model_path = os.getenv("WHISPER_CPP_MODEL", "")
+    if not model_path:
+        raise RuntimeError(
+            "whisper_cpp backend requires WHISPER_CPP_MODEL env var "
+            "(path to a ggml model, e.g. ggml-base.en.bin)"
+        )
+    out_base = str(chunk_path) + ".wf"
+    subprocess.run(
+        [
+            "whisper-cli", "-m", model_path, "-f", str(chunk_path),
+            "-otxt", "-of", out_base, "-nt",
+        ],
+        check=True, capture_output=True,
+    )
+    txt_path = out_base + ".txt"
     try:
-        with open(chunk_path, "rb") as f:
-            result = _openai().audio.transcriptions.create(model=WHISPER_MODEL, file=f)
-        return result.text
+        with open(txt_path) as f:
+            return f.read().strip()
+    finally:
+        try:
+            os.remove(txt_path)
+        except OSError:
+            pass
+
+
+def transcribe_chunk(chunk_path: str | Path) -> str:
+    """Transcribe one audio chunk via the configured backend.
+
+    Backend is selected by the TRANSCRIPTION_BACKEND env var. Returns empty
+    string on failure rather than raising, because the chunked pipeline is
+    tolerant of a missing piece — better to lose 30 s of text than the whole
+    transcript.
+    """
+    backend = (TRANSCRIPTION_BACKEND or "openai").lower()
+    try:
+        if backend == "mlx":
+            return _transcribe_chunk_mlx(chunk_path)
+        if backend == "whisper_cpp":
+            return _transcribe_chunk_whisper_cpp(chunk_path)
+        return _transcribe_chunk_openai(chunk_path)
     except Exception as e:
-        logger.warning("Failed to transcribe chunk %s: %s", chunk_path, e)
+        logger.warning(
+            "Failed to transcribe chunk %s via %s: %s", chunk_path, backend, e
+        )
         return ""
 
 
@@ -149,10 +213,8 @@ def transcribe_audio(
             file_size = os.path.getsize(audio_path)
             if file_size > CHUNK_THRESHOLD_BYTES:
                 return transcribe_large_file(audio_path, progress=progress)
-
-            with open(audio_path, "rb") as f:
-                result = _openai().audio.transcriptions.create(model=WHISPER_MODEL, file=f)
-            return result.text
+            # Small-file fast path — single call through the active backend.
+            return transcribe_chunk(audio_path)
         finally:
             if owns_tmp:
                 try:

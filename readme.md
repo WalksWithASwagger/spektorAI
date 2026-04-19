@@ -12,8 +12,11 @@ base.
 
 - **Audio transcription** (MP3, WAV, OGG, M4A) via OpenAI Whisper, with
   automatic chunking for files above 20 MB.
-- **Dual-provider content generation** with OpenAI (GPT-4, 4-Turbo, 3.5) and
-  Anthropic (Claude 3 Opus / Sonnet / Haiku).
+- **Three provider lanes**: OpenAI (cloud), Anthropic (cloud), or any local
+  model running via Ollama (`localhost:11434`). Ollama models are
+  auto-discovered at UI load.
+- **Local-first transcription** available: MLX Whisper (Apple Silicon native)
+  or whisper.cpp as alternates to the cloud Whisper API.
 - **Five-stage pipeline** per run: wisdom → outline → social media → image
   prompts → full article draft.
 - **Per-user voice**: prompts + knowledge base live under `prompts/<user>/`
@@ -131,6 +134,30 @@ backends.
 python whisperforge.py path/to/audio.m4a [transcript.txt]
 ```
 
+### Running fully local (no cloud inference)
+
+You can run the whole transcription + content pipeline on-device, with only
+Notion requiring network access:
+
+```bash
+# 1. Pull an LLM via Ollama (llama3 works; larger models write better)
+ollama pull llama3
+
+# 2. Enable the local backends
+export TRANSCRIPTION_BACKEND=mlx           # Apple Silicon
+export MLX_WHISPER_MODEL=mlx-community/whisper-medium-mlx  # medium recommended
+
+# 3. Run normally
+streamlit run app.py
+# then in the sidebar: AI Provider → "Ollama (local)" → pick a model
+```
+
+The installed Ollama models are auto-discovered at sidebar load, so new
+`ollama pull`s appear without restarting. Transcription backends available:
+`openai` (cloud default), `mlx` (local Apple Silicon via `mlx-whisper`), and
+`whisper_cpp` (local via the `whisper-cli` binary; set `WHISPER_CPP_MODEL` to
+a ggml bin path).
+
 ---
 
 ## Workflow
@@ -216,6 +243,11 @@ tests/smoke.sh            # boots streamlit, hits /_stcore/health
 | `SERVICE_TOKEN`     | Shared X-API-Key for inter-service calls        | services mode |
 | `WHISPERFORGE_LOG_LEVEL` | `DEBUG` / `INFO` / `WARNING` (default INFO) | no          |
 | `WHISPERFORGE_CACHE_DIR` | Cache location (default `.cache/`)          | no            |
+| `WHISPERFORGE_CACHE`     | `1` to enable the transcription/LLM cache    | no            |
+| `TRANSCRIPTION_BACKEND`  | `openai` (default) \| `mlx` \| `whisper_cpp` | no            |
+| `MLX_WHISPER_MODEL`      | HF repo for mlx-whisper (default whisper-medium-mlx) | no    |
+| `WHISPER_CPP_MODEL`      | Path to ggml bin for `whisper_cpp` backend   | whisper_cpp only |
+| `OLLAMA_BASE_URL`        | Override Ollama endpoint (default `http://localhost:11434/v1`) | no |
 | `TRANSCRIPTION_URL` / `PROCESSING_URL` / `STORAGE_URL` | Override service URLs (docker-compose sets these) | no |
 
 ---

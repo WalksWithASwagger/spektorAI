@@ -19,10 +19,14 @@ from anthropic import Anthropic
 from openai import OpenAI
 
 from . import cache
-from .config import ANTHROPIC_API_KEY, DEFAULT_PROMPTS, OPENAI_API_KEY
+from .config import ANTHROPIC_API_KEY, DEFAULT_PROMPTS, OLLAMA_BASE_URL, OPENAI_API_KEY
 from .logging import get_logger
 
 logger = get_logger(__name__)
+
+# Providers whose label starts with this prefix route through Ollama
+# (OpenAI-compatible local inference).
+OLLAMA_PROVIDER_LABEL = "Ollama (local)"
 
 # --- Context builders per content_type -------------------------------------
 # Each builder receives a dict and returns the user-message body string.
@@ -61,6 +65,31 @@ def _openai() -> OpenAI:
 
 def _anthropic() -> Anthropic:
     return Anthropic(api_key=ANTHROPIC_API_KEY)
+
+
+def _ollama() -> OpenAI:
+    # Ollama ignores the api_key but the SDK requires a non-empty string.
+    return OpenAI(api_key="ollama", base_url=OLLAMA_BASE_URL)
+
+
+def discover_ollama_models() -> Dict[str, str]:
+    """Query the running Ollama daemon for installed models.
+
+    Returns {display_name: model_id}. Empty dict if Ollama isn't reachable —
+    callers should fall back to the static LLM_MODELS entry.
+    """
+    try:
+        resp = _ollama().models.list()
+    except Exception as e:
+        logger.info("Ollama not reachable: %s", e)
+        return {}
+    out = {}
+    for m in resp.data:
+        # Prefer a clean display name (strip the ":latest" tag when it's there).
+        mid = m.id
+        label = mid.split(":")[0].replace("_", " ").title()
+        out[label] = mid
+    return out
 
 
 def _format_prompt_body(prompt_content: str) -> str:
@@ -109,6 +138,19 @@ def _call(
             messages=[{"role": "user", "content": user_content}],
         )
         return response.content[0].text
+    if provider == OLLAMA_PROVIDER_LABEL:
+        # Ollama speaks the OpenAI chat-completions shape. Some local models
+        # are small and won't always respect max_tokens gracefully — we still
+        # pass it because honouring user intent beats hiding the knob.
+        response = _ollama().chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
+            max_tokens=max_tokens,
+        )
+        return response.choices[0].message.content or ""
     raise ValueError(f"Unsupported provider: {provider!r}")
 
 
