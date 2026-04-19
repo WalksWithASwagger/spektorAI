@@ -32,6 +32,10 @@ OLLAMA_PROVIDER_LABEL = "Ollama (local)"
 # Each builder receives a dict and returns the user-message body string.
 
 _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
+    # Cleanup stage: the "user content" IS the raw transcript; the prompt
+    # body tells the model what to do with it. No framing phrase added so
+    # the model doesn't hallucinate one into the output.
+    "transcript_cleanup": lambda ctx: ctx["transcript"],
     "wisdom_extraction": lambda ctx: (
         f"Here's the transcription to analyze:\n\n{ctx['transcript']}"
     ),
@@ -51,6 +55,8 @@ _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
 }
 
 _MAX_TOKENS: Dict[str, int] = {
+    # Cleanup can return up to ~the full transcript length; give it room.
+    "transcript_cleanup": 4000,
     "wisdom_extraction": 1500,
     "outline_creation": 1500,
     "social_media": 1000,
@@ -98,54 +104,100 @@ def _format_prompt_body(prompt_content: str) -> str:
     return parts[1].strip() if len(parts) > 1 else prompt_content
 
 
-def _compose_system_prompt(prompt: str, knowledge_base: Optional[Dict[str, str]]) -> str:
-    body = _format_prompt_body(prompt)
+def _compose_kb_block(knowledge_base: Optional[Dict[str, str]]) -> str:
+    """Render the user's knowledge base into a single prompt block.
+
+    This block is STABLE across all five pipeline stages within one run —
+    meaning it's the ideal prefix for Anthropic's prompt cache. Changes to
+    the KB invalidate the cache; the per-stage prompt body lives separately.
+    """
     if not knowledge_base:
-        return body
+        return ""
     kb = "\n\n".join(f"## {name}\n{content}" for name, content in knowledge_base.items())
     return (
         "Use the following knowledge base to inform your analysis and match "
         "the user's style and perspective:\n\n"
         f"{kb}\n\n"
         "When analyzing the content, please incorporate these perspectives "
-        "and style guidelines.\n\n"
-        f"Original Prompt:\n{body}"
+        "and style guidelines."
     )
+
+
+def _compose_system_prompt(prompt: str, knowledge_base: Optional[Dict[str, str]]) -> str:
+    """Merge KB + per-stage prompt into a single system string (for flat
+    providers like OpenAI/Ollama that don't support structured system blocks)."""
+    body = _format_prompt_body(prompt)
+    kb = _compose_kb_block(knowledge_base)
+    if not kb:
+        return body
+    return f"{kb}\n\nOriginal Prompt:\n{body}"
 
 
 def _call(
     provider: str,
     model: str,
-    system_prompt: str,
+    kb_block: str,
+    prompt_body: str,
     user_content: str,
     max_tokens: int,
 ) -> str:
     if provider == "OpenAI":
+        system_flat = (
+            f"{kb_block}\n\nOriginal Prompt:\n{prompt_body}" if kb_block else prompt_body
+        )
         response = _openai().chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": system_prompt},
+                {"role": "system", "content": system_flat},
                 {"role": "user", "content": user_content},
             ],
             max_tokens=max_tokens,
         )
         return response.choices[0].message.content or ""
+
     if provider == "Anthropic":
+        # Split the system into two blocks: the KB (stable across stages,
+        # cache_control=ephemeral) and the per-stage prompt body (varies,
+        # uncached). With this split, stages 2-5 in a 5-stage pipeline run
+        # read the KB from cache at 0.1x input cost.
+        # https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+        system_blocks = []
+        if kb_block:
+            system_blocks.append({
+                "type": "text",
+                "text": kb_block,
+                "cache_control": {"type": "ephemeral"},
+            })
+        if prompt_body:
+            system_blocks.append({"type": "text", "text": prompt_body})
         response = _anthropic().messages.create(
             model=model,
             max_tokens=max_tokens,
-            system=system_prompt,
+            system=system_blocks or "",
             messages=[{"role": "user", "content": user_content}],
         )
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            logger.info(
+                "Anthropic usage: in=%s out=%s cache_read=%s cache_write=%s",
+                getattr(usage, "input_tokens", "?"),
+                getattr(usage, "output_tokens", "?"),
+                getattr(usage, "cache_read_input_tokens", 0),
+                getattr(usage, "cache_creation_input_tokens", 0),
+            )
         return response.content[0].text
+
     if provider == OLLAMA_PROVIDER_LABEL:
-        # Ollama speaks the OpenAI chat-completions shape. Some local models
-        # are small and won't always respect max_tokens gracefully — we still
-        # pass it because honouring user intent beats hiding the knob.
+        # Ollama speaks the OpenAI chat-completions shape with a flat string
+        # system prompt. No caching, but the KB-first ordering gives us
+        # prefix-caching-friendly ordering for future runtimes that support it.
+        system_flat = (
+            f"{kb_block}\n\nOriginal Prompt:\n{prompt_body}" if kb_block else prompt_body
+        )
         response = _ollama().chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": system_prompt},
+                {"role": "system", "content": system_flat},
                 {"role": "user", "content": user_content},
             ],
             max_tokens=max_tokens,
@@ -178,18 +230,21 @@ def generate(
         )
 
     resolved_prompt = prompt or DEFAULT_PROMPTS.get(content_type, "")
-    system = _compose_system_prompt(resolved_prompt, knowledge_base)
+    kb_block = _compose_kb_block(knowledge_base)
+    prompt_body = _format_prompt_body(resolved_prompt)
     user_content = _CONTEXT_BUILDERS[content_type](context)
     tokens = max_tokens or _MAX_TOKENS.get(content_type, 1500)
 
     key = cache.make_key([
         content_type, provider, model, str(tokens),
-        cache.text_hash(system), cache.text_hash(user_content),
+        cache.text_hash(kb_block),
+        cache.text_hash(prompt_body),
+        cache.text_hash(user_content),
     ])
 
     def _compute() -> Optional[str]:
         try:
-            return _call(provider, model, system, user_content, tokens)
+            return _call(provider, model, kb_block, prompt_body, user_content, tokens)
         except Exception as e:
             logger.error("generate(%s) failed on %s %s: %s", content_type, provider, model, e)
             return None
@@ -207,10 +262,11 @@ def apply_prompt(
     knowledge_base: Optional[Dict[str, str]] = None,
 ) -> Optional[str]:
     """Generic 'analyze this text with this prompt' helper used by legacy callers."""
-    system = _compose_system_prompt(prompt, knowledge_base)
+    kb_block = _compose_kb_block(knowledge_base)
+    prompt_body = _format_prompt_body(prompt)
     user_content = f"Here's the transcription to analyze:\n\n{text}"
     try:
-        return _call(provider, model, system, user_content, max_tokens=1500)
+        return _call(provider, model, kb_block, prompt_body, user_content, max_tokens=1500)
     except Exception as e:
         logger.error("apply_prompt failed on %s %s: %s", provider, model, e)
         return None

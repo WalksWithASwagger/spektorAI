@@ -137,3 +137,60 @@ class TestContextBuilders:
             "gpt-4",
         )
         assert mock_openai.chat.completions.create.call_args.kwargs["max_tokens"] == 1000
+
+    def test_transcript_cleanup_passes_raw_transcript_as_user_content(self, mock_openai):
+        """Cleanup stage feeds the raw transcript directly — no framing phrase —
+        so the model doesn't hallucinate one into its output."""
+        llm.generate(
+            "transcript_cleanup",
+            {"transcript": "uh, hi, you know?"},
+            "OpenAI",
+            "gpt-4o-mini",
+        )
+        user_msg = mock_openai.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert user_msg == "uh, hi, you know?"
+
+    def test_transcript_cleanup_max_tokens_is_4000(self, mock_openai):
+        llm.generate(
+            "transcript_cleanup",
+            {"transcript": "x"},
+            "OpenAI",
+            "gpt-4o-mini",
+        )
+        assert mock_openai.chat.completions.create.call_args.kwargs["max_tokens"] == 4000
+
+
+class TestAnthropicPromptCaching:
+    """The Anthropic branch splits KB + per-stage prompt into separate system
+    blocks so the KB (long, stable) caches across the 5-stage pipeline."""
+
+    def test_kb_and_prompt_are_separate_blocks_with_cache_control_on_kb(self, mock_anthropic):
+        llm.generate(
+            "wisdom_extraction",
+            {"transcript": "body"},
+            "Anthropic",
+            "claude-haiku-4-5",
+            prompt="stage-specific instructions",
+            knowledge_base={"Voice": "friendly"},
+        )
+        system_blocks = mock_anthropic.messages.create.call_args.kwargs["system"]
+        assert isinstance(system_blocks, list)
+        assert len(system_blocks) == 2
+        kb_block, prompt_block = system_blocks
+        # KB comes first and is cacheable
+        assert "friendly" in kb_block["text"]
+        assert kb_block["cache_control"] == {"type": "ephemeral"}
+        # Prompt body comes second and is NOT cached (so it can vary per stage)
+        assert "stage-specific" in prompt_block["text"]
+        assert "cache_control" not in prompt_block
+
+    def test_no_kb_produces_single_block_no_cache_control(self, mock_anthropic):
+        llm.generate(
+            "wisdom_extraction",
+            {"transcript": "body"},
+            "Anthropic",
+            "claude-haiku-4-5",
+            prompt="just the prompt",
+        )
+        system_blocks = mock_anthropic.messages.create.call_args.kwargs["system"]
+        assert system_blocks == [{"type": "text", "text": "just the prompt"}]

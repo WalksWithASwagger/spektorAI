@@ -23,6 +23,10 @@ class PipelineResult:
     social_posts: Optional[str] = None
     image_prompts: Optional[str] = None
     article: Optional[str] = None
+    # Raw transcript as returned from ASR. Populated when cleanup is enabled
+    # so callers can still see what the transcriber actually heard.
+    raw_transcript: Optional[str] = None
+    cleaned_transcript: Optional[str] = None
 
 
 _STAGES = [
@@ -41,22 +45,49 @@ def run(
     prompts: Optional[Dict[str, str]] = None,
     knowledge_base: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCallback] = None,
+    cleanup: bool = True,
 ) -> PipelineResult:
-    """Execute all five content stages sequentially.
+    """Execute the content pipeline.
+
+    When ``cleanup`` is True (default), a stage-0 pass strips filler words,
+    false starts, and ASR typos from the transcript before downstream stages
+    see it. Disabled for raw/unaltered runs or when the transcript is already
+    clean (e.g. pasted text). The cleaned text is used for all subsequent
+    stages; the original is preserved on ``PipelineResult.raw_transcript``.
 
     ``prompts`` is an optional {content_type: template} override dict (typically
     the user's custom prompts loaded via whisperforge_core.prompts). Missing
     keys fall back to DEFAULT_PROMPTS inside llm.generate().
     """
     prompts = prompts or {}
-    result = PipelineResult()
+    result = PipelineResult(raw_transcript=transcript)
 
     def _report(frac: float, label: str) -> None:
         if progress:
             progress(frac, label)
 
+    # Stage 0: optional transcript cleanup. ~5% budget. Failure falls back to
+    # the raw transcript rather than aborting the whole run.
+    if cleanup:
+        _report(0.0, "Cleaning transcript...")
+        cleaned = llm.generate(
+            "transcript_cleanup",
+            {"transcript": transcript},
+            provider,
+            model,
+            prompt=prompts.get("transcript_cleanup"),
+            # Cleanup doesn't need the KB — it's mechanical editing,
+            # not stylistic generation. Skipping the KB here also keeps
+            # this call fast and leaves cache-prefix room for stages 1-5.
+            knowledge_base=None,
+        )
+        if cleaned:
+            transcript = cleaned
+            result.cleaned_transcript = cleaned
+        _report(0.05, "Cleaning transcript...")
+
     # Stage 1: wisdom (needs transcript)
-    _report(0.0, _STAGES[0][1])
+    _report(0.05, _STAGES[0][1])
     result.wisdom = llm.generate(
         "wisdom_extraction",
         {"transcript": transcript},

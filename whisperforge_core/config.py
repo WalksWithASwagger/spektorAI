@@ -74,6 +74,16 @@ LLM_MODELS = {
 
 # Default prompts used when a user has no custom prompt on disk.
 DEFAULT_PROMPTS = {
+    "transcript_cleanup": (
+        "You are a transcript editor. Clean this raw audio transcript:\n"
+        "- Remove filler words (um, uh, like, you know, right, so)\n"
+        "- Fix obvious speech-to-text misspellings and typos\n"
+        "- Remove false starts and self-corrections; keep only the corrected phrasing\n"
+        "- Preserve the speaker's voice, word choices, and sentence rhythm\n"
+        "- Do NOT paraphrase, summarize, or add content\n"
+        "- Do NOT reformat into paragraphs or add headers\n"
+        "- Return only the cleaned transcript, no preamble or commentary."
+    ),
     "wisdom_extraction": (
         "Extract key insights, lessons, and wisdom from the transcript. "
         "Focus on actionable takeaways and profound realizations."
