@@ -5,6 +5,16 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-04-19
+
+### Added
+- **Agentic article drafting** (opt-in via `agentic=True` or the "Agentic drafting" sidebar toggle). Single-shot `article_writing` becomes a three-pass flow: draft → critique → revise. New `DEFAULT_PROMPTS` entries for `article_critique` and `article_revise`. Verified live on a 3-topic clip: Haiku 4.5 produced 13 specific editorial notes addressing voice drift, invented framing, length discipline, and incomplete thoughts; revised article addressed each.
+- **Fact-check pass** (opt-in via `fact_check=True` or the "Fact-check article" toggle). Reads the final article against the transcript, returns JSON list of claims not grounded in the source. Verified live: caught 4 real fabrications (invented launch dates, unsourced tool-behavior claims). New "Fact Check" toggle in Notion (green when clean, red with per-claim details when flagged).
+- `PipelineResult` gains `article_draft`, `article_critique`, `fact_check_flags`. `ContentBundle` mirrors these so the editorial trail is auditable from Notion.
+
+### Changed
+- Fact-check (when combined with agentic) runs against the revised article, not the draft — so we're grounding the final product.
+
 ## [0.3.1] - 2026-04-19
 
 ### Added
