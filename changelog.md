@@ -5,6 +5,26 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-04-19
+
+### Added
+- Local model lanes: Ollama provider (OpenAI-compatible, `localhost:11434`) with auto-discovery of installed models via `llm.discover_ollama_models()`. MLX Whisper and whisper.cpp backends selectable via `TRANSCRIPTION_BACKEND=mlx|whisper_cpp`.
+- Cache wiring — `WHISPERFORGE_CACHE=1` enables sha256-keyed result caching across `audio.transcribe_audio` and `llm.generate`. Never caches empty/None (so failures retry). 20 new unit tests covering the cache behavior.
+
+### Changed
+- `LLM_MODELS` catalog refreshed. Dropped Claude 3.x (retired from Anthropic's API). Added Claude Haiku 4.5 (new default), Sonnet 4.5, Opus 4.5. OpenAI adds gpt-4o and gpt-4o-mini; gpt-4 and gpt-4-turbo kept as legacy entries.
+- Default provider/model in `main()` session-state init → Anthropic `claude-haiku-4-5` (fast, cheap, in-voice). Override in sidebar for premium or local.
+- `transcribe_audio` small-file fast path now routes through `transcribe_chunk` so all three backends (openai / mlx / whisper_cpp) behave consistently.
+
+### Fixed
+- Key harvest from `kk-ai-ecosystem/.env` auto-populates `.env`; target Notion database (`WhisperForge DB`) auto-discovered via integration search.
+
+### Removed (cleanup sweep)
+- `monitoring/`, `scripts/`, `experiments/`, `services/auth/`, root `Dockerfile`, `setup.py`, `shared-requirements.txt`, `.DS_Store` (all dead).
+
+### Docs
+- Full `readme.md` rewrite: architecture diagram, "Running fully local" section, expanded env-var reference table.
+
 ## [0.2.0] - 2026-04-19
 
 ### Added

@@ -59,6 +59,7 @@ LLM_MODELS = {
     "Anthropic": {
         # Claude 4.5 line. Claude 3.x was retired from Anthropic's API —
         # keeping it in this dict only produces 404s.
+        "Claude Haiku 4.5 (Fast, default)": "claude-haiku-4-5",
         "Claude Sonnet 4.5 (Best for writing)": "claude-sonnet-4-5",
         "Claude Opus 4.5 (Most capable)": "claude-opus-4-5",
     },

@@ -215,10 +215,13 @@ def main():
         st.session_state.wisdom = ""
     if 'audio_file' not in st.session_state:
         st.session_state.audio_file = None
+    # Default to Claude Haiku 4.5 — fast, cheap, good-enough quality.
+    # Override in the sidebar to switch to Sonnet/Opus for premium drafts
+    # or Ollama (local) for private/offline runs.
     if 'ai_provider' not in st.session_state:
-        st.session_state.ai_provider = "OpenAI"
+        st.session_state.ai_provider = "Anthropic"
     if 'ai_model' not in st.session_state:
-        st.session_state.ai_model = None
+        st.session_state.ai_model = "claude-haiku-4-5"
     
     # Apply the improved cyberpunk theme
     local_css()
