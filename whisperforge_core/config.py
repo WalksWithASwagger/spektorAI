@@ -50,14 +50,17 @@ DEFAULT_CHUNK_TARGET_MB = 25
 
 LLM_MODELS = {
     "OpenAI": {
-        "GPT-4 (Most Capable)": "gpt-4",
-        "GPT-4 Turbo": "gpt-4-turbo-preview",
-        "GPT-3.5 Turbo (Faster)": "gpt-3.5-turbo",
+        # Current, 2025+. Defaults first, legacy last.
+        "GPT-4o (Best)": "gpt-4o",
+        "GPT-4o mini (Fast, cheap)": "gpt-4o-mini",
+        "GPT-4 Turbo (Legacy)": "gpt-4-turbo",
+        "GPT-4 (Legacy)": "gpt-4",
     },
     "Anthropic": {
-        "Claude 3 Opus": "claude-3-opus-20240229",
-        "Claude 3 Sonnet": "claude-3-sonnet-20240229",
-        "Claude 3 Haiku": "claude-3-haiku-20240307",
+        # Claude 4.5 line. Claude 3.x was retired from Anthropic's API —
+        # keeping it in this dict only produces 404s.
+        "Claude Sonnet 4.5 (Best for writing)": "claude-sonnet-4-5",
+        "Claude Opus 4.5 (Most capable)": "claude-opus-4-5",
     },
     # Ollama provider — OpenAI-compatible local inference. The model list is
     # populated dynamically by llm.discover_ollama_models() when the UI loads,
