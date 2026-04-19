@@ -5,6 +5,27 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-19
+
+### Added
+- **Anthropic prompt caching** on KB + system blocks. KB goes first with `cache_control: {"type": "ephemeral"}`; per-stage prompt follows uncached. Verified: stages 2-5 of a pipeline run read ~5800 cached tokens at 0.1x input cost. ~67% input-token cost reduction per run.
+- **Post-ASR cleanup stage** (opt-out via `cleanup=False`). New content_type `transcript_cleanup` runs as pipeline stage 0, strips fillers/false-starts/typos before downstream stages see the transcript. Steals Wispr Flow's signature move.
+- **Chapterization stage** (opt-out via `chapters=False`). New content_type `chapters` produces `[{title, summary, start_quote}]` via JSON schema. `llm.generate_chapters()` helper parses defensively. Notion gets a new "Chapters" toggle above Transcription with bulleted entries and optional `[MM:SS]` prefix.
+- **Structured Outputs** on title/summary/tags via OpenAI JSON schema mode. All regex fragility gone. Helpers upgraded from gpt-3.5-turbo to gpt-4o-mini.
+- **WhisperX backend** (`TRANSCRIPTION_BACKEND=whisperx`). faster-whisper + wav2vec2 alignment + optional pyannote diarization. Model cache is per-process for fast repeat runs. Diarization labels each segment with `[SPEAKER_XX]` when `WHISPERX_DIARIZATION=1` and `WHISPERX_HF_TOKEN` is set.
+- **Silero VAD chunker** (`CHUNKER=vad`). Cuts on silences instead of bytes, drops silent segments entirely, falls back to size-based on failure.
+- New env knobs: `WHISPER_MODEL`, `CHUNKER`, `WHISPERX_MODEL`, `WHISPERX_DEVICE`, `WHISPERX_COMPUTE`, `WHISPERX_DIARIZATION`, `WHISPERX_HF_TOKEN`.
+
+### Changed
+- `LLM_MODELS` catalog refreshed again. Claude Haiku 4.5 added as new session-state default (fastest + in-voice). Sonnet 4.5 and Opus 4.5 kept as premium tiers.
+- Cloud transcription default → `gpt-4o-mini-transcribe` (was `whisper-1`). Still pinnable via `WHISPER_MODEL`.
+- `_call()` split for Anthropic to use structured `system` blocks (KB first with cache_control, prompt second uncached). OpenAI/Ollama paths unchanged, still flat string.
+- `PipelineResult` gained `raw_transcript`, `cleaned_transcript`, `chapters` fields.
+- `ContentBundle` gained `chapters` list field.
+
+### Docs
+- `readme.md` env-var reference table expanded with all new knobs.
+
 ## [0.2.1] - 2026-04-19
 
 ### Added
