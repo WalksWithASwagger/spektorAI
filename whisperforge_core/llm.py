@@ -18,6 +18,7 @@ from typing import Callable, Dict, Optional
 from anthropic import Anthropic
 from openai import OpenAI
 
+from . import cache
 from .config import ANTHROPIC_API_KEY, DEFAULT_PROMPTS, OPENAI_API_KEY
 from .logging import get_logger
 
@@ -124,6 +125,9 @@ def generate(
 
     ``prompt`` falls back to DEFAULT_PROMPTS[content_type]. ``max_tokens``
     falls back to a sensible default per content_type. Returns None on error.
+
+    When WHISPERFORGE_CACHE=1, the result is cached by sha256 of
+    (system_prompt + user_content + provider + model + max_tokens).
     """
     if content_type not in _CONTEXT_BUILDERS:
         raise ValueError(
@@ -136,11 +140,19 @@ def generate(
     user_content = _CONTEXT_BUILDERS[content_type](context)
     tokens = max_tokens or _MAX_TOKENS.get(content_type, 1500)
 
-    try:
-        return _call(provider, model, system, user_content, tokens)
-    except Exception as e:
-        logger.error("generate(%s) failed on %s %s: %s", content_type, provider, model, e)
-        return None
+    key = cache.make_key([
+        content_type, provider, model, str(tokens),
+        cache.text_hash(system), cache.text_hash(user_content),
+    ])
+
+    def _compute() -> Optional[str]:
+        try:
+            return _call(provider, model, system, user_content, tokens)
+        except Exception as e:
+            logger.error("generate(%s) failed on %s %s: %s", content_type, provider, model, e)
+            return None
+
+    return cache.cached_or_compute(key, _compute)
 
 
 # --- Ad-hoc helpers that don't fit the generate() contract -----------------

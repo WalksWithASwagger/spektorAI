@@ -2,17 +2,29 @@
 
 Restored from old_app.py with a safer key: sha256(file_bytes) + model + prompt_hash.
 Keying on the file alone produced stale wisdom when prompts changed.
+
+Disabled by default so runs stay fresh. Enable by setting
+``WHISPERFORGE_CACHE=1`` (or ``true``/``yes``/``on``). Clear with
+``cache.clear()`` or by deleting the ``.cache/`` directory.
 """
 
 import hashlib
+import os
 import pickle
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional, TypeVar
 
 from .config import CACHE_DIR
 from .logging import get_logger
 
 logger = get_logger(__name__)
+
+T = TypeVar("T")
+
+
+def enabled() -> bool:
+    """True when the WHISPERFORGE_CACHE env flag opts the user in."""
+    return os.getenv("WHISPERFORGE_CACHE", "").lower() in ("1", "true", "yes", "on")
 
 
 def _ensure_cache_dir() -> Path:
@@ -77,3 +89,26 @@ def clear() -> int:
         except OSError:
             pass
     return count
+
+
+def cached_or_compute(key: str, compute: Callable[[], T]) -> T:
+    """If caching is enabled and ``key`` is in cache, return the cached value.
+    Otherwise call ``compute()``, store its result (when non-None/non-empty),
+    and return it. When caching is disabled, this is equivalent to just
+    calling ``compute()`` — zero overhead, zero behavior change."""
+    if not enabled():
+        return compute()
+
+    hit = get(key)
+    if hit is not None:
+        logger.info("cache HIT %s", key[:8])
+        return hit
+
+    logger.info("cache MISS %s", key[:8])
+    value = compute()
+    # Never persist falsy sentinel values — an empty transcript or None LLM
+    # output is almost always an error state, and caching it would wedge the
+    # user into replaying the failure.
+    if value:
+        put(key, value)
+    return value

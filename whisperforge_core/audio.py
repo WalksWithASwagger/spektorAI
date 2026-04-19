@@ -8,6 +8,7 @@ Large files (>20MB) are split into ~25MB chunks (dynamically sized, capped at
 sequentially and concatenated.
 """
 
+import hashlib
 import math
 import os
 import shutil
@@ -18,6 +19,7 @@ from typing import Callable, List, Optional, Tuple
 from openai import OpenAI
 from pydub import AudioSegment
 
+from . import cache
 from .config import DEFAULT_CHUNK_TARGET_MB, OPENAI_API_KEY, WHISPER_MODEL
 from .logging import get_logger
 
@@ -124,28 +126,38 @@ def transcribe_audio(
     """Transcribe audio from either a file path or raw bytes (e.g. uploaded file).
 
     Routes small files straight to Whisper and large ones through chunking.
+    When WHISPERFORGE_CACHE=1, the result is cached by
+    sha256(audio_bytes) + whisper_model so repeated runs on the same file
+    skip the API call entirely.
     """
     owns_tmp = False
     if isinstance(source, (str, Path)):
         audio_path = str(source)
+        content_hash = cache.file_hash(audio_path)
     else:
         # Assume bytes-like (e.g. Streamlit UploadedFile.getvalue())
+        content_hash = hashlib.sha256(source).hexdigest()
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(source)
             audio_path = tmp.name
             owns_tmp = True
 
-    try:
-        file_size = os.path.getsize(audio_path)
-        if file_size > CHUNK_THRESHOLD_BYTES:
-            return transcribe_large_file(audio_path, progress=progress)
+    key = cache.make_key([content_hash, "transcribe", WHISPER_MODEL])
 
-        with open(audio_path, "rb") as f:
-            result = _openai().audio.transcriptions.create(model=WHISPER_MODEL, file=f)
-        return result.text
-    finally:
-        if owns_tmp:
-            try:
-                os.remove(audio_path)
-            except OSError:
-                pass
+    def _compute() -> str:
+        try:
+            file_size = os.path.getsize(audio_path)
+            if file_size > CHUNK_THRESHOLD_BYTES:
+                return transcribe_large_file(audio_path, progress=progress)
+
+            with open(audio_path, "rb") as f:
+                result = _openai().audio.transcriptions.create(model=WHISPER_MODEL, file=f)
+            return result.text
+        finally:
+            if owns_tmp:
+                try:
+                    os.remove(audio_path)
+                except OSError:
+                    pass
+
+    return cache.cached_or_compute(key, _compute)
