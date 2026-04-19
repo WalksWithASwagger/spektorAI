@@ -14,7 +14,7 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
-from whisperforge_core import adapters, audio, llm, notion, pipeline
+from whisperforge_core import adapters, audio, cost, history, llm, notion, pipeline
 from whisperforge_core import prompts as prompts_mod
 from whisperforge_core.config import DEFAULT_PROMPTS, LLM_MODELS
 
@@ -130,6 +130,26 @@ def create_content_notion_entry(title, transcript, wisdom=None, outline=None,
     if url:
         st.success("Successfully saved to Notion!")
         st.markdown(f"[Open in Notion]({url})")
+        # Log this run to the history file so it shows up in the sidebar
+        # panel on the next render. Cost comes from the session-wide ledger,
+        # which accumulates every LLM call since the app launched.
+        breakdown = cost.estimate_cost()
+        history.append(history.RunRecord(
+            timestamp=history.now_iso(),
+            title=title,
+            notion_url=url,
+            audio_filename=audio_filename,
+            provider=provider or "",
+            model=model or "",
+            cost_usd=round(breakdown.total_usd, 6),
+            cache_savings_usd=round(breakdown.cache_savings_usd, 6),
+            flags={
+                "agentic": bool(getattr(st.session_state, "agentic_drafting", False)),
+                "fact_check": bool(getattr(st.session_state, "fact_check_ran", False)),
+                "chapters": bool(getattr(st.session_state, "chapters", [])),
+                "backend": os.getenv("TRANSCRIPTION_BACKEND", "openai"),
+            },
+        ))
         return url
     st.error("Notion save failed — see logs.")
     return False
@@ -331,6 +351,42 @@ def main():
                  "'Fact Check' toggle in Notion.",
         )
 
+        # Session cost readout — reads the accumulating ledger that llm._call
+        # writes to on every provider call. Includes the Anthropic cache
+        # savings so Kris can see prompt-caching paying for itself.
+        _cost = cost.estimate_cost()
+        if _cost.calls:
+            st.markdown('<div class="section-header">Session</div>', unsafe_allow_html=True)
+            c_a, c_b = st.columns(2)
+            c_a.metric("Est. cost", f"${_cost.total_usd:.4f}")
+            c_b.metric("Cache saved", f"${_cost.cache_savings_usd:.4f}")
+            st.caption(
+                f"{_cost.calls} call(s) · "
+                f"{_cost.input_tokens + _cost.cache_read_tokens + _cost.cache_write_tokens:,} in · "
+                f"{_cost.output_tokens:,} out"
+            )
+
+        # Recent Notion exports — history is append-only, reverse-chronological.
+        _recent = history.recent(limit=8)
+        if _recent:
+            with st.expander(f"Recent runs ({len(_recent)})", expanded=False):
+                for r in _recent:
+                    when = r.timestamp.replace("T", " ").replace("Z", "")
+                    flags = [k for k, v in (r.flags or {}).items() if v and k != "backend"]
+                    badge = " · ".join(flags) if flags else ""
+                    cost_txt = f"${r.cost_usd:.4f}" if r.cost_usd else ""
+                    if r.notion_url:
+                        st.markdown(
+                            f"[{r.title[:60]}]({r.notion_url})  \n"
+                            f"<small>{when} · {r.model} · {cost_txt}"
+                            + (f" · {badge}" if badge else "")
+                            + "</small>",
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(f"{r.title[:60]}  \n<small>{when}</small>",
+                                    unsafe_allow_html=True)
+
         # Move system status to sidebar and clean up UI
         st.markdown('<div class="section-header">System Status</div>', unsafe_allow_html=True)
         st.markdown("""
@@ -409,27 +465,27 @@ def main():
                         st.error(f"Error saving knowledge base file: {str(e)}")
     
     # Add tabs for input selection
-    input_tabs = st.tabs(["Audio Upload", "Text Input"])
-    
+    input_tabs = st.tabs(["Audio Upload", "Record", "Text Input"])
+
     # Tab 1: Audio Upload
     with input_tabs[0]:
         st.markdown('<div class="section-header">Audio Transcription</div>', unsafe_allow_html=True)
-        
+
         # Update the file uploader with clear message about 500MB limit
         uploaded_file = st.file_uploader(
-            "Upload your audio file", 
+            "Upload your audio file",
             type=['mp3', 'wav', 'ogg', 'm4a'],
             key="audio_uploader",
             help="Files up to 500MB are supported. Large files will be automatically chunked for processing."
         )
-        
+
         # Add custom message about large file support
         st.markdown("""
         <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: -15px; margin-bottom: 15px;">
             Large files (up to 500MB) are automatically chunked for optimal processing.
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Display the audio player if a file is uploaded
         if uploaded_file is not None:
             st.audio(uploaded_file, format='audio/wav')
@@ -538,8 +594,77 @@ def main():
                     st.error(f"Processing error: {str(e)}")
                     st.error("Please make sure your audio file is in a supported format and not corrupted.")
     
-    # Tab 2: Text Input
+    # Tab 2: In-browser Recording (uses st.audio_input, native in Streamlit
+    # 1.35+). The recorder returns an UploadedFile-compatible object so we
+    # can treat it identically to the file_uploader case above: set it as
+    # the active audio_file in session_state and surface the same
+    # Transcribe / I'm Feeling Lucky buttons.
     with input_tabs[1]:
+        st.markdown('<div class="section-header">Dictate Live</div>', unsafe_allow_html=True)
+        st.caption(
+            "Click the mic to record. When you stop, Transcribe or run the full "
+            "pipeline directly — no file export/upload round-trip."
+        )
+        recorded = st.audio_input("Record a voice note", key="recorder")
+        if recorded is not None:
+            st.audio(recorded, format="audio/wav")
+
+            rec_c1, rec_c2 = st.columns(2)
+            with rec_c1:
+                rec_transcribe = st.button(
+                    "Transcribe Recording", key="rec_transcribe_button",
+                    use_container_width=True,
+                )
+            with rec_c2:
+                rec_lucky = st.button(
+                    "I'm Feeling Lucky", key="rec_lucky_button",
+                    use_container_width=True,
+                )
+
+            if rec_transcribe or rec_lucky:
+                # Give the recording a plausible filename so downstream
+                # Notion bundles show something meaningful in the
+                # "Original Audio" slot.
+                recorded.name = getattr(recorded, "name", None) or (
+                    f"recording-{datetime.now().strftime('%Y%m%d-%H%M%S')}.wav"
+                )
+                st.session_state.audio_file = recorded
+                try:
+                    with st.spinner("Transcribing recording..."):
+                        transcript = transcribe_audio(recorded)
+                    st.session_state.transcription = transcript
+                    st.text_area("Transcription", transcript, height=180,
+                                 key="rec_transcript_preview")
+                    if rec_lucky and transcript:
+                        with st.spinner("Running the full pipeline..."):
+                            kb = load_user_knowledge_base(selected_user)
+                            results = process_all_content(
+                                transcript,
+                                st.session_state.ai_provider,
+                                st.session_state.ai_model,
+                                knowledge_base=kb,
+                            )
+                        if results:
+                            st.success("Generated.")
+                            st.session_state.wisdom = results.get("wisdom") or ""
+                            url = create_content_notion_entry(
+                                f"Recording — {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                                transcript,
+                                wisdom=results.get("wisdom"),
+                                outline=results.get("outline"),
+                                social_content=results.get("social_posts"),
+                                image_prompts=results.get("image_prompts"),
+                                article=results.get("article"),
+                            )
+                            if url:
+                                st.caption("Saved.")
+                except Exception as e:
+                    st.error(f"Recording flow error: {e}")
+        else:
+            st.info("🎙️ Click the microphone to start recording.")
+
+    # Tab 3: Text Input
+    with input_tabs[2]:
         st.markdown('<div class="section-header">Text Processing</div>', unsafe_allow_html=True)
         
         text_input = st.text_area("Enter your text", height=200, key="text_input_area")

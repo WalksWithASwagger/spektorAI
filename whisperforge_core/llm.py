@@ -18,7 +18,7 @@ from typing import Callable, Dict, Optional
 from anthropic import Anthropic
 from openai import OpenAI
 
-from . import cache
+from . import cache, cost
 from .config import ANTHROPIC_API_KEY, DEFAULT_PROMPTS, OLLAMA_BASE_URL, OPENAI_API_KEY
 from .logging import get_logger
 
@@ -189,6 +189,13 @@ def _call(
             ],
             max_tokens=max_tokens,
         )
+        usage = getattr(response, "usage", None)
+        if usage:
+            cost.record(cost.UsageRecord(
+                provider="OpenAI", model=model,
+                input_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+                output_tokens=getattr(usage, "completion_tokens", 0) or 0,
+            ))
         return response.choices[0].message.content or ""
 
     if provider == "Anthropic":
@@ -221,6 +228,13 @@ def _call(
                 getattr(usage, "cache_read_input_tokens", 0),
                 getattr(usage, "cache_creation_input_tokens", 0),
             )
+            cost.record(cost.UsageRecord(
+                provider="Anthropic", model=model,
+                input_tokens=getattr(usage, "input_tokens", 0) or 0,
+                output_tokens=getattr(usage, "output_tokens", 0) or 0,
+                cache_read_tokens=getattr(usage, "cache_read_input_tokens", 0) or 0,
+                cache_write_tokens=getattr(usage, "cache_creation_input_tokens", 0) or 0,
+            ))
         return response.content[0].text
 
     if provider == OLLAMA_PROVIDER_LABEL:
@@ -238,6 +252,16 @@ def _call(
             ],
             max_tokens=max_tokens,
         )
+        # Local inference is free — record tokens for the UI breakdown but
+        # with provider="Ollama (local)" which has no PRICING entry, so
+        # estimate_cost() reports $0 for these.
+        usage = getattr(response, "usage", None)
+        if usage:
+            cost.record(cost.UsageRecord(
+                provider=OLLAMA_PROVIDER_LABEL, model=model,
+                input_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+                output_tokens=getattr(usage, "completion_tokens", 0) or 0,
+            ))
         return response.choices[0].message.content or ""
     raise ValueError(f"Unsupported provider: {provider!r}")
 
@@ -337,6 +361,13 @@ def _structured_call(schema_name: str, schema: dict, system: str, user: str, max
                 },
             },
         )
+        usage = getattr(response, "usage", None)
+        if usage:
+            cost.record(cost.UsageRecord(
+                provider="OpenAI", model=_STRUCTURED_MODEL,
+                input_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+                output_tokens=getattr(usage, "completion_tokens", 0) or 0,
+            ))
         raw = response.choices[0].message.content or "{}"
         return _json.loads(raw)
     except Exception as e:

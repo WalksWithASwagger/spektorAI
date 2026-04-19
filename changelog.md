@@ -5,6 +5,16 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-19
+
+### Added
+- **In-browser recording** via `st.audio_input` (native in Streamlit 1.35+). New "Record" tab alongside "Audio Upload" and "Text Input" with Transcribe + I'm Feeling Lucky buttons that wire straight through to the existing pipeline. No separate recording app needed.
+- **Cost tracker** — new `whisperforge_core.cost` module with a session usage ledger, per-provider/model pricing table, and Anthropic cache-semantics-aware `estimate_cost()`. Every `llm._call` records token counts on success. Sidebar shows "Est. cost" + "Cache saved" metrics for the session.
+- **Run history** — new `whisperforge_core.history` module writes a JSONL record to `.cache/history.jsonl` after each successful Notion save (title, link, provider/model, cost, cache savings, flags, audio filename). Sidebar "Recent runs" expander shows the last 8 with one-click Notion links.
+
+### Changed
+- `whisperforge_core/__init__.py` re-exports the new `cost` and `history` modules.
+
 ## [0.3.2] - 2026-04-19
 
 ### Added
