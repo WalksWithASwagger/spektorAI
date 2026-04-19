@@ -9,13 +9,14 @@ logger = logging.getLogger(__name__)
 class Config:
     # API Keys
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     NOTION_API_KEY = os.getenv("NOTION_API_KEY")
     SERVICE_TOKEN = os.getenv("SERVICE_TOKEN")
-    
+
     # Log configuration status
     logger.info("=== Configuration Status ===")
     logger.info(f"OpenAI API Key present: {'Yes' if OPENAI_API_KEY else 'No'}")
-    logger.info(f"Claude API Key present: {'Yes' if CLAUDE_API_KEY else 'No'}")
+    logger.info(f"Anthropic API Key present: {'Yes' if ANTHROPIC_API_KEY else 'No'}")
     logger.info(f"Notion API Key present: {'Yes' if NOTION_API_KEY else 'No'}")
     logger.info(f"Service Token present: {'Yes' if SERVICE_TOKEN else 'No'}")
     

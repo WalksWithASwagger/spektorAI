@@ -1,5 +1,6 @@
 # Environment variables
 .env
+.env*
 
 # Python
 __pycache__/
@@ -26,15 +27,20 @@ wheels/
 
 # Virtual Environment
 venv/
+whisperforge-env/
 ENV/
 
 # Cache files
 cache.pkl
 *.cache
+.cache/
 
 # Logs
 *.log
 whisperforge.log
+
+# Pytest
+.pytest_cache/
 
 # IDE specific files
 .idea/
@@ -42,5 +48,5 @@ whisperforge.log
 *.swp
 *.swo
 .DS_Store
+**/.DS_Store
 backups/
-.env*

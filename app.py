@@ -1,1289 +1,173 @@
-import streamlit as st
-from openai import OpenAI
-from dotenv import load_dotenv
+"""WhisperForge Streamlit UI.
+
+Thin presentation layer on top of the `whisperforge_core` package. The UI owns
+session state and progress surfaces; all business logic (audio chunking,
+Whisper transcription, LLM content generation, Notion export, prompt
+management) lives in ``whisperforge_core`` so microservices in services/ can
+share the same code.
+"""
+
 import os
-from notion_client import Client
 from datetime import datetime
-from pydub import AudioSegment
-import tempfile
-import math
-import glob
-from anthropic import Anthropic
-import requests  # for Grok API
-import shutil
 from pathlib import Path
 
-# Load environment variables
+import streamlit as st
+from dotenv import load_dotenv
+
+from whisperforge_core import adapters, audio, llm, notion, pipeline
+from whisperforge_core import prompts as prompts_mod
+from whisperforge_core.config import DEFAULT_PROMPTS, LLM_MODELS
+
+import styles
+
 load_dotenv()
 
-# Initialize clients
-openai_client = OpenAI()
-anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-notion_client = Client(auth=os.getenv("NOTION_API_KEY"))
-NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
-GROK_API_KEY = os.getenv("GROK_API_KEY")
+_adapters = adapters.get_adapters()
 
-# Available LLM models grouped by provider
-LLM_MODELS = {
-    "OpenAI": {
-        "GPT-4 (Most Capable)": "gpt-4",
-        "GPT-4 Turbo": "gpt-4-turbo-preview",
-        "GPT-3.5 Turbo (Faster)": "gpt-3.5-turbo",
-    },
-    "Anthropic": {
-        "Claude 3 Opus": "claude-3-opus-20240229",
-        "Claude 3 Sonnet": "claude-3-sonnet-20240229",
-        "Claude 3 Haiku": "claude-3-haiku-20240307",
-    },
-    "Grok": {
-        "Grok-1": "grok-1",
-    }
-}
+
+# ---- UI helpers -----------------------------------------------------------
 
 def local_css():
-    """Apply refined cyberpunk styling inspired by Luma's interface"""
-    st.markdown("""
-    <style>
-    /* Refined Cyberpunk Theme - WhisperForge Command Center */
-    
-    /* Base variables for limited color palette */
-    :root {
-        --bg-primary: #121218;
-        --bg-secondary: #1a1a24;
-        --bg-tertiary: #222230;
-        --accent-primary: #7928CA;
-        --accent-secondary: #FF0080;
-        --text-primary: #f0f0f0;
-        --text-secondary: #a0a0a0;
-        --text-muted: #707070;
-        --success: #36D399;
-        --warning: #FBBD23;
-        --error: #F87272;
-        --info: #3ABFF8;
-        --border-radius: 6px;
-        --card-radius: 10px;
-        --glow-intensity: 4px;
-        --terminal-font: 'JetBrains Mono', 'Courier New', monospace;
-        --system-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    }
-    
-    /* Global styles */
-    .stApp {
-        background: linear-gradient(160deg, var(--bg-primary) 0%, #0f0f17 100%);
-        color: var(--text-primary);
-        font-family: var(--system-font);
-    }
-    
-    /* Clean, compact header */
-    .header-container {
-        border-radius: var(--card-radius);
-        background: linear-gradient(110deg, rgba(121, 40, 202, 0.10) 0%, rgba(0, 0, 0, 0) 80%);
-        border: 1px solid rgba(121, 40, 202, 0.25);
-        padding: 12px 20px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .header-container::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(121, 40, 202, 0.5), transparent);
-        animation: header-shine 3s ease-in-out infinite;
-    }
-    
-    @keyframes header-shine {
-        0% { transform: translateX(-100%); }
-        50% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
-    }
-    
-    .header-title {
-        font-family: var(--terminal-font);
-        font-size: 1.4rem;
-        font-weight: 500;
-        background: linear-gradient(90deg, #7928CA, #FF0080);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: 0.02em;
-    }
-    
-    .header-date {
-        font-family: var(--terminal-font);
-        color: var(--text-secondary);
-        font-size: 0.85rem;
-        opacity: 0.8;
-    }
-    
-    /* Compact status cards */
-    .status-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin: 12px 0 18px 0;
-    }
-    
-    .status-card {
-        background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-        border-radius: var(--card-radius);
-        padding: 12px;
-        transition: all 0.2s ease;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .status-card:hover {
-        border: 1px solid rgba(121, 40, 202, 0.3);
-        box-shadow: 0 0 10px rgba(121, 40, 202, 0.15);
-    }
-    
-    .status-card::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 1.5px;
-        background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .status-card:hover::after {
-        opacity: 1;
-    }
-    
-    .status-card h3 {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: 0.8rem;
-        margin-bottom: 4px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-weight: 500;
-    }
-    
-    .status-value {
-        font-size: 1.15rem;
-        font-weight: 600;
-        text-align: center;
-        color: var(--text-primary);
-        font-family: var(--terminal-font);
-    }
-    
-    /* Quick access buttons */
-    .quick-access {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        margin: 12px 0;
-    }
-    
-    .quick-button {
-        background: rgba(121, 40, 202, 0.1);
-        border-radius: var(--card-radius);
-        padding: 10px;
-        text-align: center;
-        color: var(--text-primary);
-        transition: all 0.2s ease;
-        cursor: pointer;
-        border: 1px solid rgba(121, 40, 202, 0.1);
-        font-size: 0.85rem;
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-    }
-    
-    .quick-button:hover {
-        background: rgba(121, 40, 202, 0.15);
-        border-color: rgba(121, 40, 202, 0.3);
-        transform: translateY(-2px);
-    }
-    
-    /* Section headers with subtle underline */
-    .section-header {
-        color: var(--text-primary);
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin: 20px 0 8px 0;
-        padding-bottom: 6px;
-        position: relative;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }
-    
-    .section-header::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        height: 1px;
-        width: 100%;
-        background: linear-gradient(90deg, var(--accent-primary), transparent);
-    }
-    
-    /* Tabs styling */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: var(--bg-secondary);
-        border-radius: var(--border-radius);
-        padding: 4px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        gap: 2px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        border-radius: var(--border-radius);
-        color: var(--text-secondary);
-        background-color: transparent;
-        transition: all 0.2s ease;
-        font-size: 0.85rem;
-        font-weight: 500;
-        padding: 8px 16px;
-    }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        color: var(--text-primary);
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(110deg, rgba(121, 40, 202, 0.15) 0%, rgba(255, 0, 128, 0.05) 100%);
-        color: var(--text-primary) !important;
-        border: 1px solid rgba(121, 40, 202, 0.25) !important;
-    }
-    
-    /* File uploader styling */
-    [data-testid="stFileUploader"] {
-        background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-        border: 1px dashed rgba(121, 40, 202, 0.3);
-        border-radius: var(--card-radius);
-        padding: 15px;
-        transition: all 0.2s ease;
-    }
-    
-    [data-testid="stFileUploader"]:hover {
-        border-color: rgba(121, 40, 202, 0.5);
-        box-shadow: 0 0 15px rgba(121, 40, 202, 0.15);
-    }
-    
-    /* Button styling */
-    .stButton > button {
-        background: linear-gradient(110deg, rgba(121, 40, 202, 0.08) 0%, rgba(255, 0, 128, 0.05) 100%);
-        border: 1px solid rgba(121, 40, 202, 0.25);
-        color: var(--text-primary);
-        border-radius: var(--border-radius);
-        padding: 8px 16px;
-        font-family: var(--system-font);
-        transition: all 0.2s ease;
-        font-weight: 500;
-        font-size: 0.85rem;
-    }
-    
-    .stButton > button:hover {
-        background: linear-gradient(110deg, rgba(121, 40, 202, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%);
-        border-color: rgba(121, 40, 202, 0.4);
-        transform: translateY(-1px);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-    }
-    
-    .stButton > button:active {
-        transform: translateY(0px);
-    }
-    
-    /* "I'm Feeling Lucky" special button */
-    .lucky-button {
-        background: linear-gradient(110deg, rgba(54, 211, 153, 0.1) 0%, rgba(255, 0, 128, 0.05) 100%) !important;
-        border: 1px solid rgba(54, 211, 153, 0.3) !important;
-    }
-    
-    .lucky-button:hover {
-        background: linear-gradient(110deg, rgba(54, 211, 153, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%) !important;
-        border-color: rgba(54, 211, 153, 0.5) !important;
-    }
-    
-    /* Audio player styling */
-    audio {
-        width: 100%;
-        border-radius: var(--border-radius);
-        background: var(--bg-secondary);
-        margin: 10px 0;
-        height: 32px;
-    }
-    
-    /* Text area styling */
-    .stTextArea > div > div > textarea {
-        background-color: var(--bg-secondary);
-        color: var(--text-primary);
-        border: 1px solid rgba(121, 40, 202, 0.2);
-        border-radius: var(--border-radius);
-        padding: 10px;
-        font-family: var(--system-font);
-    }
-    
-    .stTextArea > div > div > textarea:focus {
-        border: 1px solid rgba(121, 40, 202, 0.4);
-        box-shadow: 0 0 0 1px rgba(121, 40, 202, 0.2);
-    }
-    
-    /* Text input styling */
-    .stTextInput > div > div > input {
-        background-color: var(--bg-secondary);
-        color: var(--text-primary);
-        border: 1px solid rgba(121, 40, 202, 0.2);
-        border-radius: var(--border-radius);
-        padding: 8px 12px;
-        font-family: var(--system-font);
-        height: 36px;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        border: 1px solid rgba(121, 40, 202, 0.4);
-        box-shadow: 0 0 0 1px rgba(121, 40, 202, 0.2);
-    }
-    
-    /* Selectbox styling */
-    .stSelectbox > div {
-        background-color: var(--bg-secondary);
-    }
-    
-    .stSelectbox > div > div {
-        background-color: var(--bg-secondary);
-        color: var(--text-primary);
-        border: 1px solid rgba(121, 40, 202, 0.2);
-        border-radius: var(--border-radius);
-    }
-    
-    /* Progress bar styling */
-    .stProgress > div > div > div {
-        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-        border-radius: var(--border-radius);
-    }
-    
-    /* Expander styling */
-    .streamlit-expanderHeader {
-        background-color: var(--bg-secondary);
-        border-radius: var(--border-radius);
-        border: 1px solid rgba(121, 40, 202, 0.1);
-        font-size: 0.85rem;
-        padding: 8px 12px;
-    }
-    
-    .streamlit-expanderHeader:hover {
-        border-color: rgba(121, 40, 202, 0.25);
-    }
-    
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: var(--bg-primary);
-        border-right: 1px solid rgba(121, 40, 202, 0.15);
-    }
-    
-    [data-testid="stSidebar"] [data-testid="stMarkdown"] h1,
-    [data-testid="stSidebar"] [data-testid="stMarkdown"] h2,
-    [data-testid="stSidebar"] [data-testid="stMarkdown"] h3 {
-        color: var(--accent-primary);
-        font-size: 1rem;
-    }
-    
-    /* Content section styling */
-    .content-section {
-        background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-        border-radius: var(--card-radius);
-        padding: 15px;
-        margin: 12px 0;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .content-section h3 {
-        color: var(--text-primary);
-        margin-top: 0;
-        margin-bottom: 10px;
-        font-weight: 500;
-        font-size: 1rem;
-        padding-bottom: 8px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Terminal-style output */
-    .terminal-output {
-        background-color: rgba(0, 0, 0, 0.2);
-        border-left: 2px solid var(--accent-primary);
-        border-radius: var(--border-radius);
-        padding: 10px 15px;
-        font-family: var(--terminal-font);
-        color: var(--text-primary);
-        font-size: 0.85rem;
-        margin: 10px 0;
-    }
-    
-    /* Process indicator */
-    .process-indicator {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: var(--bg-secondary);
-        padding: 10px;
-        border-radius: var(--border-radius);
-        margin: 15px 0;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .process-indicator .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--accent-primary);
-        margin-right: 10px;
-        animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 0.4; }
-        50% { opacity: 1; }
-        100% { opacity: 0.4; }
-    }
-    
-    .process-status {
-        flex-grow: 1;
-        font-size: 0.85rem;
-    }
-    
-    /* Notion button styling */
-    .notion-button {
-        display: inline-block;
-        background: linear-gradient(110deg, rgba(121, 40, 202, 0.1) 0%, rgba(255, 0, 128, 0.05) 100%);
-        border: 1px solid rgba(121, 40, 202, 0.25);
-        border-radius: var(--border-radius);
-        padding: 8px 15px;
-        color: var(--text-primary);
-        text-decoration: none;
-        font-family: var(--system-font);
-        transition: all 0.2s ease;
-        font-size: 0.85rem;
-        font-weight: 500;
-        margin-top: 10px;
-    }
-    
-    .notion-button:hover {
-        background: linear-gradient(110deg, rgba(121, 40, 202, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%);
-        border-color: rgba(121, 40, 202, 0.4);
-        transform: translateY(-1px);
-    }
-    
-    /* Footer styling */
-    .app-footer {
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid rgba(121, 40, 202, 0.15);
-        font-size: 0.8rem;
-        text-align: center;
-        color: var(--text-muted);
-    }
-    
-    .footer-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .footer-status {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin: 10px 0;
-    }
-    
-    .footer-status span {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    
-    .footer-status-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        display: inline-block;
-    }
-    
-    .status-secure .footer-status-dot {
-        background-color: var(--success);
-        box-shadow: 0 0 5px var(--success);
-    }
-    
-    .status-sovereignty .footer-status-dot {
-        background-color: var(--accent-primary);
-        box-shadow: 0 0 5px var(--accent-primary);
-    }
-    
-    .status-offline .footer-status-dot {
-        background-color: var(--info);
-        box-shadow: 0 0 5px var(--info);
-    }
-    
-    /* Animations and effects */
-    .scanner-line {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-        opacity: 0.4;
-        z-index: 1000;
-        animation: scanner-move 8s linear infinite;
-    }
-    
-    @keyframes scanner-move {
-        0% { top: 0; }
-        100% { top: 100%; }
-    }
-    
-    /* Toast notifications */
-    .toast-notification {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: var(--bg-secondary);
-        border-radius: var(--border-radius);
-        padding: 10px 15px;
-        border-left: 3px solid var(--success);
-        color: var(--text-primary);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        font-size: 0.85rem;
-        animation: toast-in 0.3s ease forwards;
-    }
-    
-    @keyframes toast-in {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    </style>
-    
-    <!-- Add the scanner line animation -->
-    <div class="scanner-line"></div>
-    """, unsafe_allow_html=True)
+    """Inject the WhisperForge cyberpunk theme (styles.CSS)."""
+    st.markdown(styles.CSS, unsafe_allow_html=True)
+
+
+# ---- Delegates for the UI -------------------------------------------------
+# These wrap whisperforge_core with the signatures the legacy UI expects and
+# with streamlit-aware progress / error surfaces where useful.
+
+def get_available_users():
+    return prompts_mod.list_users()
+
 
 def load_user_knowledge_base(user):
-    """Load knowledge base files for a specific user"""
-    knowledge_base = {}
-    kb_path = f'prompts/{user}/knowledge_base'
-    
-    if os.path.exists(kb_path):
-        for file in os.listdir(kb_path):
-            if file.endswith(('.txt', '.md')):
-                with open(os.path.join(kb_path, file), 'r') as f:
-                    name = os.path.splitext(file)[0].replace('_', ' ').title()
-                    knowledge_base[name] = f.read()
-    
-    return knowledge_base
+    return prompts_mod.load_knowledge_base(user)
 
-def load_prompts():
-    """Load prompt templates from the prompts directory"""
-    users = []
-    users_prompts = {}  # Initialize as dictionary
-    
-    # Check if prompts directory exists
-    if not os.path.exists("prompts"):
-        os.makedirs("prompts")
-        st.info("Created prompts directory. Please add prompt templates.")
-        return users, users_prompts
-    
-    # Get list of user directories
-    user_dirs = [d for d in os.listdir("prompts") if os.path.isdir(os.path.join("prompts", d))]
-    
-    # If no user directories, create a default one
-    if not user_dirs:
-        default_dir = os.path.join("prompts", "default_user")
-        os.makedirs(default_dir, exist_ok=True)
-        user_dirs = ["default_user"]
-        
-    # Add users to the list
-    for user in user_dirs:
-        users.append(user)
-        users_prompts[user] = {}  # Initialize each user with an empty dictionary
-        
-        # Get prompt files for each user
-        user_dir = os.path.join("prompts", user)
-        prompt_files = []
-        try:
-            prompt_files = [f for f in os.listdir(user_dir) if f.endswith('.md')]
-        except Exception as e:
-            st.warning(f"Error accessing prompts for {user}: {str(e)}")
-        
-        # Load each prompt file
-        for prompt_file in prompt_files:
-            prompt_name = os.path.splitext(prompt_file)[0]
-            try:
-                with open(os.path.join(user_dir, prompt_file), 'r') as f:
-                    prompt_content = f.read()
-                users_prompts[user][prompt_name] = prompt_content
-            except Exception as e:
-                st.warning(f"Error loading prompt {prompt_file}: {str(e)}")
-    
-    return users, users_prompts
-
-def apply_prompt(text, prompt_content, provider, model, user_knowledge=None):
-    """Apply a specific prompt using the selected model and provider, incorporating user knowledge"""
-    try:
-        prompt_parts = prompt_content.split('## Prompt')
-        if len(prompt_parts) > 1:
-            prompt_text = prompt_parts[1].strip()
-        else:
-            prompt_text = prompt_content
-
-        # Include knowledge base context if available
-        system_prompt = prompt_text
-        if user_knowledge:
-            knowledge_context = "\n\n".join([
-                f"## {name}\n{content}" 
-                for name, content in user_knowledge.items()
-            ])
-            system_prompt = f"""Use the following knowledge base to inform your analysis and match the user's style and perspective:
-
-{knowledge_context}
-
-When analyzing the content, please incorporate these perspectives and style guidelines.
-
-Original Prompt:
-{prompt_text}"""
-
-        if provider == "OpenAI":
-            response = openai_client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Here's the transcription to analyze:\n\n{text}"}
-                ],
-                max_tokens=1500
-            )
-            return response.choices[0].message.content
-
-        elif provider == "Anthropic":
-            response = anthropic_client.messages.create(
-                model=model,
-                max_tokens=1500,
-                system=system_prompt,
-                messages=[
-                    {"role": "user", "content": f"Here's the transcription to analyze:\n\n{text}"}
-                ]
-            )
-            return response.content[0].text
-
-        elif provider == "Grok":
-            # Grok API endpoint (you'll need to adjust this based on actual Grok API documentation)
-            headers = {
-                "Authorization": f"Bearer {GROK_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Here's the transcription to analyze:\n\n{text}"}
-                ]
-            }
-            response = requests.post(
-                "https://api.grok.x.ai/v1/chat/completions",  # Adjust URL as needed
-                headers=headers,
-                json=payload
-            )
-            return response.json()["choices"][0]["message"]["content"]
-
-    except Exception as e:
-        st.error(f"Analysis error with {provider} {model}: {str(e)}")
-        return None
-
-def chunk_audio(audio_path, target_size_mb=25):
-    """Split audio file into chunks of approximately target_size_mb"""
-    try:
-        audio = AudioSegment.from_file(audio_path)
-        
-        # Calculate optimal chunk size based on file size
-        file_size = os.path.getsize(audio_path)
-        total_chunks = math.ceil(file_size / (target_size_mb * 1024 * 1024))
-        
-        # Ensure minimum chunk length (5 seconds) and maximum chunks (20)
-        MIN_CHUNK_LENGTH_MS = 5000
-        MAX_CHUNKS = 20
-        
-        if total_chunks > MAX_CHUNKS:
-            target_size_mb = math.ceil(file_size / (MAX_CHUNKS * 1024 * 1024))
-            total_chunks = MAX_CHUNKS
-        
-        chunk_length_ms = max(len(audio) // total_chunks, MIN_CHUNK_LENGTH_MS)
-        
-        # Create temporary directory for chunks
-        temp_dir = tempfile.mkdtemp(prefix='whisperforge_chunks_')
-        chunks = []
-        
-        # Show chunking progress
-        progress_text = st.empty()
-        progress_bar = st.progress(0)
-        
-        for i in range(0, len(audio), chunk_length_ms):
-            chunk = audio[i:i + chunk_length_ms]
-            if len(chunk) < MIN_CHUNK_LENGTH_MS:
-                continue
-                
-            # Save chunk with index in filename
-            chunk_path = os.path.join(temp_dir, f'chunk_{i//chunk_length_ms}.mp3')
-            chunk.export(chunk_path, format='mp3')
-            chunks.append(chunk_path)
-            
-            # Update progress
-            progress = (i + chunk_length_ms) / len(audio)
-            progress_bar.progress(min(progress, 1.0))
-            progress_text.text(f"Chunking audio: {min(int(progress * 100), 100)}%")
-        
-        progress_text.empty()
-        progress_bar.empty()
-        
-        return chunks, temp_dir
-    except Exception as e:
-        st.error(f"Error chunking audio: {str(e)}")
-        return [], None
-
-def transcribe_chunk(chunk_path, i, total_chunks):
-    """Transcribe a single chunk with error handling and progress tracking"""
-    try:
-        with open(chunk_path, "rb") as audio:
-            transcript = openai_client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio
-            )
-            return transcript.text
-    except Exception as e:
-        st.warning(f"Warning: Failed to transcribe part {i+1} of {total_chunks}: {str(e)}")
-        return ""
-
-def generate_title(transcript):
-    """Generate a descriptive 5-7 word title based on the transcript"""
-    try:
-        prompt = f"""Create a clear, descriptive title (5-7 words) that captures the main topic of this transcript:
-        Transcript: {transcript[:1000]}...
-        
-        Return only the title, no quotes or additional text."""
-        
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that creates concise, descriptive titles."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=50,
-            temperature=0.3
-        )
-        
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return "Audio Transcription"
-
-def generate_summary(transcript):
-    """Generate a one-sentence summary of the audio content"""
-    try:
-        prompt = f"""Create a single, insightful sentence that summarizes the key message or main insight from this transcript:
-        Transcript: {transcript[:1000]}...
-        
-        Return only the summary sentence, no additional text."""
-        
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that creates concise, insightful summaries."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=100,
-            temperature=0.3
-        )
-        
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return "Summary of audio content"
-
-def generate_short_title(text):
-    """Generate a 5-7 word descriptive title from the transcript"""
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4-turbo-preview",
-            messages=[
-                {"role": "system", "content": "Create a concise, descriptive 5-7 word title that captures the main topic or theme of this content. Make it clear and engaging. Return ONLY the title words, nothing else."},
-                {"role": "user", "content": f"Generate a 5-7 word title for this transcript:\n\n{text[:2000]}..."} # First 2000 chars for context
-            ]
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        st.error(f"Title generation error: {str(e)}")
-        return "Untitled Audio Transcription"
-
-def chunk_text_for_notion(text, chunk_size=1900):
-    """Split text into chunks that respect Notion's character limit"""
-    if not text:
-        return []
-    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
-
-def create_content_notion_entry(title, transcript, wisdom=None, outline=None, social_content=None, image_prompts=None, article=None):
-    """Create a new entry in the Notion database with all content sections"""
-    try:
-        # Initialize audio_filename at the beginning of the function
-        audio_filename = "None"
-        if hasattr(st.session_state, 'audio_file') and st.session_state.audio_file:
-            audio_filename = st.session_state.audio_file.name
-        
-        # Generate AI title if none provided
-        if not title or title.startswith("Transcription -") or title.startswith("Content -"):
-            ai_title = generate_short_title(transcript)
-            title = f"WHISPER: {ai_title}"
-        
-        # Generate tags for the content
-        content_tags = generate_content_tags(transcript, wisdom)
-        
-        # Generate summary
-        summary = generate_summary(transcript)
-        
-        # Track model usage for metadata
-        used_models = []
-        if hasattr(st.session_state, 'ai_provider') and hasattr(st.session_state, 'ai_model'):
-            if st.session_state.ai_provider and st.session_state.ai_model:
-                used_models.append(f"{st.session_state.ai_provider} {st.session_state.ai_model}")
-        if transcript:  # If we have a transcript, we likely used Whisper
-            used_models.append("OpenAI Whisper-1")
-            
-        # Estimate token usage
-        total_tokens = estimate_token_usage(transcript, wisdom, outline, social_content, image_prompts, article)
-        
-        # Format content with toggles
-        content = []
-        
-        # Add summary section with AI-generated summary
-        content.extend([
-            {
-                "type": "callout",
-                "callout": {
-                    "rich_text": [{"type": "text", "text": {"content": summary}}],
-                    "color": "purple_background",
-                    "icon": {
-                        "type": "emoji",
-                        "emoji": "💜"
-                    }
-                }
-            },
-            {
-                "type": "divider",
-                "divider": {}
-            }
-        ])
-        
-        # Add Transcript section with chunked content and color
-        content.extend([
-            {
-                "type": "toggle",
-                "toggle": {
-                    "rich_text": [{"type": "text", "text": {"content": "Transcription"}}],
-                    "color": "default", # dark gray/black
-                    "children": [
-                        {
-                            "type": "paragraph",
-                            "paragraph": {
-                                "rich_text": [{"type": "text", "text": {"content": chunk}}]
-                            }
-                        } for chunk in chunk_text_for_notion(transcript)
-                    ]
-                }
-            }
-        ])
-
-        # Add Wisdom section if available
-        if wisdom:
-            content.extend([
-                {
-                    "type": "toggle",
-                    "toggle": {
-                        "rich_text": [{"type": "text", "text": {"content": "Wisdom"}}],
-                        "color": "brown_background",
-                        "children": [
-                            {
-                                "type": "paragraph",
-                                "paragraph": {
-                                    "rich_text": [{"type": "text", "text": {"content": chunk}}]
-                                }
-                            } for chunk in chunk_text_for_notion(wisdom)
-                        ]
-                    }
-                }
-            ])
-
-        # Add Socials section with golden brown background
-        if social_content:
-            content.extend([
-                {
-                    "type": "toggle",
-                    "toggle": {
-                        "rich_text": [{"type": "text", "text": {"content": "Socials"}}],
-                        "color": "orange_background", # closest to golden brown
-                        "children": [
-                            {
-                                "type": "paragraph",
-                                "paragraph": {
-                                    "rich_text": [{"type": "text", "text": {"content": chunk}}]
-                                }
-                            } for chunk in chunk_text_for_notion(social_content)
-                        ]
-                    }
-                }
-            ])
-
-        # Add Image Prompts with green background
-        if image_prompts:
-            content.extend([
-                {
-                    "type": "toggle",
-                    "toggle": {
-                        "rich_text": [{"type": "text", "text": {"content": "Image Prompts"}}],
-                        "color": "green_background",
-                        "children": [
-                            {
-                                "type": "paragraph",
-                                "paragraph": {
-                                    "rich_text": [{"type": "text", "text": {"content": chunk}}]
-                                }
-                            } for chunk in chunk_text_for_notion(image_prompts)
-                        ]
-                    }
-                }
-            ])
-
-        # Add Outline with blue background
-        if outline:
-            content.extend([
-                {
-                    "type": "toggle",
-                    "toggle": {
-                        "rich_text": [{"type": "text", "text": {"content": "Outline"}}],
-                        "color": "blue_background",
-                        "children": [
-                            {
-                                "type": "paragraph",
-                                "paragraph": {
-                                    "rich_text": [{"type": "text", "text": {"content": chunk}}]
-                                }
-                            } for chunk in chunk_text_for_notion(outline)
-                        ]
-                    }
-                }
-            ])
-
-        # Add Draft Post with purple background
-        if article:
-            content.extend([
-                {
-                    "type": "toggle",
-                    "toggle": {
-                        "rich_text": [{"type": "text", "text": {"content": "Draft Post"}}],
-                        "color": "purple_background",
-                        "children": [
-                            {
-                                "type": "paragraph",
-                                "paragraph": {
-                                    "rich_text": [{"type": "text", "text": {"content": chunk}}]
-                                }
-                            } for chunk in chunk_text_for_notion(article)
-                        ]
-                    }
-                }
-            ])
-            
-        # Add Original Audio section with maroon/red background if audio file exists
-        if audio_filename != "None":
-            content.extend([
-                {
-                    "type": "toggle",
-                    "toggle": {
-                        "rich_text": [{"type": "text", "text": {"content": "Original Audio"}}],
-                        "color": "red_background",
-                        "children": [
-                            {
-                                "type": "paragraph",
-                                "paragraph": {
-                                    "rich_text": [{"type": "text", "text": {"content": audio_filename}}]
-                                }
-                            }
-                        ]
-                    }
-                }
-            ])
-        
-        # Add metadata section
-        content.extend([
-            {
-                "type": "divider",
-                "divider": {}
-            },
-            {
-                "type": "heading_2",
-                "heading_2": {
-                    "rich_text": [{"type": "text", "text": {"content": "Metadata"}}]
-                }
-            },
-            {
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{"type": "text", "text": {"content": f"**Original Audio:** {audio_filename}"}}]
-                }
-            },
-            {
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{"type": "text", "text": {"content": f"**Created:** {datetime.now().strftime('%Y-%m-%d %H:%M')}"}}]
-                }
-            },
-            {
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{"type": "text", "text": {"content": f"**Models Used:** {', '.join(used_models) if used_models else 'None'}"}}]
-                }
-            },
-            {
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{"type": "text", "text": {"content": f"**Estimated Tokens:** {total_tokens:,}"}}]
-                }
-            }
-        ])
-
-        # Create the page in Notion
-        response = notion_client.pages.create(
-            parent={"database_id": NOTION_DATABASE_ID},
-            properties={
-                "Name": {"title": [{"text": {"content": title}}]},
-                "Tags": {"multi_select": [{"name": tag} for tag in content_tags]},
-            },
-            children=content
-        )
-        
-        # Make the Notion link clickable in the UI
-        if response and isinstance(response, dict) and 'id' in response:
-            page_id = response['id']
-            page_url = f"https://notion.so/{page_id.replace('-', '')}"
-            st.success(f"Successfully saved to Notion!")
-            st.markdown(f"[Open in Notion]({page_url})")
-            return page_url
-        else:
-            st.error("Notion API returned an invalid response")
-            st.write("Response:", response)  # Debug info
-            return False
-            
-    except Exception as e:
-        st.error(f"Detailed error creating Notion entry: {str(e)}")
-        return False
-
-def estimate_token_usage(transcript, wisdom=None, outline=None, social_content=None, image_prompts=None, article=None):
-    """Estimate token usage for all content generated"""
-    # Approximate token count (roughly 4 chars per token for English)
-    token_count = 0
-    
-    # Count tokens in all content
-    if transcript:
-        token_count += len(transcript) / 4
-    if wisdom:
-        token_count += len(wisdom) / 4
-    if outline:
-        token_count += len(outline) / 4
-    if social_content:
-        token_count += len(social_content) / 4
-    if image_prompts:
-        token_count += len(image_prompts) / 4
-    if article:
-        token_count += len(article) / 4
-        
-    # Add approximate prompt tokens and overhead
-    token_count += 1000  # For system prompts, etc.
-    
-    return int(token_count)
-
-def generate_content_tags(transcript, wisdom=None):
-    """Generate relevant tags based on content"""
-    try:
-        # Use OpenAI to generate relevant tags
-        prompt = f"""Based on this content:
-        Transcript: {transcript[:500]}...
-        Wisdom: {wisdom[:500] if wisdom else ''}
-        
-        Generate 5 relevant one-word tags that describe the main topics and themes.
-        Return only the tags separated by commas, lowercase. Examples: spiritual, history, technology, motivation, business"""
-        
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that generates relevant content tags."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=50,
-            temperature=0.3
-        )
-        
-        # Split the response into individual tags and clean them
-        tags = [tag.strip().lower() for tag in response.choices[0].message.content.split(',')]
-        
-        # Ensure we have exactly 5 tags
-        while len(tags) < 5:
-            tags.append("general")
-        return tags[:5]
-    except Exception as e:
-        # Return default tags if there's an error
-        return ["audio", "transcription", "content", "notes", "whisperforge"]
-
-def get_available_openai_models():
-    """Get current list of available OpenAI models"""
-    try:
-        models = openai_client.models.list()
-        gpt_models = {
-            model.id: model.id for model in models 
-            if any(x in model.id for x in ['gpt-4', 'gpt-3.5'])
-        }
-        return gpt_models
-    except Exception as e:
-        st.error(f"Error fetching OpenAI models: {str(e)}")
-        return {}
-
-def get_available_anthropic_models():
-    """Get current list of available Anthropic models"""
-    # Current as of March 2024
-    return {
-        "Claude 3 Opus": "claude-3-opus-20240229",
-        "Claude 3 Sonnet": "claude-3-sonnet-20240229",
-        "Claude 3 Haiku": "claude-3-haiku-20240307",
-        "Claude 2.1": "claude-2.1",
-    }
-
-def get_available_grok_models():
-    """Get current list of available Grok models"""
-    # Current as of March 2024
-    return {
-        "Grok-1": "grok-1",
-    }
-
-# Update the LLM_MODELS dictionary dynamically
-def get_current_models():
-    return {
-        "OpenAI": get_available_openai_models(),
-        "Anthropic": get_available_anthropic_models(),
-        "Grok": get_available_grok_models(),
-    }
-
-# Add this function to get available users
-def get_available_users():
-    """Get a list of available users by scanning the prompts directory"""
-    users = []
-    prompts_dir = 'prompts'
-    
-    if not os.path.exists(prompts_dir):
-        os.makedirs(prompts_dir)
-        return ["Default"]
-    
-    # Get all user directories
-    for user_dir in os.listdir(prompts_dir):
-        user_path = os.path.join(prompts_dir, user_dir)
-        if os.path.isdir(user_path) and not user_dir.startswith('.'):
-            users.append(user_dir)
-    
-    # If no users found, return a default user
-    if not users:
-        users = ["Default"]
-    
-    return users
-
-# Make sure this function exists and works properly
-def get_custom_prompt(user, prompt_type, users_prompts, default_prompts):
-    """Safely retrieve a custom prompt for the user, or use default if not available"""
-    # Ensure users_prompts is a dictionary
-    if not isinstance(users_prompts, dict):
-        return default_prompts.get(prompt_type, "")
-        
-    # Get user's prompts or empty dict if user not found
-    user_prompts = users_prompts.get(user, {})
-    if not isinstance(user_prompts, dict):
-        return default_prompts.get(prompt_type, "")
-    
-    # Return the custom prompt if available, otherwise use the default
-    return user_prompts.get(prompt_type, default_prompts.get(prompt_type, ""))
-
-# Add this function to save custom prompts
-def save_custom_prompt(user, prompt_type, prompt_content):
-    """Save a custom prompt for a specific user and prompt type"""
-    user_dir = os.path.join("prompts", user, "custom_prompts")
-    os.makedirs(user_dir, exist_ok=True)
-    
-    prompt_path = os.path.join(user_dir, f"{prompt_type}.txt")
-    try:
-        with open(prompt_path, "w") as f:
-            f.write(prompt_content)
-        return True
-    except Exception as e:
-        st.error(f"Error saving custom prompt: {str(e)}")
-        return False
-
-def list_knowledge_base_files(user):
-    """List knowledge base files for a specific user"""
-    kb_path = os.path.join('prompts', user, 'knowledge_base')
-    files = []
-    
-    if os.path.exists(kb_path):
-        for file in os.listdir(kb_path):
-            if file.endswith(('.txt', '.md')) and not file.startswith('.'):
-                files.append(os.path.join(kb_path, file))
-    
-    return files
 
 def get_available_models(provider):
-    """Fetch available models from the selected AI provider"""
+    return list(LLM_MODELS.get(provider, {}).values())
+
+
+def get_custom_prompt(user, prompt_type, users_prompts, default_prompts):
+    return prompts_mod.get_prompt(user, prompt_type, users_prompts) or default_prompts.get(prompt_type, "")
+
+
+def transcribe_audio(audio_file):
+    """Route an uploaded Streamlit file (or path string) through the core
+    transcriber, surfacing errors via st.error."""
     try:
-        if provider == "OpenAI":
-            models = openai_client.models.list()
-            # Filter for chat-capable models
-            available_models = [
-                model.id for model in models 
-                if any(name in model.id.lower() for name in ["gpt-4", "gpt-3.5"])
-            ]
-            # Sort to put GPT-4 models first
-            available_models.sort(key=lambda x: "gpt-4" in x.lower(), reverse=True)
-            if not available_models:
-                return ["gpt-4", "gpt-3.5-turbo"]
-            return available_models
-            
-        elif provider == "Anthropic":
-            # Anthropic's API doesn't provide model list, use known models
-            return [
-                "claude-3-opus-20240229",
-                "claude-3-sonnet-20240229",
-                "claude-3-haiku-20240307"
-            ]
-            
-        elif provider == "Grok":
-            # Add Grok model fetching when API available
-            return ["grok-1"]
-            
-        return []
+        if isinstance(audio_file, str):
+            return _adapters.transcriber.transcribe(audio_file)
+        suffix = "." + audio_file.name.rsplit(".", 1)[-1] if "." in audio_file.name else ".mp3"
+        return _adapters.transcriber.transcribe(audio_file.getvalue(), suffix=suffix)
     except Exception as e:
-        st.error(f"Error fetching models from {provider}: {str(e)}")
-        # Fallback models if API fails
-        if provider == "OpenAI":
-            return ["gpt-4", "gpt-3.5-turbo"]
-        elif provider == "Anthropic":
-            return ["claude-3-opus-20240229", "claude-3-sonnet-20240229"]
-        elif provider == "Grok":
-            return ["grok-1"]
-        return []
+        st.error(f"Transcription error: {e}")
+        return ""
+
+
+def generate_short_title(text):
+    return llm.generate_title(text)
+
+
+def create_content_notion_entry(title, transcript, wisdom=None, outline=None,
+                                social_content=None, image_prompts=None, article=None):
+    """Build a ContentBundle from session_state + args, save to Notion."""
+    audio_filename = None
+    if getattr(st.session_state, "audio_file", None):
+        audio_filename = st.session_state.audio_file.name
+
+    if not title or title.startswith("Transcription -") or title.startswith("Content -"):
+        title = f"WHISPER: {llm.generate_title(transcript)}"
+
+    summary = llm.generate_summary(transcript)
+    tags = llm.generate_tags((transcript or "") + " " + (wisdom or ""), max_tags=5) or ["audio", "transcription", "content", "notes", "whisperforge"]
+
+    models_used = []
+    provider = getattr(st.session_state, "ai_provider", None)
+    model = getattr(st.session_state, "ai_model", None)
+    if provider and model:
+        models_used.append(f"{provider} {model}")
+    if transcript:
+        models_used.append("OpenAI Whisper-1")
+
+    bundle = notion.ContentBundle(
+        title=title,
+        transcript=transcript or "",
+        wisdom=wisdom or "",
+        outline=outline or "",
+        social_content=social_content or "",
+        image_prompts=image_prompts or "",
+        article=article or "",
+        summary=summary,
+        tags=tags,
+        audio_filename=audio_filename,
+        models_used=models_used,
+    )
+    try:
+        url = _adapters.storage.save(bundle)
+    except Exception as e:
+        st.error(f"Detailed error creating Notion entry: {e}")
+        return False
+    if url:
+        st.success("Successfully saved to Notion!")
+        st.markdown(f"[Open in Notion]({url})")
+        return url
+    st.error("Notion save failed — see logs.")
+    return False
+
+
+def _generate(content_type, context, provider, model, custom_prompt, knowledge_base):
+    """Shared delegate body for all five legacy generate_* wrappers."""
+    return _adapters.processor.generate(content_type, context, provider, model,
+                                        prompt=custom_prompt, knowledge_base=knowledge_base)
+
+
+def generate_wisdom(transcript, ai_provider, model, custom_prompt=None, knowledge_base=None):
+    return _generate("wisdom_extraction", {"transcript": transcript},
+                     ai_provider, model, custom_prompt, knowledge_base)
+
+
+def generate_outline(transcript, wisdom, ai_provider, model, custom_prompt=None, knowledge_base=None):
+    return _generate("outline_creation", {"transcript": transcript, "wisdom": wisdom or ""},
+                     ai_provider, model, custom_prompt, knowledge_base)
+
+
+def generate_social_content(wisdom, outline, ai_provider, model, custom_prompt=None, knowledge_base=None):
+    return _generate("social_media", {"wisdom": wisdom or "", "outline": outline or ""},
+                     ai_provider, model, custom_prompt, knowledge_base)
+
+
+def generate_image_prompts(wisdom, outline, ai_provider, model, custom_prompt=None, knowledge_base=None):
+    return _generate("image_prompts", {"wisdom": wisdom or "", "outline": outline or ""},
+                     ai_provider, model, custom_prompt, knowledge_base)
+
+
+def generate_article(transcript, wisdom, outline, ai_provider, model, custom_prompt=None, knowledge_base=None):
+    return _generate("article_writing",
+                     {"transcript": transcript, "wisdom": wisdom or "", "outline": outline or ""},
+                     ai_provider, model, custom_prompt, knowledge_base)
+
+
+def process_all_content(text, ai_provider, model, knowledge_base=None):
+    """Run the full 5-stage pipeline with a streamlit progress bar."""
+    bar = st.progress(0)
+    status = st.empty()
+
+    def cb(frac, label):
+        bar.progress(min(max(frac, 0.0), 1.0))
+        status.text(label)
+
+    result = _adapters.processor.run_pipeline(text, ai_provider, model,
+                                              knowledge_base=knowledge_base, progress=cb)
+    status.text("Content generation complete!")
+    return {
+        "wisdom": result.wisdom,
+        "outline": result.outline,
+        "social_posts": result.social_posts,
+        "image_prompts": result.image_prompts,
+        "article": result.article,
+    }
+
 
 def configure_prompts(selected_user, users_prompts):
     """Configure custom prompts for the selected user"""
@@ -1322,471 +206,6 @@ def configure_prompts(selected_user, users_prompts):
                 users_prompts[selected_user] = {}
             users_prompts[selected_user][prompt_type] = new_prompt
 
-def transcribe_large_file(file_path):
-    """Process a large audio file by chunking it and transcribing each chunk"""
-    try:
-        st.info("Processing large audio file in chunks...")
-        
-        # Split audio into chunks
-        chunks, temp_dir = chunk_audio(file_path)
-        if not chunks:
-            st.error("Failed to chunk audio file.")
-            return ""
-        
-        # Create progress indicators
-        progress_text = st.empty()
-        progress_bar = st.progress(0)
-        
-        # Process each chunk
-        transcriptions = []
-        for i, chunk_path in enumerate(chunks):
-            # Update progress
-            progress = (i + 1) / len(chunks)
-            progress_bar.progress(progress)
-            progress_text.text(f"Transcribing part {i+1} of {len(chunks)}...")
-            
-            # Transcribe chunk
-            chunk_text = transcribe_chunk(chunk_path, i, len(chunks))
-            transcriptions.append(chunk_text)
-            
-            # Clean up chunk file
-            try:
-                os.remove(chunk_path)
-            except:
-                pass
-        
-        # Clean up temporary directory
-        if temp_dir:
-            try:
-                shutil.rmtree(temp_dir)
-            except:
-                pass
-        
-        # Combine all transcriptions with proper spacing
-        full_transcript = " ".join(transcriptions)
-        
-        # Clear progress indicators
-        progress_text.empty()
-        progress_bar.empty()
-        
-        return full_transcript
-        
-    except Exception as e:
-        st.error(f"Error processing large file: {str(e)}")
-        return ""
-
-def transcribe_audio(audio_file):
-    """Transcribe an audio file with size-based handling"""
-    try:
-        # Check if audio_file is a string (path) or an UploadedFile object
-        if isinstance(audio_file, str):
-            audio_path = audio_file
-            file_size = os.path.getsize(audio_path)
-        else:
-            # Save uploaded file temporarily
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{audio_file.name.split('.')[-1]}") as tmp_file:
-                tmp_file.write(audio_file.getvalue())
-                audio_path = tmp_file.name
-                file_size = os.path.getsize(audio_path)
-        
-        # Size threshold for chunking (20MB)
-        CHUNK_THRESHOLD = 20 * 1024 * 1024
-        
-        if file_size > CHUNK_THRESHOLD:
-            # Process large file in chunks
-            transcript = transcribe_large_file(audio_path)
-        else:
-            # Process small file directly
-            with open(audio_path, "rb") as audio:
-                response = openai_client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio
-                )
-                transcript = response.text
-        
-        # Clean up temporary file if we created it
-        if not isinstance(audio_file, str):
-            try:
-                os.remove(audio_path)
-            except:
-                pass
-        
-        return transcript
-        
-    except Exception as e:
-        st.error(f"Transcription error: {str(e)}")
-        return ""
-
-def generate_wisdom(transcript, ai_provider, model, custom_prompt=None, knowledge_base=None):
-    """Extract key insights and wisdom from a transcript"""
-    try:
-        prompt = custom_prompt or DEFAULT_PROMPTS["wisdom_extraction"]
-        
-        # Include knowledge base context if available
-        if knowledge_base:
-            knowledge_context = "\n\n".join([
-                f"## {name}\n{content}" 
-                for name, content in knowledge_base.items()
-            ])
-            system_prompt = f"""Use the following knowledge base to inform your analysis:
-
-{knowledge_context}
-
-When analyzing the content, please incorporate these perspectives and guidelines.
-
-Original Prompt:
-{prompt}"""
-        else:
-            system_prompt = prompt
-        
-        # Use the selected AI provider and model
-        if ai_provider == "OpenAI":
-            response = openai_client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Here's the transcription to analyze:\n\n{transcript}"}
-                ],
-                max_tokens=1500
-            )
-            return response.choices[0].message.content
-
-        elif ai_provider == "Anthropic":
-            response = anthropic_client.messages.create(
-                model=model,
-                max_tokens=1500,
-                system=system_prompt,
-                messages=[
-                    {"role": "user", "content": f"Here's the transcription to analyze:\n\n{transcript}"}
-                ]
-            )
-            return response.content[0].text
-
-        elif ai_provider == "Grok":
-            # Grok API endpoint (you'll need to adjust this based on actual Grok API documentation)
-            headers = {
-                "Authorization": f"Bearer {GROK_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Here's the transcription to analyze:\n\n{transcript}"}
-                ]
-            }
-            response = requests.post(
-                "https://api.grok.x.ai/v1/chat/completions",  # Adjust URL as needed
-                headers=headers,
-                json=payload
-            )
-            return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        st.error(f"Analysis error with {ai_provider} {model}: {str(e)}")
-        return None
-
-def generate_outline(transcript, wisdom, ai_provider, model, custom_prompt=None, knowledge_base=None):
-    """Create a structured outline based on transcript and wisdom"""
-    try:
-        prompt = custom_prompt or DEFAULT_PROMPTS["outline_creation"]
-        
-        # Include knowledge base context if available
-        if knowledge_base:
-            knowledge_context = "\n\n".join([
-                f"## {name}\n{content}" 
-                for name, content in knowledge_base.items()
-            ])
-            system_prompt = f"""Use the following knowledge base to inform your analysis:
-
-{knowledge_context}
-
-When creating the outline, please incorporate these perspectives and guidelines.
-
-Original Prompt:
-{prompt}"""
-        else:
-            system_prompt = prompt
-        
-        # Combine transcript and wisdom for better context
-        content = f"TRANSCRIPT:\n{transcript}\n\nWISDOM:\n{wisdom}"
-        
-        # Use the selected AI provider and model
-        if ai_provider == "OpenAI":
-            response = openai_client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": content}
-                ],
-                max_tokens=1500
-            )
-            return response.choices[0].message.content
-            
-        elif ai_provider == "Anthropic":
-            response = anthropic_client.messages.create(
-                model=model,
-                max_tokens=1500,
-                system=system_prompt,
-                messages=[{"role": "user", "content": content}]
-            )
-            return response.content[0].text
-            
-        elif ai_provider == "Grok":
-            headers = {
-                "Authorization": f"Bearer {GROK_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": content}
-                ]
-            }
-            response = requests.post(
-                "https://api.grok.x.ai/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-            return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        st.error(f"Error creating outline with {ai_provider} {model}: {str(e)}")
-        return None
-
-def generate_social_content(wisdom, outline, ai_provider, model, custom_prompt=None, knowledge_base=None):
-    """Create social media posts based on the content"""
-    try:
-        prompt = custom_prompt or DEFAULT_PROMPTS["social_media"]
-        
-        # Combine wisdom and outline for context
-        content = f"WISDOM:\n{wisdom}\n\nOUTLINE:\n{outline}"
-        
-        # Use the selected AI provider and model
-        if ai_provider == "OpenAI":
-            response = openai_client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": content}
-                ],
-                max_tokens=1000
-            )
-            return response.choices[0].message.content
-            
-        elif ai_provider == "Anthropic":
-            response = anthropic_client.messages.create(
-                model=model,
-                max_tokens=1000,
-                system=prompt,
-                messages=[{"role": "user", "content": content}]
-            )
-            return response.content[0].text
-            
-        elif ai_provider == "Grok":
-            headers = {
-                "Authorization": f"Bearer {GROK_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": content}
-                ]
-            }
-            response = requests.post(
-                "https://api.grok.x.ai/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-            return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        st.error(f"Error creating social content with {ai_provider} {model}: {str(e)}")
-        return None
-
-def generate_image_prompts(wisdom, outline, ai_provider, model, custom_prompt=None, knowledge_base=None):
-    """Create image generation prompts based on the content"""
-    try:
-        prompt = custom_prompt or DEFAULT_PROMPTS["image_prompts"]
-        
-        # Combine wisdom and outline for context
-        content = f"WISDOM:\n{wisdom}\n\nOUTLINE:\n{outline}"
-        
-        # Use the selected AI provider and model
-        if ai_provider == "OpenAI":
-            response = openai_client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": content}
-                ],
-                max_tokens=1000
-            )
-            return response.choices[0].message.content
-            
-        elif ai_provider == "Anthropic":
-            response = anthropic_client.messages.create(
-                model=model,
-                max_tokens=1000,
-                system=prompt,
-                messages=[{"role": "user", "content": content}]
-            )
-            return response.content[0].text
-            
-        elif ai_provider == "Grok":
-            headers = {
-                "Authorization": f"Bearer {GROK_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": content}
-                ]
-            }
-            response = requests.post(
-                "https://api.grok.x.ai/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-            return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        st.error(f"Error creating image prompts with {ai_provider} {model}: {str(e)}")
-        return None
-
-def generate_article(transcript, wisdom, outline, ai_provider, model, custom_prompt=None, knowledge_base=None):
-    """Write a full article based on the outline and content"""
-    try:
-        prompt = custom_prompt or """Write a comprehensive, engaging article based on the provided outline and wisdom.
-        Include an introduction, developed sections following the outline, and a conclusion.
-        Maintain a conversational yet authoritative tone."""
-        
-        # Combine all content for context
-        content = f"TRANSCRIPT EXCERPT:\n{transcript[:1000]}...\n\nWISDOM:\n{wisdom}\n\nOUTLINE:\n{outline}"
-        
-        # Use the selected AI provider and model
-        if ai_provider == "OpenAI":
-            response = openai_client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": content}
-                ],
-                max_tokens=2500
-            )
-            return response.choices[0].message.content
-            
-        elif ai_provider == "Anthropic":
-            response = anthropic_client.messages.create(
-                model=model,
-                max_tokens=2500,
-                system=prompt,
-                messages=[{"role": "user", "content": content}]
-            )
-            return response.content[0].text
-            
-        elif ai_provider == "Grok":
-            headers = {
-                "Authorization": f"Bearer {GROK_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": content}
-                ]
-            }
-            response = requests.post(
-                "https://api.grok.x.ai/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-            return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        st.error(f"Error writing article with {ai_provider} {model}: {str(e)}")
-        return None
-
-def generate_seo_metadata(content, title):
-    """Generate SEO metadata for the content"""
-    try:
-        prompt = f"""As an SEO expert, analyze this content and generate essential SEO metadata:
-
-Content Title: {title}
-Content Preview: {content[:1000]}...
-
-Please provide:
-1. SEO-optimized title (50-60 chars)
-2. Meta description (150-160 chars)
-3. Primary keyword
-4. 3-4 secondary keywords
-5. Recommended URL slug
-6. Schema type recommendation
-
-Format as JSON."""
-
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are an SEO expert that provides metadata in JSON format."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,
-            temperature=0.3
-        )
-        
-        return response.choices[0].message.content
-    except Exception as e:
-        st.error(f"Error generating SEO metadata: {str(e)}")
-        return None
-
-def process_all_content(text, ai_provider, model, knowledge_base=None):
-    """Process all content stages at once"""
-    try:
-        results = {
-            'wisdom': None,
-            'outline': None,
-            'social_posts': None,
-            'image_prompts': None,
-            'article': None
-        }
-        
-        # Sequential processing with progress bar
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        # Generate wisdom
-        status_text.text("Extracting wisdom...")
-        results['wisdom'] = generate_wisdom(text, ai_provider, model, knowledge_base=knowledge_base)
-        progress_bar.progress(0.2)
-        
-        # Generate outline
-        status_text.text("Creating outline...")
-        results['outline'] = generate_outline(text, results['wisdom'], ai_provider, model, knowledge_base=knowledge_base)
-        progress_bar.progress(0.4)
-        
-        # Generate social content
-        status_text.text("Generating social media content...")
-        results['social_posts'] = generate_social_content(results['wisdom'], results['outline'], ai_provider, model, knowledge_base=knowledge_base)
-        progress_bar.progress(0.6)
-        
-        # Generate image prompts
-        status_text.text("Creating image prompts...")
-        results['image_prompts'] = generate_image_prompts(results['wisdom'], results['outline'], ai_provider, model, knowledge_base=knowledge_base)
-        progress_bar.progress(0.8)
-        
-        # Generate article
-        status_text.text("Writing full article...")
-        results['article'] = generate_article(text, results['wisdom'], results['outline'], ai_provider, model, knowledge_base=knowledge_base)
-        progress_bar.progress(1.0)
-        
-        status_text.text("Content generation complete!")
-        return results
-        
-    except Exception as e:
-        st.error(f"Error in batch processing: {str(e)}")
-        return None
 
 def main():
     # Initialize session state variables first to avoid errors
@@ -1825,7 +244,7 @@ def main():
         # AI Provider selection in sidebar with clean UI
         ai_provider = st.selectbox(
             "AI Provider", 
-            options=["OpenAI", "Anthropic", "Grok"],
+            options=["OpenAI", "Anthropic"],
             key="ai_provider_select",
             on_change=lambda: setattr(st.session_state, 'ai_model', None)  # Reset model when provider changes
         )
@@ -1841,7 +260,6 @@ def main():
             "claude-3-opus-20240229": "Most capable Anthropic model",
             "claude-3-sonnet-20240229": "Balanced Anthropic model",
             "claude-3-haiku-20240307": "Fast, efficient Anthropic model",
-            "grok-1": "Grok's base model"
         }
         
         # If no model is selected or previous model isn't in new provider's list, select first
@@ -1931,7 +349,7 @@ def main():
                         with open(os.path.join(kb_path, f"{kb_name}.md"), "wb") as f:
                             f.write(uploaded_kb.getvalue())
                         st.success("Knowledge base file added successfully!")
-                        st.experimental_rerun()
+                        st.rerun()
                     except Exception as e:
                         st.error(f"Error saving knowledge base file: {str(e)}")
     
@@ -2281,23 +699,7 @@ def main():
     """, unsafe_allow_html=True)
 
 # Default prompts in case user prompts are not available
-DEFAULT_PROMPTS = {
-    "wisdom_extraction": """Extract key insights, lessons, and wisdom from the transcript. Focus on actionable takeaways and profound realizations.""",
-    
-    "summary": """## Summary
-Create a concise summary of the main points and key messages in the transcript.
-Capture the essence of the content in a few paragraphs.""",
-    
-    "outline_creation": """Create a detailed outline for an article or blog post based on the transcript and extracted wisdom. Include major sections and subsections.""",
-    
-    "social_media": """Generate engaging social media posts for different platforms (Twitter, LinkedIn, Instagram) based on the key insights.""",
-    
-    "image_prompts": """Create detailed image generation prompts that visualize the key concepts and metaphors from the content.""",
-    
-    "article_writing": """Write a comprehensive article based on the provided outline and wisdom. Maintain a clear narrative flow and engaging style.""",
-    
-    "seo_analysis": """Analyze the content from an SEO perspective and provide optimization recommendations for better search visibility while maintaining content quality."""
-}
+
 
 if __name__ == "__main__":
-    main() 
+    main()

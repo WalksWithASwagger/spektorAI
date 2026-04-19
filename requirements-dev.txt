@@ -1,9 +1,4 @@
-# Testing
-pytest
-pytest-asyncio
-httpx
-fastapi
-
-# Development
-black
-flake8 
+-r requirements.txt
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0

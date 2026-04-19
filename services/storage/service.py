@@ -1,120 +1,64 @@
-from fastapi import FastAPI, HTTPException
+"""Storage microservice — Notion export via whisperforge_core.notion.
+
+POST /save    ContentBundle -> {"url": str}
+GET  /health
+
+Auth: X-API-Key: SERVICE_TOKEN header.
+"""
+
+from typing import List, Optional
+
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
-from datetime import datetime
-from notion_client import Client
-import os
-import logging
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from shared.security import verify_service_token
+from whisperforge_core import notion
+from whisperforge_core.logging import get_logger
 
-app = FastAPI()
+logger = get_logger("storage")
+app = FastAPI(title="WhisperForge Storage Service")
 
 
-class StorageRequest(BaseModel):
-    transcription: str
-    processed_text: str
-    file_name: str
-    metadata: Dict[str, Any] = {
-        "title_prefix": "Transcription: ",
-        "tags": ["transcription"],
-        "custom_date": None
-    }
+class SaveRequest(BaseModel):
+    title: str
+    transcript: str = ""
+    wisdom: str = ""
+    outline: str = ""
+    social_content: str = ""
+    image_prompts: str = ""
+    article: str = ""
+    summary: str = ""
+    tags: List[str] = []
+    audio_filename: Optional[str] = None
+    models_used: List[str] = []
+    database_id: Optional[str] = None  # override config if caller wants
 
 
 @app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+async def health():
+    return {"status": "healthy", "service": "storage"}
 
 
-@app.post("/store")
-async def store_transcription(request: StorageRequest):
-    logger.info("Received storage request")
-    logger.debug(f"File name: {request.file_name}")
-    
-    # Check environment variables
-    notion_key = os.getenv("NOTION_API_KEY")
-    database_id = os.getenv("NOTION_DATABASE_ID")
-    
-    logger.info(f"Notion API Key present: {'Yes' if notion_key else 'No'}")
-    logger.info(f"Notion Database ID present: {'Yes' if database_id else 'No'}")
-    
+@app.post("/save")
+async def save(req: SaveRequest, _: str = Depends(verify_service_token)):
+    bundle = notion.ContentBundle(
+        title=req.title,
+        transcript=req.transcript,
+        wisdom=req.wisdom,
+        outline=req.outline,
+        social_content=req.social_content,
+        image_prompts=req.image_prompts,
+        article=req.article,
+        summary=req.summary,
+        tags=req.tags,
+        audio_filename=req.audio_filename,
+        models_used=req.models_used,
+    )
     try:
-        notion = Client(auth=os.getenv("NOTION_API_KEY"))
-        database_id = os.getenv("NOTION_DATABASE_ID")
-
-        if not database_id:
-            logger.error("Notion database ID not configured")
-            raise HTTPException(status_code=500, detail="Notion database ID not configured")
-
-        # Extract metadata with defaults
-        title_prefix = request.metadata.get("title_prefix", "Transcription: ")
-        tags = request.metadata.get("tags", ["transcription"])
-        custom_date = request.metadata.get("custom_date")
-
-        # Prepare the date
-        date_value = custom_date if custom_date else datetime.now().isoformat()
-
-        logger.info(f"Creating Notion page for: {request.file_name}")
-        logger.debug(f"Using tags: {tags}")
-
-        try:
-            # Create the page with metadata
-            response = notion.pages.create(
-                parent={"database_id": database_id},
-                properties={
-                    "Name": {
-                        "title": [
-                            {"text": {"content": f"{title_prefix}{request.file_name}"}}
-                        ]
-                    },
-                    "Tags": {
-                        "multi_select": [{"name": tag} for tag in tags]
-                    },
-                    "Created Date": {"date": {"start": date_value}},
-                },
-                children=[
-                    {
-                        "object": "block",
-                        "type": "paragraph",
-                        "paragraph": {
-                            "rich_text": [{"text": {"content": request.processed_text}}]
-                        },
-                    },
-                    {"object": "block", "type": "divider", "divider": {}},
-                    {
-                        "object": "block",
-                        "type": "paragraph",
-                        "paragraph": {
-                            "rich_text": [{"text": {"content": "Full Transcription:"}}]
-                        },
-                    },
-                    {
-                        "object": "block",
-                        "type": "paragraph",
-                        "paragraph": {
-                            "rich_text": [{"text": {"content": request.transcription}}]
-                        },
-                    },
-                ],
-            )
-
-            notion_url = response.get("url")
-            logger.info(f"Successfully created Notion page: {notion_url}")
-            return {"status": "success", "url": notion_url}
-
-        except Exception as e:
-            logger.error(f"Notion API error: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to create Notion page: {str(e)}"
-            )
-
+        url = notion.create_page(bundle, database_id=req.database_id)
     except Exception as e:
-        logger.error(f"Storage error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Storage error: {str(e)}"
-        )
+        logger.exception("notion save failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    if not url:
+        raise HTTPException(status_code=500, detail="Notion returned no page URL")
+    return {"url": url}

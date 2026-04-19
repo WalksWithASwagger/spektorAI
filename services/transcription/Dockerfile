@@ -1,25 +1,25 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-COPY services/transcription/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-services.txt ./
+RUN pip install --no-cache-dir -r requirements-services.txt
 
-# Copy service code
-COPY services/transcription/ .
-COPY shared/ ./shared/
+COPY whisperforge_core ./whisperforge_core
+COPY shared ./shared
+COPY services/transcription/service.py ./service.py
 
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1
 
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=5 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 CMD ["uvicorn", "service:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "300"]

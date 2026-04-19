@@ -5,6 +5,33 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-19
+
+### Added
+- `whisperforge_core/` package — shared business logic (audio, llm, notion, prompts, pipeline, cache, logging, adapters) used by both the monolith and the FastAPI microservices.
+- `DEPLOY_MODE=direct|services` env flag selecting between local (in-process) and containerized (HTTP) backends via `whisperforge_core.adapters`.
+- `styles.py` — all CSS extracted from `app.py`.
+- Text-input tab can now save generated content to Notion (previously dead-ended).
+- `requirements-services.txt` for the FastAPI stack; `audioop-lts` shim for Python 3.13 (pydub compat).
+
+### Changed
+- `app.py` shrunk 2302 → ~705 lines (thin UI shell over `whisperforge_core`).
+- Services under `services/` rewritten as thin wrappers on `whisperforge_core`; `services/frontend/app.py` deleted in favor of a single canonical `app.py` that runs in both modes.
+- `docker-compose.yml` rebuilt: adds missing `storage` service, removes orphaned `auth`/`postgres`/`admin`. Auth deferred for single-user deployments.
+- `shared/security.py` simplified to an `X-API-Key: SERVICE_TOKEN` check (JWT deferred).
+- Whisperforge CLI (`whisperforge.py`) is now a 45-line wrapper on `whisperforge_core.audio`.
+
+### Fixed
+- `requirements.txt` was the FastAPI/JWT stack instead of Streamlit — now lists the correct runtime deps.
+- `shared/config.py` NameError on undefined `CLAUDE_API_KEY`.
+- Deprecated `st.experimental_rerun()` → `st.rerun()`.
+- Three bare `except:` clauses replaced with `except OSError:` for cleanup paths.
+
+### Removed
+- Grok provider support (endpoint unverified, only `grok-1` listed).
+- Legacy `old_app.py` after salvaging logging + cache patterns.
+- `services/admin/` (stubs, no Dockerfile), `services/shared/` (dup of `/shared/`), stale test files.
+
 ## [0.1.1] - 2024-03-20
 
 ### Added

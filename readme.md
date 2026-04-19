@@ -1,257 +1,231 @@
 # WhisperForge
 
-Transform spoken ideas into comprehensive content with AI assistance. WhisperForge transcribes audio, extracts insights, and creates structured Notion pages with multiple content formats.
+Turn spoken thoughts into polished, publishable content. Upload audio, and
+WhisperForge transcribes it, extracts wisdom, drafts an outline and article,
+generates social posts + image prompts, and ships the bundle to a structured
+Notion page — all tuned to your own voice via a per-user prompt and knowledge
+base.
+
+---
 
 ## Features
 
-- **Audio Transcription**: Support for MP3, WAV, OGG, and M4A files
-- **Multi-Model AI Integration**: OpenAI, Anthropic, and Grok support
-- **Smart Content Generation**: 
-  - AI-generated descriptive titles
-  - One-sentence content summaries
-  - Key wisdom extraction
-  - Content tags generation
-- **Notion Integration**: 
-  - Structured page layout with collapsible sections
-  - Automatic metadata and properties
-  - Professional formatting
+- **Audio transcription** (MP3, WAV, OGG, M4A) via OpenAI Whisper, with
+  automatic chunking for files above 20 MB.
+- **Dual-provider content generation** with OpenAI (GPT-4, 4-Turbo, 3.5) and
+  Anthropic (Claude 3 Opus / Sonnet / Haiku).
+- **Five-stage pipeline** per run: wisdom → outline → social media → image
+  prompts → full article draft.
+- **Per-user voice**: prompts + knowledge base live under `prompts/<user>/`
+  and are injected into the system prompt on every call.
+- **Text-input mode**: paste prose instead of uploading audio and run the same
+  pipeline (useful for imported transcripts).
+- **Structured Notion export**: collapsible toggles per section, color-coded,
+  AI-generated title + tags + summary, respecting Notion's block limits.
+- **Two deployment modes**: single-process monolith for local use, or
+  FastAPI microservices via `docker-compose` — same code, same UI.
+
+---
+
+## Architecture
+
+```
+whisperforge_core/            pure-logic package (no Streamlit)
+├── config.py                 env, LLM catalog, defaults
+├── logging.py                logger setup
+├── cache.py                  file-hash pickle cache (sha256 + model + prompt)
+├── prompts.py                user/KB discovery, override precedence
+├── audio.py                  chunking + Whisper transcription
+├── llm.py                    unified generate() for OpenAI/Anthropic
+├── notion.py                 ContentBundle + 1900-char block chunker
+├── pipeline.py               5-stage orchestration with progress callback
+├── adapters.py               Local{Transcriber,Processor,Storage}
+└── http_adapters.py          Http{Transcriber,Processor,Storage}
+
+app.py                        Streamlit UI shell (imports whisperforge_core)
+styles.py                     all CSS
+whisperforge.py               45-line CLI wrapper for transcription only
+
+services/
+├── transcription/service.py  POST /transcribe → audio.transcribe_audio
+├── processing/service.py     POST /generate, /pipeline → llm / pipeline
+├── storage/service.py        POST /save → notion.create_page
+└── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
+
+shared/                       cross-service config + X-API-Key auth
+tests/                        pytest suite (38 tests) + smoke.sh
+prompts/<user>/               prompts, knowledge_base, custom_prompts
+```
+
+The monolith (`streamlit run app.py`) imports `whisperforge_core` directly. In
+services mode (`docker compose up`), the same `app.py` runs inside a `frontend`
+container and talks to the three FastAPI services over HTTP via
+`http_adapters`. Swap by setting `DEPLOY_MODE=direct` (default) or `services`.
+
+---
 
 ## Setup
 
-1. Clone the repository
-2. Install dependencies:
+### Prerequisites
+
+- Python 3.10+ (tested on 3.11 and 3.13; `audioop-lts` shim pinned for 3.13)
+- `ffmpeg` on `PATH` (`brew install ffmpeg` on macOS)
+- OpenAI and Notion API keys; Anthropic key optional but recommended
+
+### Install
+
 ```bash
+git clone <your-fork-url> spektorAI
+cd spektorAI
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
-3. Configure environment variables in `.env`:
+
+### Configure `.env`
+
 ```env
-OPENAI_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
-NOTION_API_KEY=your_key_here
-NOTION_DATABASE_ID=your_database_id
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-...
+NOTION_API_KEY=secret_...
+NOTION_DATABASE_ID=<your-database-id>
+
+# Only needed for services mode (docker compose):
+SERVICE_TOKEN=<any-shared-secret>
 ```
 
-## Usage
+### Create your prompt profile (first run only)
 
-1. Run the application:
+```bash
+mkdir -p prompts/<YourName>/{prompts,knowledge_base,custom_prompts}
+```
+
+Drop `.md` prompt templates into `prompts/<YourName>/prompts/` and voice/style
+docs into `prompts/<YourName>/knowledge_base/`.
+
+---
+
+## Running
+
+### Monolith (local, recommended for daily use)
+
 ```bash
 streamlit run app.py
+# → http://localhost:8501
 ```
 
-2. Upload audio file and process content:
-   - Select AI provider and model
-   - Click "Transcribe Audio"
-   - Generate additional content as needed
-   - Export to Notion at any point
+### Microservices (docker-compose)
 
-## Notion Integration Details
+```bash
+docker compose up --build
+# → http://localhost:8501
+```
 
-Each Notion page includes:
-1. AI-generated descriptive title (prefixed with "WHISPER:")
-2. Purple callout with AI-generated summary
-3. Collapsible sections:
-   - ▶️ Original Audio
-   - ▶️ Transcription
-   - ▶️ Wisdom
-   - ▶️ Socials
-   - ▶️ Image Prompts
-   - ▶️ Outline
-   - ▶️ Draft Post
-4. Metadata section with:
-   - Original audio filename
-   - Creation date
-   - WhisperForge attribution
-5. Database properties:
-   - Created Date
-   - Tags (AI-generated)
+Four containers come up: `transcription`, `processing`, `storage`, `frontend`.
+The frontend's `DEPLOY_MODE=services` env var tells it to HTTP-call the
+backends.
 
-## Technical Notes
+### CLI (transcription only)
 
-- Handles large audio files through chunked processing
-- Respects Notion's 2000-character block limit
-- Uses GPT for generating titles, summaries, and tags
-- Maintains consistent formatting and structure
+```bash
+python whisperforge.py path/to/audio.m4a [transcript.txt]
+```
 
-## Future Enhancements
+---
 
-- Additional content generation options
-- More AI provider integrations
-- Custom prompt configurations
-- Enhanced metadata and tagging
+## Workflow
 
-![WhisperForge Banner](assets/whisperforge_banner.png)
+1. **Pick your user profile** in the sidebar. Any directory under `prompts/`
+   becomes a profile.
+2. **Select provider + model** (OpenAI or Anthropic).
+3. **Upload audio or paste text.** Large audio is chunked automatically.
+4. **Generate** — run individual stages (Extract Wisdom, Create Outline,
+   Social, Image Prompts, Full Article) or use "I'm Feeling Lucky" to run the
+   whole pipeline sequentially with a progress bar.
+5. **Save to Notion** — builds a single page with color-coded toggles per
+   section, an AI-generated title, summary callout, tags, and metadata
+   footer (audio filename, timestamp, models used, token estimate).
 
-## Table of Contents
-- [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage Guide](#usage-guide)
-  - [Quick Start](#quick-start)
-  - [Step-by-Step Workflow](#step-by-step-workflow)
-  - [Customizing Prompts](#customizing-prompts)
-  - [Managing Knowledge Base](#managing-knowledge-base)
-- [Technical Architecture](#technical-architecture)
-- [Configuration](#configuration)
-- [The Vision](#the-vision)
-- [Appendix: Enhancement Ideas](#appendix-enhancement-ideas)
+### Notion page layout
 
-## Overview
+```
+WHISPER: <AI-generated title>
+  💜 callout with one-sentence summary
+  ─── divider ───
+  ▶ Transcription           (default toggle)
+  ▶ Wisdom                  (brown)
+  ▶ Socials                 (orange)
+  ▶ Image Prompts           (green)
+  ▶ Outline                 (blue)
+  ▶ Draft Post              (purple)
+  ▶ Original Audio          (red; only if audio was uploaded)
+  ─── Metadata ───
+  Original Audio · Created · Models Used · Estimated Tokens
+Properties: Name, Tags (multi-select, AI-generated)
+```
 
-WhisperForge is an AI-powered audio transcription and content creation tool designed for streamlining the process of turning your spoken thoughts into polished, publishable content. Built with OpenAI's Whisper model for transcription and various LLMs (OpenAI, Anthropic, Grok) for content enhancement, WhisperForge creates a seamless pipeline from dictation to publication-ready materials.
+---
 
-Record your thoughts, upload the audio, and let WhisperForge extract wisdom, create outlines, generate social media content, suggest image prompts, and even draft complete articles - all properly formatted and saved to your Notion workspace.
+## Customising prompts and knowledge base
 
-## Installation
+Three override layers per user, resolved in precedence order:
 
-### Prerequisites
-- Python 3.8 or higher
-- Streamlit
-- OpenAI API key
-- Notion API key and database ID
-- (Optional) Anthropic API key
-- (Optional) Grok API key
+1. `prompts/<user>/custom_prompts/<type>.txt` — highest priority, saved by the
+   in-app "Save Prompt" button.
+2. `prompts/<user>/prompts/<type>.md` — on-disk template.
+3. `whisperforge_core.config.DEFAULT_PROMPTS[<type>]` — fallback.
 
-### Setup Instructions
+Valid `<type>` values: `wisdom_extraction`, `summary`, `outline_creation`,
+`social_media`, `image_prompts`, `article_writing`, `seo_analysis`.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/whisperforge.git
-   cd whisperforge
-   ```
+**Knowledge base** files at `prompts/<user>/knowledge_base/*.{md,txt}` are
+prepended to the system prompt on every LLM call, so the model writes in your
+voice and with your context.
 
-2. **Create a virtual environment**
-   ```bash
-   python -m venv whisperforge-env
-   source whisperforge-env/bin/activate  # On Windows, use: whisperforge-env\Scripts\activate
-   ```
+---
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Development
 
-4. **Set up environment variables**
-   Create a `.env` file in the project root with the following:
-   ```
-   OPENAI_API_KEY=your_openai_api_key
-   NOTION_API_KEY=your_notion_api_key
-   NOTION_DATABASE_ID=your_notion_database_id
-   ANTHROPIC_API_KEY=your_anthropic_api_key  # Optional
-   GROK_API_KEY=your_grok_api_key  # Optional
-   ```
+### Tests
 
-5. **Create prompt directories**
-   ```bash
-   mkdir -p prompts/YourName/prompts
-   mkdir -p prompts/YourName/knowledge_base
-   mkdir -p prompts/YourName/custom_prompts
-   ```
+```bash
+pip install -r requirements-dev.txt
+pytest tests/ -q          # 38 unit tests, ~1s
+tests/smoke.sh            # boots streamlit, hits /_stcore/health
+```
 
-## Usage Guide
+### Directory structure for day-to-day work
 
-### Quick Start
+- **Fixing bugs in the pipeline?** Edit `whisperforge_core/` — all business
+  logic lives there. The monolith and services both pick up the change.
+- **Tweaking UI or CSS?** `app.py` for layout, `styles.py` for CSS.
+- **Changing Notion layout?** `whisperforge_core/notion.py`. Preserve the
+  1900-char block chunker — `tests/test_notion.py` pins that invariant.
+- **Adding a provider?** Add a branch in `whisperforge_core/llm._call` and
+  extend `LLM_MODELS` in `config.py`.
 
-1. Run the application:
-   ```bash
-   streamlit run app.py
-   ```
+### Configuration reference
 
-2. Select your user profile in the sidebar
+| Env var             | Purpose                                         | Required      |
+| ------------------- | ----------------------------------------------- | ------------- |
+| `OPENAI_API_KEY`    | Whisper + GPT models                            | yes           |
+| `ANTHROPIC_API_KEY` | Claude models                                   | recommended   |
+| `NOTION_API_KEY`    | Notion integration                              | yes           |
+| `NOTION_DATABASE_ID`| Destination database ID                         | yes           |
+| `DEPLOY_MODE`       | `direct` (default) or `services`                | no            |
+| `SERVICE_TOKEN`     | Shared X-API-Key for inter-service calls        | services mode |
+| `WHISPERFORGE_LOG_LEVEL` | `DEBUG` / `INFO` / `WARNING` (default INFO) | no          |
+| `WHISPERFORGE_CACHE_DIR` | Cache location (default `.cache/`)          | no            |
+| `TRANSCRIPTION_URL` / `PROCESSING_URL` / `STORAGE_URL` | Override service URLs (docker-compose sets these) | no |
 
-3. Upload an audio file
+---
 
-4. Click "Transcribe Audio"
+## Changelog
 
-5. Review the transcription and select your preferred AI model
+See [`changelog.md`](changelog.md). The 2026-04-19 refactor (0.2.0) collapsed
+the previous two parallel implementations into a single shared-logic package,
+dropped Grok, fixed `requirements.txt`, and added the test suite.
 
-6. Use the expanders to generate desired content:
-   - Extract Wisdom
-   - Create Outline
-   - Generate Social Posts
-   - Create Image Prompts
-   - Write Full Article
+## License
 
-7. Click "Save to Notion" at any point to export your content
-
-### Step-by-Step Workflow
-
-#### 1. Audio Upload and Transcription
-- Upload your audio recording (supports MP3, WAV, M4A, OGG)
-- Provide an optional title (defaults to timestamp)
-- Click "Transcribe Audio" to process the recording
-- Large files are automatically chunked for better processing
-
-#### 2. AI Model Selection
-- Choose your preferred AI provider (OpenAI, Anthropic, Grok)
-- Select the specific model to use (e.g., GPT-4, Claude 3)
-
-#### 3. Content Generation
-- **Extract Wisdom**: Pull key insights and actionable takeaways
-- **Create Outline**: Generate a structured outline for an article
-- **Generate Social Media**: Create platform-specific social posts
-- **Image Prompts**: Develop prompts for AI image generators
-- **Write Article**: Draft a complete article based on the outline
-
-#### 4. Export to Notion
-- Save all generated content to your Notion database
-- Content is organized in toggles with appropriate formatting
-- Includes the original audio file reference
-
-### Customizing Prompts
-
-WhisperForge uses AI prompts to guide content generation. Customize these to match your personal voice:
-
-1. In the sidebar, expand "Configure Custom Prompts"
-2. Select the prompt type you want to customize
-3. Edit the prompt text in the text area
-4. Click "Save Prompt"
-
-Your custom prompt will now be used for all future content generation of that type.
-
-#### Default Prompt Types
-- **Wisdom Extraction**: How insights are pulled from transcriptions
-- **Outline Creation**: How article outlines are structured
-- **Social Media**: How social posts are formatted
-- **Image Prompts**: How image generation prompts are created
-- **Article Writing**: How full articles are drafted
-
-### Managing Knowledge Base
-
-The knowledge base helps the AI understand your voice, style, and perspective:
-
-1. Create .md or .txt files containing:
-   - Writing style guides
-   - Tone preferences
-   - World view and perspectives
-   - Subject matter expertise
-
-2. Place these files in `prompts/YourName/knowledge_base/`
-
-3. The AI will reference these when generating content to better match your voice
-
-## Technical Architecture
-
-WhisperForge combines several key technologies:
-
-- **Streamlit**: Front-end interface
-- **OpenAI Whisper**: Audio transcription
-- **LLM Integration**: Multiple AI providers for content generation
-- **Notion API**: Content export and organization
-- **File System**: Persistent storage of custom prompts
-
-The application follows this general flow:
-1. Audio processing and chunking
-2. Transcription via Whisper API
-3. Content generation via selected LLM
-4. Structured export to Notion
-
-## Configuration
-
-### Environment Variables
-- `OPENAI_API_KEY`: Required for transcription and OpenAI models
-- `NOTION_API_KEY`: Required for Notion integration
-- `NOTION_DATABASE_ID`: ID of the Notion database for content export
-- `ANTHROPIC_API_KEY`: Required for Claude models
-- `GROK_API_KEY`: Required for Grok models
-
-### Directory Structure
+Unlicensed / private. Not for distribution.

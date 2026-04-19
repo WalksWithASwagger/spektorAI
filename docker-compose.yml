@@ -1,72 +1,22 @@
-version: '3.8'
-
 services:
-  auth:
-    build:
-      context: .
-      dockerfile: services/auth/Dockerfile
-    ports:
-      - "8001:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/whisperforge
-      - JWT_SECRET=${JWT_SECRET}
-    networks:
-      - whisperforge-net
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:latest
-    environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=whisperforge
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - whisperforge-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5432:5432"
-
-  frontend:
-    build:
-      context: .
-      dockerfile: services/frontend/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - "8501:8501"
-    networks:
-      - whisperforge-net
-    depends_on:
-      transcription:
-        condition: service_healthy
-      processing:
-        condition: service_healthy
-    volumes:
-      - frontend_cache:/app/cache
-
   transcription:
     build:
       context: .
       dockerfile: services/transcription/Dockerfile
     env_file:
       - .env
+    environment:
+      - WHISPERFORGE_LOG_LEVEL=INFO
     networks:
       - whisperforge-net
+    volumes:
+      - audio_cache:/app/cache
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 15s
-    volumes:
-      - audio_cache:/app/cache
 
   processing:
     build:
@@ -74,16 +24,62 @@ services:
       dockerfile: services/processing/Dockerfile
     env_file:
       - .env
+    environment:
+      - WHISPERFORGE_LOG_LEVEL=INFO
     networks:
       - whisperforge-net
+    volumes:
+      - processing_cache:/app/cache
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 15s
+
+  storage:
+    build:
+      context: .
+      dockerfile: services/storage/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - WHISPERFORGE_LOG_LEVEL=INFO
+    networks:
+      - whisperforge-net
     volumes:
-      - processing_cache:/app/cache
+      - storage_cache:/app/cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: services/frontend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - DEPLOY_MODE=services
+      - TRANSCRIPTION_URL=http://transcription:8000
+      - PROCESSING_URL=http://processing:8000
+      - STORAGE_URL=http://storage:8000
+    ports:
+      - "8501:8501"
+    networks:
+      - whisperforge-net
+    volumes:
+      - frontend_cache:/app/cache
+    depends_on:
+      transcription:
+        condition: service_healthy
+      processing:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
 
 networks:
   whisperforge-net:
@@ -94,4 +90,3 @@ volumes:
   audio_cache:
   processing_cache:
   storage_cache:
-  postgres_data:

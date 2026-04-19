@@ -1,28 +1,25 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies
-COPY services/frontend/requirements.txt .
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create cache directory
-RUN mkdir -p /app/cache && \
-    chmod 777 /app/cache
+COPY whisperforge_core ./whisperforge_core
+COPY shared ./shared
+COPY prompts ./prompts
+COPY app.py styles.py ./
 
-# Copy service code
-COPY services/frontend/ .
-COPY shared/ ./shared/
+RUN mkdir -p /app/cache && chmod 777 /app/cache
 
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    DEPLOY_MODE=services
 
 EXPOSE 8501
 
