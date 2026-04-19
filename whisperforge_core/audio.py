@@ -21,6 +21,7 @@ from pydub import AudioSegment
 
 from . import cache
 from .config import (
+    CHUNKER,
     DEFAULT_CHUNK_TARGET_MB,
     MLX_WHISPER_MODEL,
     OPENAI_API_KEY,
@@ -49,9 +50,27 @@ def chunk_audio(
 ) -> Tuple[List[str], Optional[str]]:
     """Split an audio file into chunks of roughly ``target_size_mb`` MB.
 
+    Dispatches to the VAD-based chunker when CHUNKER=vad, else uses the
+    fixed-size byte-count chunker (default; preserves pre-VAD behavior).
+
     Returns (chunk_file_paths, temp_dir). Caller is responsible for cleaning up
     the temp_dir once done. On failure returns ([], None) and logs.
     """
+    if (CHUNKER or "").lower() == "vad":
+        try:
+            return _chunk_audio_vad(audio_path, target_size_mb, progress)
+        except Exception as e:
+            logger.warning("VAD chunker failed (%s) — falling back to size-based", e)
+
+    return _chunk_audio_size(audio_path, target_size_mb, progress)
+
+
+def _chunk_audio_size(
+    audio_path: str | Path,
+    target_size_mb: int,
+    progress: Optional[ProgressCallback],
+) -> Tuple[List[str], Optional[str]]:
+    """Size-based chunker: fixed ms-length chunks, regardless of content."""
     try:
         audio = AudioSegment.from_file(str(audio_path))
     except Exception as e:
@@ -79,6 +98,79 @@ def chunk_audio(
         chunks.append(chunk_path)
         if progress:
             progress(idx + 1, total_chunks, "chunking")
+
+    return chunks, temp_dir
+
+
+def _chunk_audio_vad(
+    audio_path: str | Path,
+    target_size_mb: int,
+    progress: Optional[ProgressCallback],
+) -> Tuple[List[str], Optional[str]]:
+    """VAD-based chunker: cuts on silences, drops silent segments.
+
+    Uses Silero VAD to find speech timestamps, then groups adjacent speech
+    segments into chunks that each stay under target_size_mb. Speech between
+    chunks is contiguous (no silence gaps within a chunk), and silences
+    between chunks drop out of the pipeline entirely — less audio sent to
+    the transcription model, no mid-word cuts.
+    """
+    import numpy as np
+    import torch
+    from silero_vad import get_speech_timestamps, load_silero_vad
+
+    audio = AudioSegment.from_file(str(audio_path))
+    # Silero VAD wants mono float32 at 16 kHz.
+    probe = audio.set_channels(1).set_frame_rate(16000)
+    samples = np.array(probe.get_array_of_samples()).astype(np.float32) / 32768.0
+    wav = torch.from_numpy(samples)
+
+    model = load_silero_vad()
+    speech = get_speech_timestamps(wav, model, sampling_rate=16000, return_seconds=True)
+    if not speech:
+        logger.info("VAD found no speech — falling back to size-based")
+        return _chunk_audio_size(audio_path, target_size_mb, progress)
+
+    logger.info("VAD found %d speech segments", len(speech))
+
+    # Estimate bytes-per-second from the full source to budget chunks.
+    file_size = os.path.getsize(audio_path)
+    total_sec = max(len(audio) / 1000.0, 0.001)
+    bytes_per_sec = file_size / total_sec
+    target_sec = (target_size_mb * 1024 * 1024) / max(bytes_per_sec, 1)
+
+    # Greedy packing: accumulate speech segments into groups that each span
+    # at most target_sec of source audio.
+    groups: List[List[dict]] = [[]]
+    group_start = speech[0]["start"]
+    for seg in speech:
+        span = seg["end"] - group_start
+        if groups[-1] and span > target_sec:
+            groups.append([seg])
+            group_start = seg["start"]
+        else:
+            groups[-1].append(seg)
+            if len(groups[-1]) == 1:
+                group_start = seg["start"]
+
+    temp_dir = tempfile.mkdtemp(prefix="whisperforge_chunks_")
+    chunks: List[str] = []
+    total = len(groups)
+    for idx, group in enumerate(groups):
+        # Concatenate the underlying audio pieces (from the FULL-quality source,
+        # not the 16 kHz mono probe) with tiny pads between to avoid clipping.
+        piece = AudioSegment.empty()
+        for seg in group:
+            start_ms = int(seg["start"] * 1000)
+            end_ms = int(seg["end"] * 1000)
+            piece += audio[start_ms:end_ms]
+        if len(piece) < MIN_CHUNK_LENGTH_MS:
+            continue
+        chunk_path = os.path.join(temp_dir, f"chunk_{idx}.mp3")
+        piece.export(chunk_path, format="mp3")
+        chunks.append(chunk_path)
+        if progress:
+            progress(idx + 1, total, "chunking (vad)")
 
     return chunks, temp_dir
 

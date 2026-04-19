@@ -33,6 +33,11 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 # Transcription backend: "openai" (cloud Whisper API), "mlx" (local Apple
 # Silicon via mlx-whisper), or "whisper_cpp" (local via whisper.cpp binary).
 TRANSCRIPTION_BACKEND = os.getenv("TRANSCRIPTION_BACKEND", "openai")
+
+# Chunker strategy: "size" (default — fixed-size by byte count, old behavior)
+# or "vad" (Silero VAD finds speech segments, cuts on silence). VAD avoids
+# slicing mid-word and drops silent stretches entirely.
+CHUNKER = os.getenv("CHUNKER", "size")
 # HF repo or local path for mlx-whisper — "-base-mlx" is tiny/fast,
 # "-medium-mlx" is the accuracy sweet spot, "-large-v3-turbo-mlx" is best.
 MLX_WHISPER_MODEL = os.getenv(

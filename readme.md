@@ -245,8 +245,10 @@ tests/smoke.sh            # boots streamlit, hits /_stcore/health
 | `WHISPERFORGE_CACHE_DIR` | Cache location (default `.cache/`)          | no            |
 | `WHISPERFORGE_CACHE`     | `1` to enable the transcription/LLM cache    | no            |
 | `TRANSCRIPTION_BACKEND`  | `openai` (default) \| `mlx` \| `whisper_cpp` | no            |
+| `WHISPER_MODEL`          | Cloud Whisper model (default `gpt-4o-mini-transcribe`; also `gpt-4o-transcribe` or `whisper-1`) | no |
 | `MLX_WHISPER_MODEL`      | HF repo for mlx-whisper (default whisper-medium-mlx) | no    |
 | `WHISPER_CPP_MODEL`      | Path to ggml bin for `whisper_cpp` backend   | whisper_cpp only |
+| `CHUNKER`                | `size` (default) \| `vad` (Silero VAD, cuts on silence) | no        |
 | `OLLAMA_BASE_URL`        | Override Ollama endpoint (default `http://localhost:11434/v1`) | no |
 | `TRANSCRIPTION_URL` / `PROCESSING_URL` / `STORAGE_URL` | Override service URLs (docker-compose sets these) | no |
 
