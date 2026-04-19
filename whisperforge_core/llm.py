@@ -38,6 +38,9 @@ _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
     "transcript_cleanup": lambda ctx: ctx["transcript"],
     # Chapters stage: same shape as cleanup — raw transcript in, JSON out.
     "chapters": lambda ctx: ctx["transcript"],
+    # Timestamped variant: same deal but the transcript is pre-formatted as
+    # [SSSS.S] prefixed lines, one per segment.
+    "chapters_timestamped": lambda ctx: ctx["transcript"],
     "wisdom_extraction": lambda ctx: (
         f"Here's the transcription to analyze:\n\n{ctx['transcript']}"
     ),
@@ -62,6 +65,7 @@ _MAX_TOKENS: Dict[str, int] = {
     # Chapters JSON scales with chapter count but stays modest — 2500 caps
     # at ~10 chapters with full titles/summaries.
     "chapters": 2500,
+    "chapters_timestamped": 2500,
     "wisdom_extraction": 1500,
     "outline_creation": 1500,
     "social_media": 1000,
@@ -357,23 +361,50 @@ def generate_summary(transcript: str) -> str:
     return (result or {}).get("summary", "").strip() or "Summary of audio content"
 
 
+def _format_timestamped_transcript(segments: list) -> str:
+    """Render ``[{start, end, text, speaker?}]`` as ``[SSSS.S] text`` lines
+    suitable for the ``chapters_timestamped`` prompt."""
+    lines = []
+    for s in segments:
+        start = float(s.get("start", 0.0))
+        text_ = (s.get("text") or "").strip()
+        if not text_:
+            continue
+        spk = s.get("speaker")
+        prefix = f"[{start:.1f}]" + (f" {spk}:" if spk else "")
+        lines.append(f"{prefix} {text_}")
+    return "\n".join(lines)
+
+
 def generate_chapters(
     transcript: str,
     provider: str = "Anthropic",
     model: str = "claude-haiku-4-5",
     knowledge_base: Optional[Dict[str, str]] = None,
+    segments: Optional[list] = None,
 ) -> list[dict]:
     """Segment a transcript into topical chapters.
 
-    Returns a list of ``{"title", "summary", "start_quote"}`` dicts — empty on
-    failure or if the model returned unparseable output. Uses the generate()
-    machinery so it benefits from caching + the active provider. The
-    ``start_quote`` field exists so a later timestamp-alignment pass (when
-    WhisperX is the backend) can map chapters to seconds.
+    Returns a list of ``{"title", "summary", "start_quote", "start_seconds"?}``
+    dicts — empty on failure or if the model returned unparseable output. Uses
+    the generate() machinery so it benefits from caching + the active provider.
+
+    When ``segments`` is provided (shape: the list from
+    ``audio.TranscriptionDetails.segments``), the transcript is reformatted
+    with per-segment ``[SSSS.S]`` prefixes and the timestamp-aware prompt
+    variant is used. The model then picks ``start_seconds`` per chapter, which
+    flows through to Notion's ``[M:SS]`` / ``[H:MM:SS]`` rendering.
     """
+    if segments:
+        input_text = _format_timestamped_transcript(segments)
+        content_type = "chapters_timestamped"
+    else:
+        input_text = transcript
+        content_type = "chapters"
+
     raw = generate(
-        "chapters",
-        {"transcript": transcript},
+        content_type,
+        {"transcript": input_text},
         provider,
         model,
         # Chapters are a structural extraction task — skip the KB so the model
@@ -406,16 +437,19 @@ def generate_chapters(
         return []
 
     chapters = data.get("chapters", [])
-    # Filter to dicts with required fields; drop malformed entries silently.
-    return [
-        {
+
+    def _coerce(c: dict) -> dict:
+        out = {
             "title": str(c.get("title", "")).strip(),
             "summary": str(c.get("summary", "")).strip(),
             "start_quote": str(c.get("start_quote", "")).strip(),
         }
-        for c in chapters
-        if isinstance(c, dict) and c.get("title")
-    ]
+        ts = c.get("start_seconds")
+        if isinstance(ts, (int, float)):
+            out["start_seconds"] = float(ts)
+        return out
+
+    return [_coerce(c) for c in chapters if isinstance(c, dict) and c.get("title")]
 
 
 def generate_tags(content: str, max_tags: int = 6) -> list[str]:

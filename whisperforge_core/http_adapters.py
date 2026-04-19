@@ -41,6 +41,14 @@ class HttpTranscriber:
         r.raise_for_status()
         return r.json().get("text", "")
 
+    def transcribe_detailed(self, source, suffix: str = ".mp3"):
+        # HTTP transcription service currently returns text only; segments
+        # aren't serialized across the wire yet. Wrap the text response into
+        # an empty-segments TranscriptionDetails so callers can fall back.
+        from . import audio as audio_mod  # local import to avoid cycles
+        text = self.transcribe(source, suffix=suffix)
+        return audio_mod.TranscriptionDetails(text=text, segments=[], language=None)
+
 
 class HttpProcessor:
     def generate(self, content_type, context, provider, model, prompt=None, knowledge_base=None):
@@ -61,13 +69,18 @@ class HttpProcessor:
         return r.json().get("result")
 
     def run_pipeline(self, transcript, provider, model, prompts=None,
-                     knowledge_base=None, progress: Optional[Callable] = None):
+                     knowledge_base=None, progress: Optional[Callable] = None,
+                     segments: Optional[list] = None):
         payload = {
             "transcript": transcript,
             "provider": provider,
             "model": model,
             "prompts": prompts,
             "knowledge_base": knowledge_base,
+            # Segments aren't currently read by the processing service,
+            # but sending them keeps the HTTP contract forward-compatible
+            # for when the service learns timestamp-aware chapters.
+            "segments": segments,
         }
         r = requests.post(
             f"{PROCESSING_URL}/pipeline",

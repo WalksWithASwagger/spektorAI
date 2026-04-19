@@ -54,6 +54,7 @@ def run(
     progress: Optional[ProgressCallback] = None,
     cleanup: bool = True,
     chapters: bool = True,
+    segments: Optional[list] = None,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -99,10 +100,14 @@ def run(
 
     # Stage 0.5: chapters — structural segmentation. Runs before the voice
     # stages because later stages might re-phrase things in ways that drift
-    # from the transcript's literal topic boundaries.
+    # from the transcript's literal topic boundaries. When ``segments`` is
+    # provided (e.g. WhisperX backend populated them), the timestamped variant
+    # runs and each chapter gets a ``start_seconds`` for Notion jump-links.
     if chapters:
         _report(0.05, "Chaptering...")
-        result.chapters = llm.generate_chapters(transcript, provider, model)
+        result.chapters = llm.generate_chapters(
+            transcript, provider, model, segments=segments,
+        )
         _report(0.1, "Chaptering...")
 
     # Stage 1: wisdom (needs transcript)

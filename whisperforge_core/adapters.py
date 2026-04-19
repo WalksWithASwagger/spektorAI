@@ -24,6 +24,10 @@ from .config import DEPLOY_MODE
 class Transcriber(Protocol):
     def transcribe(self, source, suffix: str = ".mp3", progress=None) -> str: ...
 
+    def transcribe_detailed(
+        self, source, suffix: str = ".mp3"
+    ) -> audio_mod.TranscriptionDetails: ...
+
 
 class Processor(Protocol):
     def generate(
@@ -44,6 +48,7 @@ class Processor(Protocol):
         prompts: Optional[Dict[str, str]] = None,
         knowledge_base: Optional[Dict[str, str]] = None,
         progress: Optional[Callable] = None,
+        segments: Optional[list] = None,
     ) -> pipeline_mod.PipelineResult: ...
 
 
@@ -57,16 +62,23 @@ class LocalTranscriber:
     def transcribe(self, source, suffix: str = ".mp3", progress=None) -> str:
         return audio_mod.transcribe_audio(source, suffix=suffix, progress=progress)
 
+    def transcribe_detailed(
+        self, source, suffix: str = ".mp3"
+    ) -> audio_mod.TranscriptionDetails:
+        return audio_mod.transcribe_audio_detailed(source, suffix=suffix)
+
 
 class LocalProcessor:
     def generate(self, content_type, context, provider, model, prompt=None, knowledge_base=None):
         return llm_mod.generate(content_type, context, provider, model,
                                 prompt=prompt, knowledge_base=knowledge_base)
 
-    def run_pipeline(self, transcript, provider, model, prompts=None, knowledge_base=None, progress=None):
+    def run_pipeline(self, transcript, provider, model, prompts=None,
+                     knowledge_base=None, progress=None, segments=None):
         return pipeline_mod.run(
             transcript, provider, model, prompts=prompts,
             knowledge_base=knowledge_base, progress=progress,
+            segments=segments,
         )
 
 

@@ -127,6 +127,30 @@ DEFAULT_PROMPTS = {
         '"summary":"...", "start_quote":"..."}]} with no preamble, no '
         "markdown fences, no commentary."
     ),
+    # Same task but the input includes [SS.S] timestamps per segment. The
+    # model is asked to pick the start_seconds for each chapter from those
+    # prefixes so downstream Notion rendering can show [M:SS] jump links.
+    "chapters_timestamped": (
+        "Segment this time-indexed transcript into topical chapters.\n\n"
+        "Each line is prefixed with [SSSS.S] showing when it begins in "
+        "seconds from the start of the recording.\n\n"
+        "For each chapter produce four fields:\n"
+        '- "title": a 3-6 word headline\n'
+        '- "summary": one sentence describing the chapter\n'
+        '- "start_seconds": the float from the [SSSS.S] prefix at the start '
+        "of this chapter (MUST be a number copied verbatim from a line "
+        "prefix — never invent one)\n"
+        '- "start_quote": the first 8-12 words of the chapter, verbatim\n\n'
+        "Guidelines:\n"
+        "- Short transcripts (under ~3 minutes): 1-2 chapters is fine.\n"
+        "- Medium (3-15 minutes): 3-5 chapters.\n"
+        "- Long (15+ minutes): 5-10 chapters. Respect topic shifts.\n"
+        "- Chapters must be in chronological order.\n"
+        "- Do NOT fabricate chapters that aren't in the source.\n\n"
+        'Return ONLY a JSON object: {"chapters": [{"title":"...", '
+        '"summary":"...", "start_seconds":0.0, "start_quote":"..."}]} with '
+        "no preamble, no markdown fences, no commentary."
+    ),
     "wisdom_extraction": (
         "Extract key insights, lessons, and wisdom from the transcript. "
         "Focus on actionable takeaways and profound realizations."

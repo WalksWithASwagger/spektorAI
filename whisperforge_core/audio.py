@@ -13,6 +13,7 @@ import math
 import os
 import shutil
 import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
@@ -38,6 +39,22 @@ from .logging import get_logger
 logger = get_logger(__name__)
 
 ProgressCallback = Callable[[int, int, str], None]  # (current, total, label) -> None
+
+
+@dataclass
+class TranscriptionDetails:
+    """Rich transcription result. Returned by transcribe_audio_detailed().
+
+    Non-rich backends (OpenAI, MLX, whisper.cpp) produce empty ``segments`` —
+    callers should treat the absence of segments as "timestamps unavailable"
+    and fall back to text-only behavior.
+    """
+
+    text: str
+    # [{"start": float seconds, "end": float seconds, "text": str,
+    #   "speaker": Optional[str]}]
+    segments: List[dict] = field(default_factory=list)
+    language: Optional[str] = None
 
 CHUNK_THRESHOLD_BYTES = 20 * 1024 * 1024
 MIN_CHUNK_LENGTH_MS = 5_000
@@ -202,12 +219,11 @@ def _transcribe_chunk_mlx(chunk_path: str | Path) -> str:
 _WHISPERX_CACHE: dict = {}
 
 
-def _transcribe_chunk_whisperx(chunk_path: str | Path) -> str:
-    """Transcribe with faster-whisper + wav2vec2 forced alignment via WhisperX.
-
-    When WHISPERX_DIARIZATION=1 AND WHISPERX_HF_TOKEN is set, also runs
-    pyannote speaker diarization and prefixes each segment with the speaker
-    label (``[SPEAKER_00] text``). Without diarization, returns plain text.
+def _whisperx_detailed(chunk_path: str | Path) -> TranscriptionDetails:
+    """Shared WhisperX workhorse — ASR + alignment + optional diarization,
+    returning the full rich result. Both ``_transcribe_chunk_whisperx`` (text
+    path) and ``transcribe_audio_detailed`` (timestamp path) route through
+    this so the two stay in lock-step.
     """
     import whisperx  # lazy-load; adds ~5s to cold start
 
@@ -225,8 +241,7 @@ def _transcribe_chunk_whisperx(chunk_path: str | Path) -> str:
     audio_array = whisperx.load_audio(str(chunk_path))
     result = asr_model.transcribe(audio_array, batch_size=8)
 
-    # 2. Align for word-level timestamps (improves downstream use, but we
-    # currently use only speaker labels in the text output).
+    # 2. Align for word-level timestamps.
     lang = result.get("language") or "en"
     align_key = ("align", lang, device)
     align_entry = _WHISPERX_CACHE.get(align_key)
@@ -263,24 +278,48 @@ def _transcribe_chunk_whisperx(chunk_path: str | Path) -> str:
         except Exception as e:
             logger.warning("whisperx diarization failed: %s", e)
 
-    # Assemble output. With diarization, prefix each segment with its speaker.
-    segments = result.get("segments", []) if isinstance(result, dict) else result
-    if WHISPERX_DIARIZATION and segments and any("speaker" in s for s in segments):
-        out_lines = []
+    raw_segments = result.get("segments", []) if isinstance(result, dict) else result
+
+    # Normalize segments into our TranscriptionDetails shape.
+    normalized: List[dict] = []
+    for seg in raw_segments:
+        text_ = (seg.get("text") or "").strip()
+        if not text_:
+            continue
+        normalized.append({
+            "start": float(seg.get("start", 0.0)),
+            "end": float(seg.get("end", 0.0)),
+            "text": text_,
+            "speaker": seg.get("speaker"),
+        })
+
+    # Assemble the plain-text rendering (diarization-prefixed if we have speakers).
+    if WHISPERX_DIARIZATION and normalized and any(s.get("speaker") for s in normalized):
+        out_lines: List[str] = []
         prev = None
-        for seg in segments:
-            spk = seg.get("speaker") or "SPEAKER_??"
-            text = (seg.get("text") or "").strip()
-            if not text:
-                continue
+        for s in normalized:
+            spk = s.get("speaker") or "SPEAKER_??"
             if spk != prev:
-                out_lines.append(f"[{spk}] {text}")
+                out_lines.append(f"[{spk}] {s['text']}")
                 prev = spk
             else:
-                out_lines[-1] += f" {text}"
-        return "\n".join(out_lines)
+                out_lines[-1] += f" {s['text']}"
+        text = "\n".join(out_lines)
+    else:
+        text = " ".join(s["text"] for s in normalized).strip()
 
-    return " ".join((s.get("text") or "").strip() for s in segments).strip()
+    return TranscriptionDetails(text=text, segments=normalized, language=lang)
+
+
+def _transcribe_chunk_whisperx(chunk_path: str | Path) -> str:
+    """Transcribe with faster-whisper + wav2vec2 forced alignment via WhisperX.
+
+    Returns plain text (with [SPEAKER_XX] prefixes when diarization is on).
+    Use ``transcribe_audio_detailed()`` instead when you also want the
+    per-segment start/end timestamps for downstream timestamp-aware features
+    (chapters, quote extraction, jump-to-moment links).
+    """
+    return _whisperx_detailed(chunk_path).text
 
 
 def _transcribe_chunk_whisper_cpp(chunk_path: str | Path) -> str:
@@ -365,6 +404,50 @@ def transcribe_large_file(
                 pass
 
     return " ".join(t for t in transcripts if t)
+
+
+def transcribe_audio_detailed(
+    source: str | Path | bytes,
+    suffix: str = ".mp3",
+) -> TranscriptionDetails:
+    """Rich transcription: returns text + per-segment timestamps + language.
+
+    Only the WhisperX backend populates segments today. All other backends
+    return a ``TranscriptionDetails`` with just ``text`` set and empty
+    ``segments`` — downstream code should check ``details.segments`` and
+    fall back to text-only behavior when empty.
+
+    Skips the chunker/cache wrapping that ``transcribe_audio()`` applies. Meant
+    for short-to-medium audio where whole-file transcription is fine (WhisperX
+    handles long audio internally via its own VAD). For very long files on
+    non-WhisperX backends, call ``transcribe_audio()`` (text-only) instead.
+    """
+    # Resolve source → temp file path.
+    owns_tmp = False
+    if isinstance(source, (str, Path)):
+        audio_path = str(source)
+    else:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(source)
+            audio_path = tmp.name
+            owns_tmp = True
+
+    backend = (TRANSCRIPTION_BACKEND or "openai").lower()
+    try:
+        if backend == "whisperx":
+            return _whisperx_detailed(audio_path)
+        # Non-rich backends: fall through to the text path. No segments.
+        text = transcribe_chunk(audio_path)
+        return TranscriptionDetails(text=text, segments=[], language=None)
+    except Exception as e:
+        logger.warning("transcribe_audio_detailed failed (%s): %s", backend, e)
+        return TranscriptionDetails(text="", segments=[], language=None)
+    finally:
+        if owns_tmp:
+            try:
+                os.remove(audio_path)
+            except OSError:
+                pass
 
 
 def transcribe_audio(

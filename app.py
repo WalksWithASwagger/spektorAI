@@ -53,15 +53,30 @@ def get_custom_prompt(user, prompt_type, users_prompts, default_prompts):
 
 
 def transcribe_audio(audio_file):
-    """Route an uploaded Streamlit file (or path string) through the core
-    transcriber, surfacing errors via st.error."""
+    """Route an uploaded Streamlit file (or path string) through the active
+    Transcriber adapter, surfacing errors via st.error.
+
+    Also fetches the detailed variant (segments + language) and stashes the
+    segments in ``st.session_state.transcription_segments`` so the chapters
+    stage can produce timestamped output when the backend provides segments
+    (currently WhisperX). Silently falls back to segment-less chapters when
+    the backend returns no segments.
+    """
     try:
         if isinstance(audio_file, str):
-            return _adapters.transcriber.transcribe(audio_file)
-        suffix = "." + audio_file.name.rsplit(".", 1)[-1] if "." in audio_file.name else ".mp3"
-        return _adapters.transcriber.transcribe(audio_file.getvalue(), suffix=suffix)
+            source, suffix = audio_file, ".mp3"
+        else:
+            source = audio_file.getvalue()
+            suffix = (
+                "." + audio_file.name.rsplit(".", 1)[-1]
+                if "." in audio_file.name else ".mp3"
+            )
+        details = _adapters.transcriber.transcribe_detailed(source, suffix=suffix)
+        st.session_state.transcription_segments = details.segments or []
+        return details.text
     except Exception as e:
         st.error(f"Transcription error: {e}")
+        st.session_state.transcription_segments = []
         return ""
 
 
@@ -158,8 +173,10 @@ def process_all_content(text, ai_provider, model, knowledge_base=None):
         bar.progress(min(max(frac, 0.0), 1.0))
         status.text(label)
 
+    segments = getattr(st.session_state, "transcription_segments", None) or None
     result = _adapters.processor.run_pipeline(text, ai_provider, model,
-                                              knowledge_base=knowledge_base, progress=cb)
+                                              knowledge_base=knowledge_base,
+                                              segments=segments, progress=cb)
     status.text("Content generation complete!")
     # Stash chapters + cleaned transcript in session_state so
     # create_content_notion_entry can pick them up on Save to Notion.
