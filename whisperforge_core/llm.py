@@ -36,6 +36,8 @@ _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
     # body tells the model what to do with it. No framing phrase added so
     # the model doesn't hallucinate one into the output.
     "transcript_cleanup": lambda ctx: ctx["transcript"],
+    # Chapters stage: same shape as cleanup — raw transcript in, JSON out.
+    "chapters": lambda ctx: ctx["transcript"],
     "wisdom_extraction": lambda ctx: (
         f"Here's the transcription to analyze:\n\n{ctx['transcript']}"
     ),
@@ -57,6 +59,9 @@ _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
 _MAX_TOKENS: Dict[str, int] = {
     # Cleanup can return up to ~the full transcript length; give it room.
     "transcript_cleanup": 4000,
+    # Chapters JSON scales with chapter count but stays modest — 2500 caps
+    # at ~10 chapters with full titles/summaries.
+    "chapters": 2500,
     "wisdom_extraction": 1500,
     "outline_creation": 1500,
     "social_media": 1000,
@@ -350,6 +355,67 @@ def generate_summary(transcript: str) -> str:
         max_tokens=120,
     )
     return (result or {}).get("summary", "").strip() or "Summary of audio content"
+
+
+def generate_chapters(
+    transcript: str,
+    provider: str = "Anthropic",
+    model: str = "claude-haiku-4-5",
+    knowledge_base: Optional[Dict[str, str]] = None,
+) -> list[dict]:
+    """Segment a transcript into topical chapters.
+
+    Returns a list of ``{"title", "summary", "start_quote"}`` dicts — empty on
+    failure or if the model returned unparseable output. Uses the generate()
+    machinery so it benefits from caching + the active provider. The
+    ``start_quote`` field exists so a later timestamp-alignment pass (when
+    WhisperX is the backend) can map chapters to seconds.
+    """
+    raw = generate(
+        "chapters",
+        {"transcript": transcript},
+        provider,
+        model,
+        # Chapters are a structural extraction task — skip the KB so the model
+        # doesn't try to inject style commentary into the titles.
+        knowledge_base=None,
+    )
+    if not raw:
+        return []
+
+    # Defensive JSON parse: strip markdown fences if the model added them,
+    # then look for the outermost {...} block. Anthropic usually returns
+    # clean JSON when told to; OpenAI sometimes wraps it.
+    import json as _json
+    text = raw.strip()
+    if text.startswith("```"):
+        # Drop the first and last fence lines
+        lines = text.splitlines()
+        text = "\n".join(lines[1:-1]) if len(lines) >= 3 else text
+
+    # Find the outermost JSON object
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        logger.warning("generate_chapters: no JSON object found in output")
+        return []
+    try:
+        data = _json.loads(text[start : end + 1])
+    except _json.JSONDecodeError as e:
+        logger.warning("generate_chapters: JSON parse failed: %s", e)
+        return []
+
+    chapters = data.get("chapters", [])
+    # Filter to dicts with required fields; drop malformed entries silently.
+    return [
+        {
+            "title": str(c.get("title", "")).strip(),
+            "summary": str(c.get("summary", "")).strip(),
+            "start_quote": str(c.get("start_quote", "")).strip(),
+        }
+        for c in chapters
+        if isinstance(c, dict) and c.get("title")
+    ]
 
 
 def generate_tags(content: str, max_tags: int = 6) -> list[str]:

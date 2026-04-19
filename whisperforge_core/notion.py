@@ -39,6 +39,9 @@ class ContentBundle:
     tags: List[str] = field(default_factory=list)
     audio_filename: Optional[str] = None
     models_used: List[str] = field(default_factory=list)
+    # Chapters as [{"title", "summary", "start_quote", ["start_seconds"]}]
+    # — start_seconds is populated by alignment (WhisperX backend), else absent.
+    chapters: List[dict] = field(default_factory=list)
 
 
 def _client() -> Client:
@@ -86,6 +89,50 @@ def estimate_tokens(bundle: ContentBundle) -> int:
     return int(total + 1000)
 
 
+def _format_timestamp(seconds: float) -> str:
+    """Render seconds as H:MM:SS (or M:SS when under an hour)."""
+    s = int(seconds)
+    h, rem = divmod(s, 3600)
+    m, sec = divmod(rem, 60)
+    if h:
+        return f"{h}:{m:02d}:{sec:02d}"
+    return f"{m}:{sec:02d}"
+
+
+def _chapters_toggle(chapters: List[dict]) -> dict:
+    """Render chapters as bulleted children inside a 'Chapters' toggle.
+
+    Each chapter line: **[MM:SS]** title — summary (timestamp only when
+    start_seconds is present; falls back to start_quote clue otherwise).
+    """
+    bullets = []
+    for c in chapters:
+        title = str(c.get("title", "")).strip() or "(untitled)"
+        summary = str(c.get("summary", "")).strip()
+        ts = c.get("start_seconds")
+        if isinstance(ts, (int, float)):
+            prefix = f"[{_format_timestamp(ts)}] "
+        else:
+            prefix = ""
+        line = f"{prefix}{title}"
+        if summary:
+            line += f" — {summary}"
+        bullets.append({
+            "type": "bulleted_list_item",
+            "bulleted_list_item": {
+                "rich_text": [{"type": "text", "text": {"content": line}}],
+            },
+        })
+    return {
+        "type": "toggle",
+        "toggle": {
+            "rich_text": [{"type": "text", "text": {"content": "Chapters"}}],
+            "color": "gray_background",
+            "children": bullets,
+        },
+    }
+
+
 def build_blocks(bundle: ContentBundle) -> List[dict]:
     """Build the ordered block list for a Notion page from a ContentBundle."""
     blocks: List[dict] = []
@@ -102,6 +149,10 @@ def build_blocks(bundle: ContentBundle) -> List[dict]:
             }
         )
         blocks.append({"type": "divider", "divider": {}})
+
+    # Chapters go near the top — they're the navigation aid. Skip when empty.
+    if bundle.chapters:
+        blocks.append(_chapters_toggle(bundle.chapters))
 
     if bundle.transcript:
         blocks.append(_toggle_section("Transcription", "default", bundle.transcript))

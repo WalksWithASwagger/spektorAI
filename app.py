@@ -102,6 +102,7 @@ def create_content_notion_entry(title, transcript, wisdom=None, outline=None,
         tags=tags,
         audio_filename=audio_filename,
         models_used=models_used,
+        chapters=getattr(st.session_state, "chapters", []) or [],
     )
     try:
         url = _adapters.storage.save(bundle)
@@ -160,6 +161,11 @@ def process_all_content(text, ai_provider, model, knowledge_base=None):
     result = _adapters.processor.run_pipeline(text, ai_provider, model,
                                               knowledge_base=knowledge_base, progress=cb)
     status.text("Content generation complete!")
+    # Stash chapters + cleaned transcript in session_state so
+    # create_content_notion_entry can pick them up on Save to Notion.
+    st.session_state.chapters = result.chapters or []
+    if result.cleaned_transcript:
+        st.session_state.cleaned_transcript = result.cleaned_transcript
     return {
         "wisdom": result.wisdom,
         "outline": result.outline,

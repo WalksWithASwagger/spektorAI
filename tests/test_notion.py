@@ -103,6 +103,68 @@ class TestContentBundleBlocks:
             assert len(p["paragraph"]["rich_text"][0]["text"]["content"]) <= 1900
 
 
+class TestChaptersBlock:
+    """The Chapters toggle appears near the top (above Transcription) and
+    renders each chapter as a bulleted list item with optional [MM:SS] prefix."""
+
+    def test_no_chapters_no_block(self):
+        bundle = notion.ContentBundle(title="t", transcript="body")
+        blocks = notion.build_blocks(bundle)
+        assert not any(
+            b["type"] == "toggle"
+            and b["toggle"]["rich_text"][0]["text"]["content"] == "Chapters"
+            for b in blocks
+        )
+
+    def test_chapters_render_as_bulleted_children(self):
+        bundle = notion.ContentBundle(
+            title="t",
+            chapters=[
+                {"title": "Opening", "summary": "Intro remarks.", "start_quote": "Welcome..."},
+                {"title": "Main Point", "summary": "The core argument.", "start_quote": "So..."},
+            ],
+        )
+        blocks = notion.build_blocks(bundle)
+        chapters = [b for b in blocks if b["type"] == "toggle"
+                    and b["toggle"]["rich_text"][0]["text"]["content"] == "Chapters"]
+        assert len(chapters) == 1
+        bullets = chapters[0]["toggle"]["children"]
+        assert len(bullets) == 2
+        assert all(b["type"] == "bulleted_list_item" for b in bullets)
+        first = bullets[0]["bulleted_list_item"]["rich_text"][0]["text"]["content"]
+        assert "Opening" in first and "Intro remarks" in first
+
+    def test_timestamped_chapters_get_mmss_prefix(self):
+        bundle = notion.ContentBundle(
+            title="t",
+            chapters=[
+                {"title": "Start", "summary": "", "start_seconds": 0},
+                {"title": "Middle", "summary": "", "start_seconds": 185},  # 3:05
+                {"title": "End", "summary": "", "start_seconds": 3725},     # 1:02:05
+            ],
+        )
+        blocks = notion.build_blocks(bundle)
+        bullets = next(b for b in blocks if b["type"] == "toggle"
+                       and b["toggle"]["rich_text"][0]["text"]["content"] == "Chapters")["toggle"]["children"]
+        texts = [b["bulleted_list_item"]["rich_text"][0]["text"]["content"] for b in bullets]
+        assert "[0:00]" in texts[0]
+        assert "[3:05]" in texts[1]
+        assert "[1:02:05]" in texts[2]
+
+    def test_chapters_appear_above_transcription(self):
+        bundle = notion.ContentBundle(
+            title="t",
+            transcript="body",
+            chapters=[{"title": "Opening", "summary": "x", "start_quote": "y"}],
+        )
+        blocks = notion.build_blocks(bundle)
+        labels = [
+            b["toggle"]["rich_text"][0]["text"]["content"]
+            for b in blocks if b["type"] == "toggle"
+        ]
+        assert labels.index("Chapters") < labels.index("Transcription")
+
+
 class TestEstimateTokens:
     def test_empty_bundle_has_overhead(self):
         tokens = notion.estimate_tokens(notion.ContentBundle(title=""))

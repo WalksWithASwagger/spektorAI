@@ -94,6 +94,23 @@ DEFAULT_PROMPTS = {
         "- Do NOT reformat into paragraphs or add headers\n"
         "- Return only the cleaned transcript, no preamble or commentary."
     ),
+    "chapters": (
+        "Segment this transcript into topical chapters that follow the "
+        "natural narrative arc.\n\n"
+        "For each chapter produce three fields:\n"
+        '- "title": a 3-6 word headline\n'
+        '- "summary": one sentence describing what the chapter covers\n'
+        '- "start_quote": the first 8-12 words of that chapter, verbatim '
+        'from the transcript (used to align chapters to timestamps later)\n\n'
+        "Guidelines:\n"
+        "- Short transcripts (under ~3 minutes of speech): 1-2 chapters is fine.\n"
+        "- Medium transcripts (3-15 minutes): 3-5 chapters.\n"
+        "- Long transcripts (15+ minutes): 5-10 chapters. Respect topic shifts.\n"
+        "- Do NOT fabricate chapters that aren't in the source.\n\n"
+        'Return ONLY a JSON object of the form: {"chapters": [{"title":"...", '
+        '"summary":"...", "start_quote":"..."}]} with no preamble, no '
+        "markdown fences, no commentary."
+    ),
     "wisdom_extraction": (
         "Extract key insights, lessons, and wisdom from the transcript. "
         "Focus on actionable takeaways and profound realizations."

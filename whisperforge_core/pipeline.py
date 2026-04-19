@@ -27,6 +27,13 @@ class PipelineResult:
     # so callers can still see what the transcriber actually heard.
     raw_transcript: Optional[str] = None
     cleaned_transcript: Optional[str] = None
+    # Topical segmentation with {title, summary, start_quote} per chapter.
+    # Empty when chapters=False or the model couldn't produce valid JSON.
+    chapters: list = None  # type: ignore[assignment]
+
+    def __post_init__(self):
+        if self.chapters is None:
+            self.chapters = []
 
 
 _STAGES = [
@@ -46,14 +53,18 @@ def run(
     knowledge_base: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCallback] = None,
     cleanup: bool = True,
+    chapters: bool = True,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
     When ``cleanup`` is True (default), a stage-0 pass strips filler words,
     false starts, and ASR typos from the transcript before downstream stages
-    see it. Disabled for raw/unaltered runs or when the transcript is already
-    clean (e.g. pasted text). The cleaned text is used for all subsequent
-    stages; the original is preserved on ``PipelineResult.raw_transcript``.
+    see it. The cleaned text is used for all subsequent stages; the original
+    is preserved on ``PipelineResult.raw_transcript``.
+
+    When ``chapters`` is True (default), a short post-cleanup pass segments
+    the transcript into {title, summary, start_quote} chapters. Useful for
+    long-form content where readers want to skim; cheap (single Haiku call).
 
     ``prompts`` is an optional {content_type: template} override dict (typically
     the user's custom prompts loaded via whisperforge_core.prompts). Missing
@@ -86,8 +97,16 @@ def run(
             result.cleaned_transcript = cleaned
         _report(0.05, "Cleaning transcript...")
 
+    # Stage 0.5: chapters — structural segmentation. Runs before the voice
+    # stages because later stages might re-phrase things in ways that drift
+    # from the transcript's literal topic boundaries.
+    if chapters:
+        _report(0.05, "Chaptering...")
+        result.chapters = llm.generate_chapters(transcript, provider, model)
+        _report(0.1, "Chaptering...")
+
     # Stage 1: wisdom (needs transcript)
-    _report(0.05, _STAGES[0][1])
+    _report(0.1, _STAGES[0][1])
     result.wisdom = llm.generate(
         "wisdom_extraction",
         {"transcript": transcript},
