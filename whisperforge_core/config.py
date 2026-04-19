@@ -45,7 +45,12 @@ PROMPTS_DIR = PROJECT_ROOT / "prompts"
 CACHE_DIR = Path(os.getenv("WHISPERFORGE_CACHE_DIR", PROJECT_ROOT / ".cache"))
 
 # --- Whisper + provider catalog -------------------------------------------
-WHISPER_MODEL = "whisper-1"
+# OpenAI's cloud transcription model. Options in 2026:
+#   - "gpt-4o-mini-transcribe" (default, fast, cheap, matches whisper-1 on
+#     short clips in practice)
+#   - "gpt-4o-transcribe" (larger, theoretically lower WER, more expensive)
+#   - "whisper-1" (legacy; kept as an override for users pinned to it)
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "gpt-4o-mini-transcribe")
 DEFAULT_CHUNK_TARGET_MB = 25
 
 LLM_MODELS = {

@@ -272,83 +272,108 @@ def apply_prompt(
         return None
 
 
-def generate_title(transcript: str) -> str:
-    """Produce a 5-7 word descriptive title via gpt-3.5-turbo."""
+# --- Structured helpers (title / summary / tags) ---------------------------
+# All three use OpenAI's JSON-schema-enforced "Structured Outputs" so we never
+# have to regex-parse prose. The schema is the contract. gpt-4o-mini is the
+# cheap tier for this kind of bounded extraction work.
+
+_STRUCTURED_MODEL = "gpt-4o-mini"
+
+
+def _structured_call(schema_name: str, schema: dict, system: str, user: str, max_tokens: int = 200) -> Optional[dict]:
+    """Call OpenAI with a strict JSON schema; return the parsed dict or None."""
+    import json as _json
     try:
         response = _openai().chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=_STRUCTURED_MODEL,
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant that creates concise, descriptive titles.",
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        "Create a clear, descriptive title (5-7 words) that captures "
-                        f"the main topic of this transcript:\nTranscript: {transcript[:1000]}...\n\n"
-                        "Return only the title, no quotes or additional text."
-                    ),
-                },
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
             ],
-            max_tokens=50,
+            max_tokens=max_tokens,
             temperature=0.3,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": schema,
+                },
+            },
         )
-        return (response.choices[0].message.content or "").strip() or "Audio Transcription"
+        raw = response.choices[0].message.content or "{}"
+        return _json.loads(raw)
     except Exception as e:
-        logger.warning("generate_title failed: %s", e)
-        return "Audio Transcription"
+        logger.warning("structured call %s failed: %s", schema_name, e)
+        return None
+
+
+def generate_title(transcript: str) -> str:
+    """Produce a 5-7 word descriptive title. Schema-enforced JSON output."""
+    result = _structured_call(
+        schema_name="title",
+        schema={
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "A clear, descriptive 5-7 word title capturing the main topic.",
+                }
+            },
+            "required": ["title"],
+            "additionalProperties": False,
+        },
+        system="You create concise, descriptive titles that capture the essence of content.",
+        user=f"Generate a 5-7 word title for this transcript:\n\n{transcript[:2000]}",
+        max_tokens=60,
+    )
+    return (result or {}).get("title", "").strip() or "Audio Transcription"
 
 
 def generate_summary(transcript: str) -> str:
-    """One-sentence summary via gpt-3.5-turbo."""
-    try:
-        response = _openai().chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant that creates concise, insightful summaries.",
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        "Create a single, insightful sentence that summarizes the key "
-                        f"message or main insight from this transcript:\n"
-                        f"Transcript: {transcript[:1000]}...\n\n"
-                        "Return only the summary sentence, no additional text."
-                    ),
-                },
-            ],
-            max_tokens=100,
-            temperature=0.3,
-        )
-        return (response.choices[0].message.content or "").strip() or "Summary of audio content"
-    except Exception as e:
-        logger.warning("generate_summary failed: %s", e)
-        return "Summary of audio content"
+    """Single-sentence summary. Schema-enforced JSON output."""
+    result = _structured_call(
+        schema_name="summary",
+        schema={
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string",
+                    "description": "A single insightful sentence summarizing the key message.",
+                }
+            },
+            "required": ["summary"],
+            "additionalProperties": False,
+        },
+        system="You distill content into one sharp, insightful sentence.",
+        user=f"Summarize this transcript in one sentence:\n\n{transcript[:2000]}",
+        max_tokens=120,
+    )
+    return (result or {}).get("summary", "").strip() or "Summary of audio content"
 
 
 def generate_tags(content: str, max_tags: int = 6) -> list[str]:
-    """Return up to ``max_tags`` short content tags."""
-    try:
-        response = _openai().chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        f"Generate up to {max_tags} short (1-2 word) content tags, "
-                        "comma-separated, no hashes, no quotes."
-                    ),
-                },
-                {"role": "user", "content": content[:2000]},
-            ],
-            max_tokens=100,
-            temperature=0.3,
-        )
-        raw = response.choices[0].message.content or ""
-        return [t.strip(" #") for t in raw.split(",") if t.strip()][:max_tags]
-    except Exception as e:
-        logger.warning("generate_tags failed: %s", e)
-        return []
+    """Up to ``max_tags`` short content tags. Schema-enforced JSON array."""
+    result = _structured_call(
+        schema_name="content_tags",
+        schema={
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": f"Up to {max_tags} short (1-2 word) tags, lowercase, no hashes.",
+                    "minItems": 1,
+                    "maxItems": max_tags,
+                }
+            },
+            "required": ["tags"],
+            "additionalProperties": False,
+        },
+        system=f"You generate up to {max_tags} short (1-2 word) content tags. Lowercase. No hashes. No duplicates.",
+        user=content[:2000],
+        max_tokens=120,
+    )
+    tags = (result or {}).get("tags", [])
+    # Defensive: ensure strings + strip any stray hashes/whitespace.
+    return [str(t).strip(" #").lower() for t in tags if t][:max_tags]
