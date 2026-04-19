@@ -49,6 +49,8 @@ class Processor(Protocol):
         knowledge_base: Optional[Dict[str, str]] = None,
         progress: Optional[Callable] = None,
         segments: Optional[list] = None,
+        agentic: bool = False,
+        fact_check: bool = False,
     ) -> pipeline_mod.PipelineResult: ...
 
 
@@ -74,11 +76,12 @@ class LocalProcessor:
                                 prompt=prompt, knowledge_base=knowledge_base)
 
     def run_pipeline(self, transcript, provider, model, prompts=None,
-                     knowledge_base=None, progress=None, segments=None):
+                     knowledge_base=None, progress=None, segments=None,
+                     agentic=False, fact_check=False):
         return pipeline_mod.run(
             transcript, provider, model, prompts=prompts,
             knowledge_base=knowledge_base, progress=progress,
-            segments=segments,
+            segments=segments, agentic=agentic, fact_check=fact_check,
         )
 
 

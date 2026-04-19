@@ -42,6 +42,15 @@ class ContentBundle:
     # Chapters as [{"title", "summary", "start_quote", ["start_seconds"]}]
     # — start_seconds is populated by alignment (WhisperX backend), else absent.
     chapters: List[dict] = field(default_factory=list)
+    # Agentic drafting intermediates. Shown as collapsed toggles when present
+    # so the final article stays front-and-center but the editorial trail is
+    # auditable after the fact.
+    article_critique: Optional[str] = None
+    # [{"claim": str, "issue": str}] when fact-check ran; empty list means
+    # ran-and-clean. We distinguish "ran but no flags" from "didn't run" via
+    # ``fact_check_ran``.
+    fact_check_flags: List[dict] = field(default_factory=list)
+    fact_check_ran: bool = False
 
 
 def _client() -> Client:
@@ -166,6 +175,27 @@ def build_blocks(bundle: ContentBundle) -> List[dict]:
         blocks.append(_toggle_section("Outline", "blue_background", bundle.outline))
     if bundle.article:
         blocks.append(_toggle_section("Draft Post", "purple_background", bundle.article))
+
+    # Editorial trail — only show when agentic drafting actually ran.
+    if bundle.article_critique:
+        blocks.append(
+            _toggle_section("Revision Notes", "yellow_background", bundle.article_critique)
+        )
+
+    if bundle.fact_check_ran:
+        if bundle.fact_check_flags:
+            body = "\n\n".join(
+                f"⚠️ **Claim:** {f.get('claim', '')}\n**Issue:** {f.get('issue', '')}"
+                for f in bundle.fact_check_flags
+            )
+            blocks.append(_toggle_section("Fact Check", "red_background", body))
+        else:
+            blocks.append(
+                _toggle_section(
+                    "Fact Check", "green_background",
+                    "✅ No claims flagged — article grounded in source.",
+                )
+            )
 
     if bundle.audio_filename:
         blocks.append(

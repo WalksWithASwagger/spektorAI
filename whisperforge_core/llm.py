@@ -57,6 +57,27 @@ _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
         f"TRANSCRIPT EXCERPT:\n{ctx['transcript'][:1000]}...\n\n"
         f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
     ),
+    # Critique receives the draft + full source context.
+    "article_critique": lambda ctx: (
+        f"DRAFT ARTICLE:\n{ctx['article']}\n\n"
+        f"---\nSOURCE MATERIAL\n---\n"
+        f"TRANSCRIPT:\n{ctx['transcript']}\n\n"
+        f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
+    ),
+    # Revise receives draft + critique + source so it can ground changes.
+    "article_revise": lambda ctx: (
+        f"DRAFT ARTICLE:\n{ctx['article']}\n\n"
+        f"---\nCRITIQUE\n---\n{ctx['critique']}\n\n"
+        f"---\nSOURCE MATERIAL\n---\n"
+        f"TRANSCRIPT:\n{ctx['transcript']}\n\n"
+        f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
+    ),
+    # Fact-check reads the article + full transcript (no summaries — need
+    # direct quote-level grounding).
+    "article_fact_check": lambda ctx: (
+        f"ARTICLE:\n{ctx['article']}\n\n"
+        f"---\nSOURCE TRANSCRIPT\n---\n{ctx['transcript']}"
+    ),
 }
 
 _MAX_TOKENS: Dict[str, int] = {
@@ -71,6 +92,12 @@ _MAX_TOKENS: Dict[str, int] = {
     "social_media": 1000,
     "image_prompts": 1000,
     "article_writing": 2500,
+    # Critique is a bulleted list; rarely needs more than 1500 tokens.
+    "article_critique": 1500,
+    # Revise returns a full article, same size budget as the initial draft.
+    "article_revise": 2500,
+    # Fact-check returns a JSON list of flags; small.
+    "article_fact_check": 1500,
 }
 
 

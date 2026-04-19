@@ -70,17 +70,20 @@ class HttpProcessor:
 
     def run_pipeline(self, transcript, provider, model, prompts=None,
                      knowledge_base=None, progress: Optional[Callable] = None,
-                     segments: Optional[list] = None):
+                     segments: Optional[list] = None,
+                     agentic: bool = False, fact_check: bool = False):
         payload = {
             "transcript": transcript,
             "provider": provider,
             "model": model,
             "prompts": prompts,
             "knowledge_base": knowledge_base,
-            # Segments aren't currently read by the processing service,
-            # but sending them keeps the HTTP contract forward-compatible
-            # for when the service learns timestamp-aware chapters.
+            # Segments, agentic, and fact_check aren't read by the processing
+            # service yet; sending them keeps the HTTP contract forward-
+            # compatible so the service can adopt these without a client bump.
             "segments": segments,
+            "agentic": agentic,
+            "fact_check": fact_check,
         }
         r = requests.post(
             f"{PROCESSING_URL}/pipeline",

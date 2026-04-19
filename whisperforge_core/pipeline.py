@@ -30,10 +30,18 @@ class PipelineResult:
     # Topical segmentation with {title, summary, start_quote} per chapter.
     # Empty when chapters=False or the model couldn't produce valid JSON.
     chapters: list = None  # type: ignore[assignment]
+    # Agentic drafting intermediates — populated when agentic=True.
+    article_draft: Optional[str] = None        # pre-critique version
+    article_critique: Optional[str] = None     # the critique bullets
+    # Fact-check flags — populated when fact_check=True. Shape:
+    # [{"claim": str, "issue": str}]. Empty list means clean.
+    fact_check_flags: list = None  # type: ignore[assignment]
 
     def __post_init__(self):
         if self.chapters is None:
             self.chapters = []
+        if self.fact_check_flags is None:
+            self.fact_check_flags = []
 
 
 _STAGES = [
@@ -55,6 +63,8 @@ def run(
     cleanup: bool = True,
     chapters: bool = True,
     segments: Optional[list] = None,
+    agentic: bool = False,
+    fact_check: bool = False,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -158,9 +168,9 @@ def run(
     )
     _report(0.8, _STAGES[3][1])
 
-    # Stage 5: article
+    # Stage 5: article draft (always runs — first pass of the agentic flow)
     _report(0.8, _STAGES[4][1])
-    result.article = llm.generate(
+    draft = llm.generate(
         "article_writing",
         {
             "transcript": transcript,
@@ -172,6 +182,90 @@ def run(
         prompt=prompts.get("article_writing"),
         knowledge_base=knowledge_base,
     )
+    result.article = draft
+    result.article_draft = draft
+
+    # Stage 6-7: agentic critique + revise. Opt-in via agentic=True.
+    # Gets cheap ($~0.005 on Haiku 4.5 + prompt caching) but markedly
+    # improves long-form quality — the critique pass catches voice drift
+    # and filler that single-shot drafting misses.
+    if agentic and draft:
+        _report(0.85, "Critiquing draft...")
+        critique = llm.generate(
+            "article_critique",
+            {
+                "article": draft,
+                "transcript": transcript,
+                "wisdom": result.wisdom or "",
+                "outline": result.outline or "",
+            },
+            provider,
+            model,
+            prompt=prompts.get("article_critique"),
+            knowledge_base=knowledge_base,
+        )
+        result.article_critique = critique
+        _report(0.9, "Revising...")
+        if critique:
+            revised = llm.generate(
+                "article_revise",
+                {
+                    "article": draft,
+                    "critique": critique,
+                    "transcript": transcript,
+                    "wisdom": result.wisdom or "",
+                    "outline": result.outline or "",
+                },
+                provider,
+                model,
+                prompt=prompts.get("article_revise"),
+                knowledge_base=knowledge_base,
+            )
+            if revised:
+                result.article = revised
+
+    # Stage 8: optional fact-check pass. Runs against whichever article is
+    # current (revised if agentic ran, draft otherwise). Output is
+    # structured JSON so the UI can render a clear flag list.
+    if fact_check and result.article:
+        _report(0.95, "Fact-checking...")
+        raw = llm.generate(
+            "article_fact_check",
+            {"article": result.article, "transcript": transcript},
+            provider,
+            model,
+            prompt=prompts.get("article_fact_check"),
+            knowledge_base=None,  # fact-check is grounded, not stylistic
+        )
+        result.fact_check_flags = _parse_fact_check(raw)
+
     _report(1.0, "Done")
 
     return result
+
+
+def _parse_fact_check(raw: Optional[str]) -> list:
+    """Defensive JSON parse of the fact-check output. Returns the ``flags``
+    list or ``[]`` on any failure — we don't want a bad critique call to
+    sink the whole pipeline result."""
+    if not raw:
+        return []
+    import json as _json
+    text = raw.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        text = "\n".join(lines[1:-1]) if len(lines) >= 3 else text
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return []
+    try:
+        data = _json.loads(text[start : end + 1])
+    except _json.JSONDecodeError:
+        return []
+    flags = data.get("flags", [])
+    return [
+        {"claim": str(f.get("claim", "")).strip(), "issue": str(f.get("issue", "")).strip()}
+        for f in flags
+        if isinstance(f, dict) and f.get("claim")
+    ]

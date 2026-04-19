@@ -118,6 +118,9 @@ def create_content_notion_entry(title, transcript, wisdom=None, outline=None,
         audio_filename=audio_filename,
         models_used=models_used,
         chapters=getattr(st.session_state, "chapters", []) or [],
+        article_critique=getattr(st.session_state, "article_critique", None),
+        fact_check_flags=getattr(st.session_state, "fact_check_flags", []) or [],
+        fact_check_ran=bool(getattr(st.session_state, "fact_check_ran", False)),
     )
     try:
         url = _adapters.storage.save(bundle)
@@ -174,12 +177,20 @@ def process_all_content(text, ai_provider, model, knowledge_base=None):
         status.text(label)
 
     segments = getattr(st.session_state, "transcription_segments", None) or None
-    result = _adapters.processor.run_pipeline(text, ai_provider, model,
-                                              knowledge_base=knowledge_base,
-                                              segments=segments, progress=cb)
+    agentic = bool(getattr(st.session_state, "agentic_drafting", False))
+    fact_check = bool(getattr(st.session_state, "fact_check_enabled", False))
+    result = _adapters.processor.run_pipeline(
+        text, ai_provider, model,
+        knowledge_base=knowledge_base,
+        segments=segments, progress=cb,
+        agentic=agentic, fact_check=fact_check,
+    )
     status.text("Content generation complete!")
-    # Stash chapters + cleaned transcript in session_state so
+    # Stash editorial intermediates + cleaned transcript so
     # create_content_notion_entry can pick them up on Save to Notion.
+    st.session_state.article_critique = result.article_critique
+    st.session_state.fact_check_flags = result.fact_check_flags or []
+    st.session_state.fact_check_ran = bool(fact_check)
     st.session_state.chapters = result.chapters or []
     if result.cleaned_transcript:
         st.session_state.cleaned_transcript = result.cleaned_transcript
@@ -301,7 +312,25 @@ def main():
             key="ai_model_select"
         )
         st.session_state.ai_model = selected_model
-        
+
+        # Pipeline-quality toggles. Both default off — agentic drafting
+        # roughly doubles the cost/time of the article stage (one extra
+        # critique call + one extra revise call) but produces publishable
+        # output where single-shot drafting produces OK output.
+        st.session_state.agentic_drafting = st.checkbox(
+            "Agentic drafting (draft → critique → revise)",
+            value=st.session_state.get("agentic_drafting", False),
+            help="Three-pass article generation. ~2x cost/time for a big "
+                 "quality jump on long-form.",
+        )
+        st.session_state.fact_check_enabled = st.checkbox(
+            "Fact-check article against transcript",
+            value=st.session_state.get("fact_check_enabled", False),
+            help="Flags claims in the article that aren't grounded in the "
+                 "source transcript. Adds one extra call; output lands in a "
+                 "'Fact Check' toggle in Notion.",
+        )
+
         # Move system status to sidebar and clean up UI
         st.markdown('<div class="section-header">System Status</div>', unsafe_allow_html=True)
         st.markdown("""

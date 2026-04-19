@@ -159,6 +159,41 @@ class TestContextBuilders:
         )
         assert mock_openai.chat.completions.create.call_args.kwargs["max_tokens"] == 4000
 
+    def test_article_critique_context_includes_draft_and_source(self, mock_openai):
+        llm.generate(
+            "article_critique",
+            {"article": "THE DRAFT", "transcript": "THE TRANSCRIPT",
+             "wisdom": "THE WISDOM", "outline": "THE OUTLINE"},
+            "OpenAI", "gpt-4o-mini",
+        )
+        user = mock_openai.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        # Critique needs ALL of draft + source to give grounded feedback
+        assert "THE DRAFT" in user
+        assert "THE TRANSCRIPT" in user
+        assert "THE WISDOM" in user
+        assert "THE OUTLINE" in user
+
+    def test_article_revise_context_includes_critique(self, mock_openai):
+        llm.generate(
+            "article_revise",
+            {"article": "DRAFT", "critique": "THE CRITIQUE",
+             "transcript": "T", "wisdom": "W", "outline": "O"},
+            "OpenAI", "gpt-4o-mini",
+        )
+        user = mock_openai.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "THE CRITIQUE" in user
+        assert "DRAFT" in user
+
+    def test_article_fact_check_context_is_article_plus_transcript_only(self, mock_openai):
+        llm.generate(
+            "article_fact_check",
+            {"article": "THE ARTICLE", "transcript": "THE TRANSCRIPT"},
+            "OpenAI", "gpt-4o-mini",
+        )
+        user = mock_openai.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "THE ARTICLE" in user
+        assert "THE TRANSCRIPT" in user
+
 
 class TestAnthropicPromptCaching:
     """The Anthropic branch splits KB + per-stage prompt into separate system

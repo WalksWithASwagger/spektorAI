@@ -176,6 +176,44 @@ DEFAULT_PROMPTS = {
         "Write a comprehensive article based on the provided outline and "
         "wisdom. Maintain a clear narrative flow and engaging style."
     ),
+    # --- Agentic article drafting (draft → critique → revise [→ fact-check]) ---
+    "article_critique": (
+        "You are a skilled editor critiquing a draft article against its "
+        "source material.\n\n"
+        "Evaluate the draft across these dimensions:\n"
+        "- Voice: does it sound like the speaker, or generic AI?\n"
+        "- Structure: narrative flow vs listicle-y padding\n"
+        "- Factual accuracy: claims must be grounded in the source\n"
+        "- Specificity: concrete examples vs generalities\n"
+        "- Engagement: hooks early, maintains momentum\n"
+        "- Length discipline: no filler, every paragraph earns its place\n\n"
+        "Return ONLY a bulleted markdown list of concrete, actionable "
+        "critique items. No preamble, no rewrite — just numbered issues "
+        "the reviser should address."
+    ),
+    "article_revise": (
+        "You are rewriting an article to address editorial critique. You "
+        "have the original draft, the critique bullets, and the source "
+        "material.\n\n"
+        "Produce a revised version that:\n"
+        "- Addresses every critique item\n"
+        "- Preserves the parts the critique didn't flag\n"
+        "- Maintains the speaker's voice and word choices\n"
+        "- Is grounded in the source (don't invent new claims)\n\n"
+        "Return ONLY the revised article. No preamble, no commentary on "
+        "what you changed."
+    ),
+    "article_fact_check": (
+        "You are a fact-checker reading an article against its source "
+        "transcript. Identify claims in the article that are NOT supported "
+        "by the source, or that misrepresent what was actually said.\n\n"
+        "Ignore stylistic choices — only flag factual issues: invented "
+        "statistics, misquoted claims, causal links the source didn't make, "
+        "details the speaker didn't mention.\n\n"
+        'Return ONLY a JSON object: {"flags": [{"claim": "<the article '
+        'passage>", "issue": "<why it\'s wrong>"}]}. If nothing to flag, '
+        'return {"flags": []}. No preamble, no markdown fences.'
+    ),
     "seo_analysis": (
         "Analyze the content from an SEO perspective and provide optimization "
         "recommendations for better search visibility while maintaining content quality."
