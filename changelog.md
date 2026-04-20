@@ -5,6 +5,20 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-19
+
+### Added
+- **RAG on knowledge base** — new `whisperforge_core/rag/` package. When a user's KB grows past 25 chunks (or `WF_RAG=1` / KB mode = "Always" in the UI), the pipeline switches from dumping the whole KB on every call to per-stage top-K retrieval with an always-included voice anchor.
+  - `chunker.py` — heading-aware split (top-3 markdown levels) with sliding-window fallback for oversized sections and .txt docs.
+  - `embedder.py` — lazy `sentence-transformers/all-MiniLM-L6-v2` (cached, MPS-accelerated on Apple Silicon). Override via `WF_EMBED_MODEL`.
+  - `store.py` — numpy cosine + on-disk persistence at `.cache/rag/<user>/<embed_hash>/` with mtime-based invalidation.
+  - `retriever.py` — stage-specific query augmentation map, voice-anchor heuristic (filename match on voice/style/tone/writing/persona), block rendering.
+- **KB mode** segmented control in ⚙ Generation Settings: Auto / Always / Never.
+- Live verified: wisdom stage dropped from ~6000 → ~2300 input tokens (62%) with RAG engaged on KK's KB. Auto mode keeps small KBs on the legacy "dump + cache" path since prompt caching already wins there.
+
+### Dependencies
+- `sentence-transformers>=2.7,<6` — pinned below v6 because v6 adds a hard torchcodec dep that breaks on macOS without exact FFmpeg libavutil versions.
+
 ## [0.7.0] - 2026-04-19
 
 ### Added
