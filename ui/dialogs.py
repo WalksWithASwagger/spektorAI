@@ -94,6 +94,38 @@ def generation_settings() -> None:
     s.rag_mode = s.rag_mode.lower()
 
     st.divider()
+    st.markdown("**A/B provider compare** (optional)")
+    st.caption(
+        "When enabled, the article stage runs once more with an alternate "
+        "model after the main run. Both articles land in the Output. "
+        "Useful for deciding whether to promote a Haiku draft to Sonnet."
+    )
+    from whisperforge_core.config import LLM_MODELS
+    _compare_options: list[str] = ["(off)"]
+    for prov, mods in LLM_MODELS.items():
+        for mid in mods.values():
+            _compare_options.append(f"{prov}::{mid}")
+    # Current setting → display label
+    current_compare = "(off)"
+    if s.compare_provider and s.compare_model:
+        current_compare = f"{s.compare_provider}::{s.compare_model}"
+    if current_compare not in _compare_options:
+        current_compare = "(off)"
+    chosen = st.selectbox(
+        "Comparison model", _compare_options,
+        index=_compare_options.index(current_compare),
+        key="gs_compare",
+        format_func=lambda v: v if v == "(off)" else v.replace("::", " · "),
+    )
+    if chosen == "(off)":
+        s.compare_provider = None
+        s.compare_model = None
+    else:
+        p, m = chosen.split("::", 1)
+        s.compare_provider = p
+        s.compare_model = m
+
+    st.divider()
     st.markdown("**Image generation** (Nano Banana / Gemini)")
     s.images_enabled = st.checkbox(
         "Generate images from image_prompts",

@@ -56,6 +56,11 @@ _SETTINGS_DEFAULTS: Dict[str, Any] = {
     # Also write a markdown export to .cache/exports/ whenever we save
     # to Notion. Useful for keeping a local / Obsidian-vault copy.
     "auto_export_markdown": False,
+    # A/B provider compare — when both are set, the article stage runs a
+    # second time with this alternate provider/model and renders a
+    # side-by-side card in the Output.
+    "compare_provider": None,
+    "compare_model": None,
     # Dialog open-state — streamlit modals can't auto-open but we track this
     # for our own animations/toasts.
     "_dialog_open": None,
@@ -81,6 +86,9 @@ _PER_RUN_DEFAULTS: Dict[str, Any] = {
     "fact_check_flags": [],
     "fact_check_ran": False,
     "generated_images": [],
+    # A/B result + label, set by pipeline.run when compare_provider/model are on
+    "article_compare": None,
+    "compare_label": None,
     # Progress state (drives sac.steps + st.status)
     "pipeline_stage_idx": 0,                     # 0..7 where 7 = done
     "pipeline_stage_label": "",

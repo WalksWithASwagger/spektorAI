@@ -39,6 +39,11 @@ class PipelineResult:
     # Generated images (populated when generate_images=True). Shape:
     # [{"path": str, "prompt": str, "succeeded": bool, "error": Optional[str]}]
     generated_images: list = None  # type: ignore[assignment]
+    # Alternate-provider comparison article (populated when
+    # compare_provider + compare_model are set). Rendered as a second
+    # card in the Output so you can A/B voices without a fresh run.
+    article_compare: Optional[str] = None
+    compare_label: Optional[str] = None   # e.g. "OpenAI gpt-4o"
 
     def __post_init__(self):
         if self.chapters is None:
@@ -78,6 +83,8 @@ def run(
     article_length_words: int = 1500,
     user: Optional[str] = None,
     rag_mode: str = "auto",
+    compare_provider: Optional[str] = None,
+    compare_model: Optional[str] = None,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -260,6 +267,35 @@ def run(
             )
             if revised:
                 result.article = revised
+
+    # Stage 7.25: optional A/B comparison — run article_writing once more
+    # with an alternate provider/model on the same context. Useful for
+    # deciding whether to promote a draft (Haiku → Sonnet, say) without
+    # a full fresh pipeline run.
+    if compare_provider and compare_model and result.article:
+        _report(0.93, "Generating comparison article...")
+        try:
+            compare = llm.generate(
+                "article_writing",
+                {
+                    "transcript": transcript,
+                    "wisdom": result.wisdom or "",
+                    "outline": result.outline or "",
+                    "_user_prefix": article_user_prefix,
+                },
+                compare_provider,
+                compare_model,
+                prompt=prompts.get("article_writing"),
+                knowledge_base=knowledge_base,
+                max_tokens=article_max_tokens,
+                user=user,
+                rag_mode=rag_mode,
+            )
+            if compare:
+                result.article_compare = compare
+                result.compare_label = f"{compare_provider} {compare_model}"
+        except Exception as e:
+            logger.warning("comparison article failed: %s", e)
 
     # Stage 7.5: optional image generation. Parses the image_prompts output
     # into distinct prompts and generates one PNG per prompt via nano-banana.

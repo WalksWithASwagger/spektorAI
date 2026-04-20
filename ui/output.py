@@ -35,24 +35,45 @@ def render() -> None:
 
     # Collapsed section tabs keep the page short. Order matches the
     # Notion page layout so screenshots line up.
-    tabs = st.tabs(
-        ["📝 Article", "🎯 Wisdom", "🗺 Outline", "📣 Social",
-         "🎨 Image prompts", "📑 Chapters", "🖼 Images"],
-    )
+    _has_compare = bool(s.get("article_compare"))
+    tab_labels = ["📝 Article"]
+    if _has_compare:
+        tab_labels.append("⚖ Compare")
+    tab_labels += ["🎯 Wisdom", "🗺 Outline", "📣 Social",
+                   "🎨 Image prompts", "📑 Chapters", "🖼 Images"]
+    tabs = st.tabs(tab_labels)
 
-    with tabs[0]:
+    idx = 0
+    with tabs[idx]:
         _section("Article", s.article, key="article")
-    with tabs[1]:
+    idx += 1
+    if _has_compare:
+        with tabs[idx]:
+            _section(
+                f"Article · {s.get('compare_label', 'alternate')}",
+                s.article_compare, key="article_compare",
+            )
+            st.caption(
+                "Alternate-provider article from the same transcript. "
+                "Use the thumbs to mark which voice landed."
+            )
+        idx += 1
+    with tabs[idx]:
         _section("Wisdom", s.wisdom, key="wisdom")
-    with tabs[2]:
+    idx += 1
+    with tabs[idx]:
         _section("Outline", s.outline, key="outline")
-    with tabs[3]:
+    idx += 1
+    with tabs[idx]:
         _section("Social", s.social_content, key="social")
-    with tabs[4]:
+    idx += 1
+    with tabs[idx]:
         _section("Image prompts", s.image_prompts, key="image_prompts")
-    with tabs[5]:
+    idx += 1
+    with tabs[idx]:
         _chapters_panel()
-    with tabs[6]:
+    idx += 1
+    with tabs[idx]:
         _images_panel()
 
     # Unified Save to Notion footer.
@@ -224,6 +245,8 @@ def _build_bundle() -> notion.ContentBundle:
         audio_filename=audio_filename,
         models_used=models_used,
         chapters=s.chapters or [],
+        article_compare=s.get("article_compare"),
+        compare_label=s.get("compare_label"),
         article_critique=s.article_critique,
         fact_check_flags=s.fact_check_flags or [],
         fact_check_ran=bool(s.fact_check_ran),

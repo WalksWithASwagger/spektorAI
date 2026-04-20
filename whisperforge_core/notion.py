@@ -42,6 +42,10 @@ class ContentBundle:
     # Chapters as [{"title", "summary", "start_quote", ["start_seconds"]}]
     # — start_seconds is populated by alignment (WhisperX backend), else absent.
     chapters: List[dict] = field(default_factory=list)
+    # A/B comparison article (alternate provider), rendered as an extra
+    # toggle when set. Stays a sibling of `article` rather than replacing it.
+    article_compare: Optional[str] = None
+    compare_label: Optional[str] = None
     # Agentic drafting intermediates. Shown as collapsed toggles when present
     # so the final article stays front-and-center but the editorial trail is
     # auditable after the fact.
@@ -175,6 +179,14 @@ def build_blocks(bundle: ContentBundle) -> List[dict]:
         blocks.append(_toggle_section("Outline", "blue_background", bundle.outline))
     if bundle.article:
         blocks.append(_toggle_section("Draft Post", "purple_background", bundle.article))
+
+    # A/B comparison article (alternate provider) — only when populated.
+    if bundle.article_compare:
+        label = (bundle.compare_label or "alternate provider").strip()
+        blocks.append(_toggle_section(
+            f"Draft Post · {label}",
+            "pink_background", bundle.article_compare,
+        ))
 
     # Editorial trail — only show when agentic drafting actually ran.
     if bundle.article_critique:

@@ -140,6 +140,46 @@ class TestFactCheck:
         assert fc_call[1]["article"] == "REVISED VERSION"
 
 
+class TestABCompare:
+    """compare_provider + compare_model triggers a second article_writing
+    call with the alternate provider. Both articles land on the result."""
+
+    def test_compare_off_by_default(self, mock_llm):
+        result = pipeline.run(
+            "transcript", "Anthropic", "claude-haiku-4-5",
+            cleanup=False, chapters=False,
+        )
+        # article_writing called once, no comparison
+        article_calls = [c for c in mock_llm if c[0] == "article_writing"]
+        assert len(article_calls) == 1
+        assert result.article_compare is None
+        assert result.compare_label is None
+
+    def test_compare_on_runs_second_article(self, mock_llm):
+        result = pipeline.run(
+            "transcript", "Anthropic", "claude-haiku-4-5",
+            cleanup=False, chapters=False,
+            compare_provider="OpenAI", compare_model="gpt-4o-mini",
+        )
+        article_calls = [c for c in mock_llm if c[0] == "article_writing"]
+        assert len(article_calls) == 2, "expected 2 article_writing calls (main + compare)"
+        # The mock returns the same canned string for both, but the label tells us
+        # the second call happened with a different provider.
+        assert result.article_compare == "DRAFT VERSION"
+        assert result.compare_label == "OpenAI gpt-4o-mini"
+
+    def test_compare_requires_both_provider_and_model(self, mock_llm):
+        # Only provider set → skip compare
+        result = pipeline.run(
+            "transcript", "Anthropic", "claude-haiku-4-5",
+            cleanup=False, chapters=False,
+            compare_provider="OpenAI", compare_model=None,
+        )
+        article_calls = [c for c in mock_llm if c[0] == "article_writing"]
+        assert len(article_calls) == 1
+        assert result.article_compare is None
+
+
 class TestFactCheckParser:
     def test_empty_output_returns_empty(self):
         assert pipeline._parse_fact_check(None) == []
