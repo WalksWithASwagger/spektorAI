@@ -277,40 +277,61 @@ audio {
    0.6.0 three-zone refactor additions
    ──────────────────────────────────────────────────────────────── */
 
-/* Bordered cards (st.container(border=True)) — soften the default white
-   border to match the brand palette. */
-[data-testid="stVerticalBlockBorderWrapper"] {
-    border: 1px solid rgba(121, 40, 202, 0.15) !important;
+/* Bordered cards (st.container(border=True)) — Streamlit applies an
+   inline border style to the underlying stVerticalBlock; we match
+   on that so our soft-purple border replaces the default white one.
+   The :has() selector is supported in Safari/Firefox/Chrome since 2023. */
+[data-testid="stVerticalBlock"]:has(> div[style*="border"]),
+div[data-testid="stVerticalBlock"][style*="border"] {
+    border: 1px solid rgba(121, 40, 202, 0.2) !important;
+    border-radius: var(--card-radius) !important;
+}
+/* Fallback: any vertical block that Streamlit bordered gets a gradient
+   background, echoing the old .content-section treatment. */
+div[data-testid="stVerticalBlock"] > div[style*="border: 1px solid"] {
+    border-color: rgba(121, 40, 202, 0.25) !important;
     border-radius: var(--card-radius) !important;
     background: linear-gradient(
         160deg,
-        rgba(26, 26, 36, 0.6) 0%,
-        rgba(18, 18, 24, 0.6) 100%
-    );
+        rgba(26, 26, 36, 0.55) 0%,
+        rgba(18, 18, 24, 0.55) 100%
+    ) !important;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
 
-/* Segmented control (sidebar provider picker) — echo the pill-button
-   gradient so the chrome feels consistent. */
-[data-testid="stSegmentedControl"] button {
+/* Segmented control — Streamlit 1.56 renders this as stButtonGroup,
+   NOT stSegmentedControl. Verified via the frontend JS bundle. */
+[data-testid="stButtonGroup"] button {
     background: transparent !important;
     border: 1px solid rgba(121, 40, 202, 0.15) !important;
     color: var(--text-secondary) !important;
     font-size: 0.8rem !important;
+    transition: all 0.2s ease;
 }
-[data-testid="stSegmentedControl"] button[aria-pressed="true"] {
-    background: linear-gradient(110deg, rgba(121, 40, 202, 0.25) 0%, rgba(255, 0, 128, 0.1) 100%) !important;
-    border-color: rgba(121, 40, 202, 0.5) !important;
+[data-testid="stButtonGroup"] button:hover {
+    border-color: rgba(121, 40, 202, 0.35) !important;
     color: var(--text-primary) !important;
-    box-shadow: 0 0 8px rgba(121, 40, 202, 0.2);
+}
+[data-testid="stButtonGroup"] button[aria-pressed="true"],
+[data-testid="stButtonGroup"] button[data-selected="true"] {
+    background: linear-gradient(
+        110deg,
+        rgba(121, 40, 202, 0.3) 0%,
+        rgba(255, 0, 128, 0.12) 100%
+    ) !important;
+    border-color: rgba(121, 40, 202, 0.55) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 10px rgba(121, 40, 202, 0.25);
 }
 
-/* st.status container — keep it from taking over the page */
-[data-testid="stStatusWidget"] {
+/* st.status container — shares the stExpander testid in current
+   Streamlit builds. Applying both is harmless. */
+[data-testid="stStatusWidget"],
+[data-testid="stExpander"] {
     border-radius: var(--card-radius) !important;
     border: 1px solid rgba(121, 40, 202, 0.2) !important;
-    background: rgba(18, 18, 24, 0.7);
+    background: rgba(18, 18, 24, 0.65) !important;
 }
 
 /* sac.steps — recolor the AntD defaults to match our palette */
@@ -413,5 +434,144 @@ audio {
     color: var(--accent-primary) !important;
     border-color: rgba(121, 40, 202, 0.4) !important;
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Restored / enhanced vibe details (0.6.1)
+   ──────────────────────────────────────────────────────────────── */
+
+/* Scanner line — restored from the old UI. Made it 2px thick + brighter
+   glow so it actually reads on screen. Sweeps top→bottom every 10s. */
+.scanner-line {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(121, 40, 202, 0.15) 20%,
+        var(--accent-primary) 50%,
+        rgba(121, 40, 202, 0.15) 80%,
+        transparent 100%
+    );
+    box-shadow: 0 0 12px rgba(121, 40, 202, 0.5),
+                0 0 24px rgba(255, 0, 128, 0.2);
+    opacity: 0.8;
+    z-index: 9999;
+    pointer-events: none;
+    animation: scanner-sweep 10s linear infinite;
+}
+
+@keyframes scanner-sweep {
+    0%   { top: -4px;    opacity: 0; }
+    6%   {                opacity: 0.9; }
+    94%  {                opacity: 0.9; }
+    100% { top: 100vh;    opacity: 0; }
+}
+
+/* Ambient background drift — subtle hue shift on the app canvas so the
+   page feels alive without being distracting. */
+.stApp {
+    background: linear-gradient(
+        160deg,
+        var(--bg-primary) 0%,
+        #12101f 50%,
+        #0f0f17 100%
+    );
+    background-size: 100% 140%;
+    animation: ambient-drift 60s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
+    0%   { background-position: 0% 0%; }
+    100% { background-position: 0% 100%; }
+}
+
+/* Primary buttons (type="primary") — replaces the old .lucky-button.
+   Teal-purple gradient with a slow animated sheen so the "I'm feeling
+   lucky" + "Save to Notion" buttons read as the main action. */
+.stButton > button[kind="primary"] {
+    background: linear-gradient(
+        110deg,
+        rgba(54, 211, 153, 0.2) 0%,
+        rgba(121, 40, 202, 0.3) 50%,
+        rgba(255, 0, 128, 0.2) 100%
+    ) !important;
+    background-size: 200% 100%;
+    border: 1px solid rgba(121, 40, 202, 0.55) !important;
+    box-shadow: 0 0 14px rgba(121, 40, 202, 0.2);
+    animation: primary-sheen 6s ease-in-out infinite;
+    font-weight: 600 !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+    background-position: 100% 0% !important;
+    box-shadow: 0 0 22px rgba(121, 40, 202, 0.35),
+                0 0 38px rgba(255, 0, 128, 0.18);
+    transform: translateY(-1px);
+}
+
+@keyframes primary-sheen {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Section-header underline wipes in on first render. */
+.section-header::after {
+    transform-origin: left;
+    animation: underline-wipe 0.6s ease-out both;
+}
+@keyframes underline-wipe {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+/* sac.steps — make the active step pulse (borrowed the old @keyframes
+   pulse that was on .process-indicator .dot before it got pruned). */
+.ant-steps-item-process .ant-steps-item-icon {
+    animation: step-pulse 2s ease-in-out infinite;
+}
+@keyframes step-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(121, 40, 202, 0.3); }
+    50%      { box-shadow: 0 0 18px rgba(121, 40, 202, 0.6),
+                           0 0 26px rgba(255, 0, 128, 0.25); }
+}
+
+/* Bottom bar — top edge glow + subtle shimmer line. */
+.bottom-bar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(121, 40, 202, 0.5) 30%,
+        rgba(255, 0, 128, 0.5) 70%,
+        transparent 100%
+    );
+    animation: bottom-shimmer 8s ease-in-out infinite;
+}
+.bottom-bar { position: relative; }
+@keyframes bottom-shimmer {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1.0; }
+}
+
+/* Bordered-container hover lift — echoes the old .quick-button feel but
+   applied to the main content cards (st.container(border=True)). */
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: rgba(121, 40, 202, 0.35) !important;
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35),
+                0 0 0 1px rgba(121, 40, 202, 0.12);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
 </style>
+
+<!-- Scanner line injected alongside the stylesheet so it's always on the page. -->
+<div class="scanner-line"></div>
 """
