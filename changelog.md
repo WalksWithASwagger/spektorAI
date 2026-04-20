@@ -5,6 +5,24 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-04-19
+
+### Restored
+- **Scanner line sweep** — the 1px-too-subtle scanner from pre-refactor was rebuilt at 2px with stronger glow + a proper 10s sweep that fades in/out at the edges.
+- **Primary buttons** ("I'm Feeling Lucky", "Save to Notion") get a teal→purple→magenta gradient with a slow 6s sheen animation — replaces the old `.lucky-button` energy.
+- **Ambient background drift** — 60s subtle gradient hue-shift on `.stApp` so the canvas feels alive.
+- **Section-header underline** wipes in on first render (`scaleX 0→1` over 0.6s).
+- **Pulse on active `sac.steps` step** — borrowed `@keyframes pulse` from the old `.process-indicator .dot`.
+- **Bottom bar** gets a top-edge shimmer that breathes on an 8s cycle.
+- **Bordered cards** have a hover-lift transition.
+
+### Fixed
+- **CSS selectors that didn't match Streamlit 1.56's actual DOM** (discovered by grepping `streamlit/static/*.js`):
+  - `st.segmented_control` renders as `stButtonGroup`, NOT `stSegmentedControl`. The provider picker was unstyled before this fix.
+  - `stVerticalBlockBorderWrapper` doesn't exist; bordered containers now match via `:has()` + `style*="border"` attribute selectors.
+  - `st.status` shares the `stExpander` testid; both selectors applied as a pair.
+- **Default user regression** — pass-1 of the refactor defaulted the sidebar to alphabetically-first user (`Caroline_Hilton` in Kris's tree), which has no KB. Result: every pipeline run since 0.6.0 ran with no KB injection → `cache_read=0` everywhere → ~67% prompt-cache savings silently disabled. Now `ui/session._resolve_default_user()` picks: persisted last-selection → first KB-having user → alphabetically first. The sidebar persists changes to `.cache/ui_preferences.json`.
+
 ## [0.6.0] - 2026-04-19
 
 ### Added
