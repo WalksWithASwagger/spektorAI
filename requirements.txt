@@ -9,3 +9,6 @@ audioop-lts>=0.2.1; python_version >= "3.13"
 python-dotenv>=1.0.0
 requests>=2.31.0
 tenacity>=8.2.0
+# RAG (Phase 1) — pinned <6 because v6 transitively requires torchcodec
+# which has FFmpeg-libavutil version mismatch issues on macOS.
+sentence-transformers>=2.7,<6
