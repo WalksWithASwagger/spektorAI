@@ -36,9 +36,14 @@ def render() -> None:
     # Collapsed section tabs keep the page short. Order matches the
     # Notion page layout so screenshots line up.
     _has_compare = bool(s.get("article_compare"))
+    _personas = s.get("persona_articles") or []
     tab_labels = ["📝 Article"]
     if _has_compare:
         tab_labels.append("⚖ Compare")
+    # One tab per persona variant — truncated name to keep tabs single-line.
+    for pa in _personas:
+        name = (pa.get("name") or "Persona").strip()
+        tab_labels.append(f"🎭 {name[:18]}")
     tab_labels += ["🎯 Wisdom", "🗺 Outline", "📣 Social",
                    "🎨 Image prompts", "📑 Chapters", "🖼 Images"]
     tabs = st.tabs(tab_labels)
@@ -56,6 +61,14 @@ def render() -> None:
             st.caption(
                 "Alternate-provider article from the same transcript. "
                 "Use the thumbs to mark which voice landed."
+            )
+        idx += 1
+    for i, pa in enumerate(_personas):
+        with tabs[idx]:
+            _section(
+                f"Persona · {pa.get('name', 'Persona')}",
+                pa.get("text") or "",
+                key=f"persona_{i}",
             )
         idx += 1
     with tabs[idx]:
@@ -247,6 +260,7 @@ def _build_bundle() -> notion.ContentBundle:
         chapters=s.chapters or [],
         article_compare=s.get("article_compare"),
         compare_label=s.get("compare_label"),
+        persona_articles=s.get("persona_articles") or [],
         article_critique=s.article_critique,
         fact_check_flags=s.fact_check_flags or [],
         fact_check_ran=bool(s.fact_check_ran),

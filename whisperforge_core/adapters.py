@@ -60,6 +60,7 @@ class Processor(Protocol):
         rag_mode: str = "auto",
         compare_provider: Optional[str] = None,
         compare_model: Optional[str] = None,
+        personas: Optional[list] = None,
     ) -> pipeline_mod.PipelineResult: ...
 
 
@@ -92,7 +93,8 @@ class LocalProcessor:
                      image_model="gemini-2.5-flash-image",
                      article_length_words=1500,
                      user=None, rag_mode="auto",
-                     compare_provider=None, compare_model=None):
+                     compare_provider=None, compare_model=None,
+                     personas=None):
         return pipeline_mod.run(
             transcript, provider, model, prompts=prompts,
             knowledge_base=knowledge_base, progress=progress,
@@ -102,6 +104,7 @@ class LocalProcessor:
             article_length_words=article_length_words,
             user=user, rag_mode=rag_mode,
             compare_provider=compare_provider, compare_model=compare_model,
+            personas=personas,
         )
 
 

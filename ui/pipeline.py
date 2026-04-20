@@ -151,6 +151,7 @@ def _execute_run() -> None:
                 rag_mode=s.get("rag_mode", "auto"),
                 compare_provider=s.get("compare_provider"),
                 compare_model=s.get("compare_model"),
+                personas=s.get("selected_personas") or None,
             )
 
             s.wisdom = result.wisdom or ""
@@ -166,6 +167,7 @@ def _execute_run() -> None:
             s.generated_images = result.generated_images or []
             s.article_compare = result.article_compare
             s.compare_label = result.compare_label
+            s.persona_articles = result.persona_articles or []
             s.pipeline_stage_idx = len(_STAGES) - 1
 
             status.update(label="Pipeline complete — see Output below.",

@@ -61,6 +61,9 @@ _SETTINGS_DEFAULTS: Dict[str, Any] = {
     # side-by-side card in the Output.
     "compare_provider": None,
     "compare_model": None,
+    # Selected persona names (multi-select). Pipeline re-runs article_writing
+    # once per persona with a voice directive appended.
+    "selected_personas": [],
     # Dialog open-state — streamlit modals can't auto-open but we track this
     # for our own animations/toasts.
     "_dialog_open": None,
@@ -89,6 +92,8 @@ _PER_RUN_DEFAULTS: Dict[str, Any] = {
     # A/B result + label, set by pipeline.run when compare_provider/model are on
     "article_compare": None,
     "compare_label": None,
+    # Persona variants — [{"name": str, "text": str}] populated by pipeline.
+    "persona_articles": [],
     # Progress state (drives sac.steps + st.status)
     "pipeline_stage_idx": 0,                     # 0..7 where 7 = done
     "pipeline_stage_label": "",

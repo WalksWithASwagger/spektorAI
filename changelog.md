@@ -5,6 +5,29 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-04-19
+
+### Added
+- **Multi-voice personas** — new built-in persona directives in `whisperforge_core/config.PERSONAS` (Punchy podcast host, Industry analyst, Twitter/X thread, Essay — long reflective, Newsletter — first person). Pipeline Stage 7.2 re-runs `article_writing` once per selected persona with the directive appended; variants land on `PipelineResult.persona_articles` as `[{"name", "text"}]`.
+- **Persona multiselect** in ⚙ Generation Settings → Personas. Empty list = off (the default).
+- **Notion rendering** — each persona variant becomes its own color-cycled toggle block (blue → green → yellow → orange → red → purple) beneath the main article, matching the A/B compare card style.
+- **Markdown export** — persona variants appear as `## Persona · <name>` sections in the exported `.md`.
+- **Output tabs** — one `🎭 <name>` tab per persona variant in the Output card, mirroring the Notion layout so screenshots line up.
+
+### Why
+- Re-runs cost only the final article stage (transcript + wisdom + outline are already cached), so generating 3 persona variants is ~1.2× the cost of a single article draft, not 3×. Makes it cheap to surface "what if I said this as a tweet thread vs. an essay" without a fresh pipeline run.
+
+## [0.8.2] - 2026-04-19
+
+### Added
+- **A/B provider compare** — optional alt-provider article side-by-side. `PipelineResult` gains `article_compare` + `compare_label`; `run()` gains `compare_provider` + `compare_model` kwargs. When both are set and a primary article exists, Stage 7.25 fires a second `article_writing` call with the alt provider/model using the same transcript + wisdom + outline + length directive — only the voice varies.
+- **Compare picker** in ⚙ Generation Settings → A/B compare. Empty = off.
+- **Notion + markdown rendering** — alternate article becomes an `⚖ Article · <alt>` toggle block with its own color band; markdown export writes a `## Article · <label>` section after the primary.
+- **Output tab** — `⚖ Compare` tab in the Output card with a caption explaining the alt voice.
+
+### Why
+- Lets you decide "promote Haiku draft to Sonnet?" without spending a full fresh pipeline run. Failures on the compare call are logged, not raised — the main article still ships.
+
 ## [0.8.1] - 2026-04-19
 
 ### Added

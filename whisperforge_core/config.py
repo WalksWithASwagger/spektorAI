@@ -232,3 +232,43 @@ DEFAULT_PROMPTS = {
 }
 
 CONTENT_TYPES = list(DEFAULT_PROMPTS.keys())
+
+# Built-in persona presets. Each entry is a system-prompt directive that
+# gets appended to the article prompt when that persona is selected.
+# Users can override by dropping a file at prompts/<user>/personas/<name>.md —
+# persona discovery in prompts.list_personas() (when we add it) picks those
+# up with the same precedence rules as regular prompts.
+PERSONAS: dict[str, str] = {
+    "Punchy podcast host": (
+        "Rewrite in the voice of a podcast host talking directly to a peer. "
+        "Short sentences. Contractions. Opinions. No academic hedging, no "
+        "'in conclusion', no 'this article will explore'. Start cold and keep "
+        "moving. It's fine — encouraged — to be funny or mildly profane."
+    ),
+    "Industry analyst": (
+        "Rewrite in the voice of a senior analyst writing a briefing note for "
+        "executives. Claims get specific numbers and dates where available; "
+        "hedge on anything that isn't supported by the source. Structure: TL;DR "
+        "→ context → analysis → implications → recommended actions."
+    ),
+    "Twitter/X thread": (
+        "Rewrite as an 8-12 tweet thread. First tweet is a hook in ~200 "
+        "characters (no emojis, no 'here's a thread'). Each subsequent tweet "
+        "is ≤280 characters, a single idea, ends on a cliffhanger or pivot. "
+        "Number them 1/ 2/ 3/ etc. Close with a payoff line and a one-line CTA."
+    ),
+    "Essay — long reflective": (
+        "Rewrite in the voice of a thoughtful long-form essayist. Literary "
+        "sentences, extended metaphors welcome, two or three specific "
+        "references/examples per section. No business-school bullet lists; "
+        "paragraphs do the work."
+    ),
+    "Newsletter — first person": (
+        "Rewrite as a weekly newsletter from the creator to their subscribers. "
+        "First-person singular. Warm but direct. Open with a one-sentence "
+        "recap of where we are; close with a single question for the reader. "
+        "Preserve specific anecdotes verbatim; don't paraphrase them away."
+    ),
+}
+
+BUILTIN_PERSONA_NAMES: list[str] = list(PERSONAS.keys())

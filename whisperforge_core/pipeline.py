@@ -44,6 +44,10 @@ class PipelineResult:
     # card in the Output so you can A/B voices without a fresh run.
     article_compare: Optional[str] = None
     compare_label: Optional[str] = None   # e.g. "OpenAI gpt-4o"
+    # Persona variants: [{"name": str, "text": str}]. Populated when the
+    # user selected at least one persona in ⚙ More → Personas. Rendered
+    # as their own Output tabs and Notion toggles.
+    persona_articles: list = None  # type: ignore[assignment]
 
     def __post_init__(self):
         if self.chapters is None:
@@ -52,6 +56,8 @@ class PipelineResult:
             self.fact_check_flags = []
         if self.generated_images is None:
             self.generated_images = []
+        if self.persona_articles is None:
+            self.persona_articles = []
 
 
 _STAGES = [
@@ -85,6 +91,7 @@ def run(
     rag_mode: str = "auto",
     compare_provider: Optional[str] = None,
     compare_model: Optional[str] = None,
+    personas: Optional[list[str]] = None,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -267,6 +274,50 @@ def run(
             )
             if revised:
                 result.article = revised
+
+    # Stage 7.2: optional persona variants — run article_writing once per
+    # selected persona with a voice directive appended to the user content.
+    # Sits after the base article so we don't waste tokens if the user hasn't
+    # selected any personas.
+    if personas and result.article:
+        from .config import PERSONAS as _BUILTIN_PERSONAS
+        total = len(personas)
+        for i, name in enumerate(personas, 1):
+            directive = _BUILTIN_PERSONAS.get(name)
+            if not directive:
+                logger.info("skipping unknown persona %r", name)
+                continue
+            _report(
+                0.91 + (i / max(total, 1)) * 0.02,
+                f"Persona: {name} ({i}/{total})",
+            )
+            try:
+                persona_prefix = (
+                    f"Target length: approximately {article_length_words} words.\n\n"
+                    f"Persona directive:\n{directive}\n\n"
+                )
+                variant = llm.generate(
+                    "article_writing",
+                    {
+                        "transcript": transcript,
+                        "wisdom": result.wisdom or "",
+                        "outline": result.outline or "",
+                        "_user_prefix": persona_prefix,
+                    },
+                    provider,
+                    model,
+                    prompt=prompts.get("article_writing"),
+                    knowledge_base=knowledge_base,
+                    max_tokens=article_max_tokens,
+                    user=user,
+                    rag_mode=rag_mode,
+                )
+                if variant:
+                    result.persona_articles.append({
+                        "name": name, "text": variant,
+                    })
+            except Exception as e:
+                logger.warning("persona %r failed: %s", name, e)
 
     # Stage 7.25: optional A/B comparison — run article_writing once more
     # with an alternate provider/model on the same context. Useful for

@@ -46,6 +46,9 @@ class ContentBundle:
     # toggle when set. Stays a sibling of `article` rather than replacing it.
     article_compare: Optional[str] = None
     compare_label: Optional[str] = None
+    # Persona variants — one toggle per item in the Notion page.
+    # Shape: [{"name": str, "text": str}]
+    persona_articles: List[dict] = field(default_factory=list)
     # Agentic drafting intermediates. Shown as collapsed toggles when present
     # so the final article stays front-and-center but the editorial trail is
     # auditable after the fact.
@@ -187,6 +190,21 @@ def build_blocks(bundle: ContentBundle) -> List[dict]:
             f"Draft Post · {label}",
             "pink_background", bundle.article_compare,
         ))
+
+    # Persona variants — one toggle per persona (each gets its own color
+    # palette slot so they stack visually distinct).
+    _persona_colors = [
+        "blue_background", "green_background", "yellow_background",
+        "orange_background", "red_background", "purple_background",
+    ]
+    for i, pa in enumerate(bundle.persona_articles or []):
+        name = (pa.get("name") or "Persona").strip()
+        text = (pa.get("text") or "").strip()
+        if text:
+            blocks.append(_toggle_section(
+                f"Persona · {name}",
+                _persona_colors[i % len(_persona_colors)], text,
+            ))
 
     # Editorial trail — only show when agentic drafting actually ran.
     if bundle.article_critique:

@@ -126,6 +126,23 @@ def generation_settings() -> None:
         s.compare_model = m
 
     st.divider()
+    st.markdown("**Personas** (optional)")
+    st.caption(
+        "Pick any combination. For each selected persona the article stage "
+        "runs once more with a voice-specific directive. Each variant lands "
+        "in its own tab in the Output + toggle in Notion. Costs and runtime "
+        "scale linearly with the number of personas."
+    )
+    from whisperforge_core.config import BUILTIN_PERSONA_NAMES
+    s.selected_personas = st.multiselect(
+        "Generate persona variants",
+        options=BUILTIN_PERSONA_NAMES,
+        default=s.selected_personas or [],
+        key="gs_personas",
+        label_visibility="collapsed",
+    )
+
+    st.divider()
     st.markdown("**Image generation** (Nano Banana / Gemini)")
     s.images_enabled = st.checkbox(
         "Generate images from image_prompts",

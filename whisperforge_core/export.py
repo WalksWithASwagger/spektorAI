@@ -124,6 +124,9 @@ def markdown_from_bundle(bundle: ContentBundle,
         label = (bundle.compare_label or "alternate provider").strip()
         _section(f"Article · {label}", bundle.article_compare)
 
+    for pa in bundle.persona_articles or []:
+        _section(f"Persona · {pa.get('name', 'Persona')}", pa.get("text"))
+
     if bundle.article_critique:
         parts.append("## Revision notes\n")
         parts.append(bundle.article_critique.strip())
