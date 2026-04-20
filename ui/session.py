@@ -48,6 +48,11 @@ _SETTINGS_DEFAULTS: Dict[str, Any] = {
     # Auto-save to Notion when the pipeline finishes — restores the old
     # Record-tab "I'm Feeling Lucky" behavior as an opt-out toggle.
     "auto_save_notion": True,
+    # KB retrieval mode: "auto" (engage RAG when KB has >25 chunks),
+    # "always" (every call routes through top-K retrieval), or "never"
+    # (legacy dump-entire-KB path; best for small KBs where Anthropic
+    # prompt caching already wins).
+    "rag_mode": "auto",
     # Dialog open-state — streamlit modals can't auto-open but we track this
     # for our own animations/toasts.
     "_dialog_open": None,

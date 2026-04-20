@@ -76,6 +76,8 @@ def run(
     image_model: str = "gemini-2.5-flash-image",
     image_output_dir: Optional[str] = None,
     article_length_words: int = 1500,
+    user: Optional[str] = None,
+    rag_mode: str = "auto",
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -140,6 +142,8 @@ def run(
         model,
         prompt=prompts.get("wisdom_extraction"),
         knowledge_base=knowledge_base,
+            user=user,
+            rag_mode=rag_mode,
     )
     _report(0.2, _STAGES[0][1])
 
@@ -152,6 +156,8 @@ def run(
         model,
         prompt=prompts.get("outline_creation"),
         knowledge_base=knowledge_base,
+            user=user,
+            rag_mode=rag_mode,
     )
     _report(0.4, _STAGES[1][1])
 
@@ -164,6 +170,8 @@ def run(
         model,
         prompt=prompts.get("social_media"),
         knowledge_base=knowledge_base,
+            user=user,
+            rag_mode=rag_mode,
     )
     _report(0.6, _STAGES[2][1])
 
@@ -176,6 +184,8 @@ def run(
         model,
         prompt=prompts.get("image_prompts"),
         knowledge_base=knowledge_base,
+            user=user,
+            rag_mode=rag_mode,
     )
     _report(0.8, _STAGES[3][1])
 
@@ -199,6 +209,8 @@ def run(
         model,
         prompt=prompts.get("article_writing"),
         knowledge_base=knowledge_base,
+            user=user,
+            rag_mode=rag_mode,
         max_tokens=article_max_tokens,
     )
     result.article = draft
@@ -222,6 +234,8 @@ def run(
             model,
             prompt=prompts.get("article_critique"),
             knowledge_base=knowledge_base,
+            user=user,
+            rag_mode=rag_mode,
         )
         result.article_critique = critique
         _report(0.9, "Revising...")
@@ -240,6 +254,8 @@ def run(
                 model,
                 prompt=prompts.get("article_revise"),
                 knowledge_base=knowledge_base,
+            user=user,
+            rag_mode=rag_mode,
                 max_tokens=article_max_tokens,
             )
             if revised:

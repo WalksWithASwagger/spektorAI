@@ -147,6 +147,8 @@ def _execute_run() -> None:
                 image_aspect_ratio=s.image_aspect,
                 image_model=s.image_model,
                 article_length_words=article_words,
+                user=s.selected_user,
+                rag_mode=s.get("rag_mode", "auto"),
             )
 
             s.wisdom = result.wisdom or ""

@@ -69,6 +69,24 @@ def generation_settings() -> None:
              "Disable if you want to review before publishing.",
     )
 
+    st.markdown("**Knowledge base retrieval**")
+    s.rag_mode = st.segmented_control(
+        "KB mode",
+        options=["Auto", "Always", "Never"],
+        default=s.rag_mode.capitalize() if isinstance(s.rag_mode, str) else "Auto",
+        key="gs_rag_mode",
+        label_visibility="collapsed",
+        help=(
+            "Auto = use RAG when your KB has >25 chunks (otherwise dump "
+            "the whole KB since prompt-caching already wins on small KBs). "
+            "Always = top-K retrieval every call. Never = legacy dump-"
+            "everything mode."
+        ),
+    ) or "Auto"
+    # Normalize UI-friendly label back to the internal lowercase key used
+    # by rag.should_engage().
+    s.rag_mode = s.rag_mode.lower()
+
     st.divider()
     st.markdown("**Image generation** (Nano Banana / Gemini)")
     s.images_enabled = st.checkbox(

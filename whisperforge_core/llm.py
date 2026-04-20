@@ -144,13 +144,45 @@ def _format_prompt_body(prompt_content: str) -> str:
     return parts[1].strip() if len(parts) > 1 else prompt_content
 
 
-def _compose_kb_block(knowledge_base: Optional[Dict[str, str]]) -> str:
+def _compose_kb_block(
+    knowledge_base: Optional[Dict[str, str]],
+    *,
+    user: Optional[str] = None,
+    stage: Optional[str] = None,
+    query: Optional[str] = None,
+    rag_mode: str = "auto",
+) -> str:
     """Render the user's knowledge base into a single prompt block.
 
-    This block is STABLE across all five pipeline stages within one run —
-    meaning it's the ideal prefix for Anthropic's prompt cache. Changes to
-    the KB invalidate the cache; the per-stage prompt body lives separately.
+    Two paths:
+      - **RAG path** (engaged via `rag.should_engage(user, rag_mode)`): pull
+        top-K relevant chunks for the stage's query + always-included voice
+        anchor. Smaller block, better focus, but requires query+user.
+      - **Legacy "dump everything" path**: prepend the entire KB. Used when
+        RAG is disabled or when we don't have enough info to query (no user,
+        no query, or RAG isn't engaging on this KB size).
+
+    The block is STABLE across all five stages within one run when using
+    legacy mode (Anthropic prompt cache loves it). RAG mode produces
+    different blocks per stage, sacrificing some cache hits in exchange
+    for ~3-20× cheaper input on large KBs.
     """
+    # Try RAG when we have what we need.
+    if user and query:
+        from . import rag  # lazy import — sentence-transformers is heavy
+        try:
+            if rag.should_engage(user, mode=rag_mode):
+                chunks = rag.retrieve(user, query=query, stage=stage)
+                if chunks:
+                    logger.info(
+                        "RAG engaged for stage=%s user=%s — %d chunks selected",
+                        stage, user, len(chunks),
+                    )
+                    return rag.format_block(chunks)
+        except Exception as e:
+            logger.warning("RAG path failed (%s) — falling back to legacy KB", e)
+
+    # Legacy path
     if not knowledge_base:
         return ""
     kb = "\n\n".join(f"## {name}\n{content}" for name, content in knowledge_base.items())
@@ -278,6 +310,8 @@ def generate(
     prompt: Optional[str] = None,
     knowledge_base: Optional[Dict[str, str]] = None,
     max_tokens: Optional[int] = None,
+    user: Optional[str] = None,
+    rag_mode: str = "auto",
 ) -> Optional[str]:
     """Generate a piece of derived content.
 
@@ -294,9 +328,14 @@ def generate(
         )
 
     resolved_prompt = prompt or DEFAULT_PROMPTS.get(content_type, "")
-    kb_block = _compose_kb_block(knowledge_base)
-    prompt_body = _format_prompt_body(resolved_prompt)
     user_content = _CONTEXT_BUILDERS[content_type](context)
+    # KB block: pass user + stage + query so RAG can engage when configured.
+    # When user/query absent we fall back to legacy whole-KB dump inside.
+    kb_block = _compose_kb_block(
+        knowledge_base, user=user, stage=content_type,
+        query=user_content, rag_mode=rag_mode,
+    )
+    prompt_body = _format_prompt_body(resolved_prompt)
     tokens = max_tokens or _MAX_TOKENS.get(content_type, 1500)
 
     key = cache.make_key([
