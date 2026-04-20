@@ -5,7 +5,7 @@ export, prompt management, caching, and logging. Importable from both the
 Streamlit monolith and the FastAPI microservices — must NOT import streamlit.
 """
 
-from . import adapters, audio, cache, config, cost, history, images, llm, notion, pipeline, prompts
+from . import adapters, audio, cache, config, cost, export, history, images, llm, notion, pipeline, prompts
 from . import logging as logging_module
 
 __all__ = [
@@ -14,6 +14,7 @@ __all__ = [
     "cache",
     "config",
     "cost",
+    "export",
     "history",
     "images",
     "llm",

@@ -5,6 +5,17 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-04-19
+
+### Added
+- **Markdown export** — new `whisperforge_core/export.py` renders any `ContentBundle` as a single `.md` file with YAML frontmatter (title, created, source, models, tags, optional notion_url). Obsidian-compatible. Chapters get `[MM:SS]` / `[H:MM:SS]` prefixes.
+- **💾 Markdown button** in the Output card next to Save-to-Notion. Saves to `.cache/exports/YYYY-MM-DD-<slug>.md`; a download button appears after export.
+- **`auto_export_markdown` toggle** in ⚙ Generation Settings → Output — when on, every Notion save also writes the markdown copy alongside.
+- `ui/output._build_bundle()` extracted as shared ContentBundle constructor so Notion save and markdown export stay in lockstep.
+
+### Tests
+- `tests/test_export.py` — 12 new (frontmatter shape, section ordering, chapter timestamps, fact-check rendering, duplicate-filename disambiguation, slug unicode handling). 131 total.
+
 ## [0.8.0] - 2026-04-19
 
 ### Added

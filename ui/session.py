@@ -53,6 +53,9 @@ _SETTINGS_DEFAULTS: Dict[str, Any] = {
     # (legacy dump-entire-KB path; best for small KBs where Anthropic
     # prompt caching already wins).
     "rag_mode": "auto",
+    # Also write a markdown export to .cache/exports/ whenever we save
+    # to Notion. Useful for keeping a local / Obsidian-vault copy.
+    "auto_export_markdown": False,
     # Dialog open-state — streamlit modals can't auto-open but we track this
     # for our own animations/toasts.
     "_dialog_open": None,

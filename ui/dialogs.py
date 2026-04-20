@@ -68,6 +68,12 @@ def generation_settings() -> None:
         help="Save the run automatically once the article stage completes. "
              "Disable if you want to review before publishing.",
     )
+    s.auto_export_markdown = st.checkbox(
+        "Also export a markdown copy (.cache/exports/)",
+        value=s.auto_export_markdown, key="gs_mdexport",
+        help="Obsidian-compatible .md with YAML frontmatter. Written "
+             "alongside Notion save — great for local vaults.",
+    )
 
     st.markdown("**Knowledge base retrieval**")
     s.rag_mode = st.segmented_control(

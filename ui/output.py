@@ -16,6 +16,7 @@ import streamlit as st
 
 from whisperforge_core import adapters as adapters_mod
 from whisperforge_core import cost as cost_mod
+from whisperforge_core import export as export_mod
 from whisperforge_core import history as history_mod
 from whisperforge_core import llm, notion
 
@@ -125,15 +126,22 @@ def _images_panel() -> None:
 def _notion_save_bar() -> None:
     s = st.session_state
     already = bool(s.last_notion_url)
-    c1, c2 = st.columns([3, 2])
+    c1, c2, c3 = st.columns([3, 2, 2])
     with c1:
         if already:
             st.markdown(
-                f"**Saved to Notion.** [Open the page]({s.last_notion_url}) · "
-                "or re-save below to create a new one.")
+                f"**Saved to Notion.** [Open the page]({s.last_notion_url})")
         else:
-            st.caption("Click to publish this run to your WhisperForge DB in Notion.")
+            st.caption("Publish this run, or download a local markdown copy.")
     with c2:
+        if st.button("💾 Markdown", use_container_width=True, key="save_md"):
+            path = _export_markdown()
+            if path:
+                st.toast(f"Saved: {path.name}",
+                         icon=":material/description:")
+                st.session_state._last_md_path = str(path)
+                st.rerun()
+    with c3:
         if st.button("📤 Save to Notion", type="primary",
                      use_container_width=True, key="save_notion_unified"):
             url = _save_to_notion()
@@ -142,20 +150,43 @@ def _notion_save_bar() -> None:
                 st.toast("Saved to Notion!", icon=":material/check_circle:")
                 st.rerun()
 
+    # Surface download button for the most recent markdown export.
+    last_md = st.session_state.get("_last_md_path")
+    if last_md:
+        try:
+            with open(last_md, "rb") as f:
+                st.download_button(
+                    "⬇ Download markdown",
+                    data=f.read(),
+                    file_name=os.path.basename(last_md),
+                    mime="text/markdown",
+                    key="dl_md",
+                )
+        except OSError:
+            pass
 
-def _save_to_notion() -> Optional[str]:
-    """Build a ContentBundle from current session_state + call the Storage
-    adapter. Also writes a history record so the Runs dialog shows it."""
+
+def _export_markdown() -> Optional["Path"]:
+    """Build a ContentBundle from session_state and write it as markdown."""
+    from pathlib import Path
     s = st.session_state
-    adapters = adapters_mod.get_adapters()
+    bundle = _build_bundle()
+    try:
+        return export_mod.export(bundle, notion_url=s.last_notion_url)
+    except Exception as e:
+        st.error(f"Markdown export failed: {e}")
+        return None
 
+
+def _build_bundle() -> notion.ContentBundle:
+    """Shared ContentBundle construction used by both the Notion save and
+    markdown export paths — extracted so we don't drift between them."""
+    s = st.session_state
     transcript = s.cleaned_transcript or s.transcription or ""
     audio_filename = None
     if getattr(s.audio_file, "name", None):
         audio_filename = s.audio_file.name
 
-    # Title + summary + tags — OpenAI structured outputs when available,
-    # sensible defaults otherwise.
     try:
         title_suffix = llm.generate_title(transcript)
     except Exception:
@@ -167,7 +198,7 @@ def _save_to_notion() -> Optional[str]:
         summary = "Summary unavailable."
     try:
         tags = llm.generate_tags(
-            (transcript or "") + " " + (s.wisdom or ""), max_tags=5
+            (transcript or "") + " " + (s.wisdom or ""), max_tags=5,
         ) or ["whisperforge"]
     except Exception:
         tags = ["whisperforge"]
@@ -180,7 +211,7 @@ def _save_to_notion() -> Optional[str]:
             f"{os.getenv('TRANSCRIPTION_BACKEND', 'openai')} transcribe"
         )
 
-    bundle = notion.ContentBundle(
+    return notion.ContentBundle(
         title=title,
         transcript=transcript,
         wisdom=s.wisdom or "",
@@ -197,6 +228,16 @@ def _save_to_notion() -> Optional[str]:
         fact_check_flags=s.fact_check_flags or [],
         fact_check_ran=bool(s.fact_check_ran),
     )
+
+
+def _save_to_notion() -> Optional[str]:
+    """Save the current session_state bundle to Notion, record a history
+    entry, and — if auto_export_markdown is enabled — also write a
+    markdown copy to .cache/exports/."""
+    s = st.session_state
+    adapters = adapters_mod.get_adapters()
+    bundle = _build_bundle()
+
     try:
         url = adapters.storage.save(bundle)
     except Exception as e:
@@ -206,13 +247,23 @@ def _save_to_notion() -> Optional[str]:
         st.error("Notion save returned no URL.")
         return None
 
-    # Append to the history log so the Runs dialog shows this run next open.
+    # Optional side-write of a markdown copy.
+    if s.get("auto_export_markdown"):
+        try:
+            md_path = export_mod.export(bundle, notion_url=url)
+            s._last_md_path = str(md_path)
+        except Exception as e:
+            logger_warn = getattr(st, "toast", None)
+            if logger_warn:
+                st.toast(f"Markdown export skipped: {e}", icon=":material/warning:")
+
+    # Append history so the Runs dialog shows this run next open.
     b = cost_mod.estimate_cost()
     history_mod.append(history_mod.RunRecord(
         timestamp=history_mod.now_iso(),
-        title=title,
+        title=bundle.title,
         notion_url=url,
-        audio_filename=audio_filename,
+        audio_filename=bundle.audio_filename,
         provider=s.ai_provider or "",
         model=s.ai_model or "",
         cost_usd=round(b.total_usd, 6),
