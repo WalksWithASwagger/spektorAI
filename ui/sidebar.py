@@ -105,6 +105,8 @@ def render() -> None:
                 dialogs.prompts_editor()
             if st.button("📚 KB", use_container_width=True, key="btn_kb"):
                 dialogs.knowledge_base_manager()
+            if st.button("📊 Benchmark", use_container_width=True, key="btn_bench"):
+                dialogs.kb_benchmark()
         with c2:
             if st.button("📜 Runs", use_container_width=True, key="btn_runs"):
                 dialogs.run_history()

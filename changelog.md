@@ -5,6 +5,20 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2026-04-20
+
+### Added
+- **KB benchmark tool** — new `whisperforge_core/rag/benchmark.py` compares legacy KB-dump vs RAG top-K retrieval for a specific query, reporting char/token counts, cost at the provider's input rate, which voice-anchor doc RAG picked, and percentage savings. Pure measurement — no LLM calls, so running it is free and deterministic.
+- **📊 Benchmark** button in the sidebar opens a dialog where you pick a stage (or "All stages"), edit the sample query (defaults to the current transcript), and get a table comparing legacy vs RAG across whichever stage(s) you selected.
+- **`benchmark_all_stages()`** helper — one call returns the full stage-by-stage comparison so you can see at a glance whether RAG wins everywhere or just on specific stages.
+
+### Why
+- RAG Phase 1–3 shipped the pipeline. Phase 4 is the tuning tool: KK's KB shows a 58.9% input-token drop on `wisdom_extraction` (6,546 → 2,691 tokens) — data-driven evidence that RAG is the right default for anything bigger than 25 chunks. Phase 4 makes that number visible *before* the first run, so you can decide between Auto / Always / Never with real numbers instead of vibes.
+- Note on real-world cost: these numbers are un-cached list-price. Anthropic prompt caching on the stable legacy block closes the gap ~10× (cache reads are 10% of input rate). The UI's summary line flags this explicitly.
+
+### Tests
+- `tests/test_rag_benchmark.py` — 7 new (shape, empty-KB no-crash, legacy-chars > raw KB due to framing, known-model cost is non-zero, unknown-model cost is zero but tokens count, delta math, all-stages returns one row per stage). **148 total.**
+
 ## [0.8.4] - 2026-04-19
 
 ### Added

@@ -283,6 +283,102 @@ def knowledge_base_manager() -> None:
 
 
 # -----------------------------------------------------------------------
+# KB benchmark — measure legacy vs RAG injection size for a sample query.
+# Pure measurement (no LLM calls) so running it is free and deterministic.
+# -----------------------------------------------------------------------
+@st.dialog("Benchmark KB modes", width="large")
+def kb_benchmark() -> None:
+    from whisperforge_core.rag import benchmark as bench_mod
+    from whisperforge_core.rag.retriever import STAGE_AUGMENTATIONS
+
+    s = st.session_state
+    user = s.get("selected_user")
+    if not user:
+        st.info("Pick a user profile in the sidebar first.")
+        return
+
+    st.caption(
+        "Measures how many input tokens each pipeline stage injects from "
+        "your knowledge base under legacy (dump everything) vs RAG (top-K "
+        "retrieval). No LLM calls — this is pure sizing + input-rate math, "
+        "so running it is free."
+    )
+
+    # Query defaults to the current transcript/article excerpt when available,
+    # otherwise a reasonable stub so Kris can still eyeball his KB without
+    # first running a pipeline.
+    default_query = (
+        (s.get("transcription") or s.get("article") or "")[:2000]
+        or "A talk about AI, creativity, and helping leaders adapt."
+    )
+    query = st.text_area(
+        "Sample query (the 'user content' each stage will see)",
+        value=default_query, height=120, key="bench_query",
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        stage = st.selectbox(
+            "Stage", options=list(STAGE_AUGMENTATIONS.keys()),
+            index=list(STAGE_AUGMENTATIONS.keys()).index("wisdom_extraction"),
+            key="bench_stage",
+        )
+    with col2:
+        scope = st.selectbox(
+            "Scope", options=["Single stage", "All stages"],
+            key="bench_scope",
+        )
+
+    provider = s.get("ai_provider") or "Anthropic"
+    model = s.get("ai_model") or "claude-haiku-4-5"
+    st.caption(f"Input-rate math uses the currently selected **{provider} {model}**.")
+
+    if st.button("Run benchmark", type="primary", use_container_width=True,
+                 key="bench_run"):
+        with st.spinner("Measuring…"):
+            try:
+                if scope == "Single stage":
+                    results = [bench_mod.compare_kb_modes(
+                        user, query=query, stage=stage,
+                        provider=provider, model=model,
+                    )]
+                else:
+                    results = bench_mod.benchmark_all_stages(
+                        user, query=query, provider=provider, model=model,
+                    )
+            except Exception as e:
+                st.error(f"Benchmark failed: {e}")
+                return
+
+        rows = []
+        for r in results:
+            rows.append({
+                "Stage": r["stage"],
+                "Legacy tokens": r["legacy"]["tokens"],
+                "RAG tokens": r["rag"]["tokens"],
+                "Savings": f"{r['delta']['token_savings_pct']:.1f}%",
+                "Legacy $": f"${r['legacy']['cost_usd']:.5f}",
+                "RAG $": f"${r['rag']['cost_usd']:.5f}",
+                "RAG chunks": r["rag"]["chunks"],
+                "Anchor": r["rag"]["anchor"] or "—",
+            })
+        st.dataframe(rows, use_container_width=True, hide_index=True)
+
+        # Summary when running all stages.
+        if len(results) > 1:
+            tot_legacy = sum(r["legacy"]["cost_usd"] for r in results)
+            tot_rag = sum(r["rag"]["cost_usd"] for r in results)
+            saved = tot_legacy - tot_rag
+            pct = (saved / tot_legacy * 100) if tot_legacy else 0
+            st.success(
+                f"**Total per-run input cost:** legacy ${tot_legacy:.5f} → "
+                f"RAG ${tot_rag:.5f} — saves **${saved:.5f} ({pct:.1f}%)** "
+                f"before prompt caching. With Anthropic cache on the stable "
+                f"legacy block, the real-world gap narrows ~10×."
+            )
+
+
+# -----------------------------------------------------------------------
 # Run history — data_editor with clickable Notion links, sortable.
 # -----------------------------------------------------------------------
 @st.dialog("Recent runs", width="large")
