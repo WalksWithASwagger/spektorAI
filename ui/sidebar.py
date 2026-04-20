@@ -44,10 +44,14 @@ def render() -> None:
         users = prompts_mod.list_users()
         current_user = st.session_state.get("selected_user") or users[0]
         idx = users.index(current_user) if current_user in users else 0
-        st.session_state.selected_user = st.selectbox(
+        chosen_user = st.selectbox(
             "User", options=users, index=idx, key="sb_profile",
             label_visibility="collapsed",
         )
+        # Persist whenever the user changes — next session opens to this one.
+        if chosen_user != st.session_state.selected_user:
+            session.remember_user(chosen_user)
+        st.session_state.selected_user = chosen_user
 
         # --- Provider (segmented_control) -------------------------------
         st.markdown('<div class="section-header">Provider</div>',

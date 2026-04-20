@@ -13,11 +13,19 @@ set is split into two buckets:
 
 from __future__ import annotations
 
+import json
 from typing import Any, Dict
 
 import streamlit as st
 
 from whisperforge_core import images as images_mod
+from whisperforge_core import prompts as prompts_mod
+from whisperforge_core.config import CACHE_DIR
+
+# Where we remember which user profile was active last. Lives next to the
+# other small caches so it gets cleaned up by `cache.clear()` if the user
+# wants a fresh start.
+_PREFERENCES_FILE = CACHE_DIR / "ui_preferences.json"
 
 # --- Settings keys (preserved across runs) --------------------------------
 _SETTINGS_DEFAULTS: Dict[str, Any] = {
@@ -68,6 +76,50 @@ _PER_RUN_DEFAULTS: Dict[str, Any] = {
 }
 
 
+def _load_preferences() -> dict:
+    """Read the persisted last-user-selection JSON. Empty dict on miss."""
+    try:
+        return json.loads(_PREFERENCES_FILE.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _save_preferences(prefs: dict) -> None:
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        _PREFERENCES_FILE.write_text(json.dumps(prefs))
+    except OSError:
+        pass  # non-critical
+
+
+def _resolve_default_user() -> str:
+    """Pick the right user to default to.
+
+    Priority:
+      1. Last user selected in this Streamlit deploy (persisted to disk).
+      2. A user with a non-empty knowledge_base/ folder — without a KB,
+         prompt caching can't engage and outputs aren't in-voice.
+      3. Alphabetically first as final fallback.
+
+    This fixes a 0.6.0 regression where the new sidebar always defaulted to
+    the alphabetically first user (Caroline_Hilton in Kris's tree), which
+    meant his actual KB never got injected and the cache stayed cold.
+    """
+    users = prompts_mod.list_users()
+    if not users:
+        return "default_user"
+    # 1. Last-selected
+    last = _load_preferences().get("selected_user")
+    if last in users:
+        return last
+    # 2. First user with a non-empty KB
+    for u in users:
+        if prompts_mod.load_knowledge_base(u):
+            return u
+    # 3. Fallback
+    return users[0]
+
+
 def init_all_state() -> None:
     """Idempotently set every known key to its default if missing. Called
     once at the top of ``main()`` before any widget renders."""
@@ -76,6 +128,12 @@ def init_all_state() -> None:
     for k, default in _PER_RUN_DEFAULTS.items():
         st.session_state.setdefault(k, default)
 
+    # Resolve the user profile: persisted preference > KB-having user >
+    # first alphabetical. Done after setdefault so it only fires when
+    # selected_user is still None (first render of a session).
+    if st.session_state.selected_user is None:
+        st.session_state.selected_user = _resolve_default_user()
+
     # Default image style resolves lazily the first time we need it — avoids
     # loading the YAML at import time when it's not used.
     if st.session_state.image_style is None:
@@ -83,6 +141,14 @@ def init_all_state() -> None:
             st.session_state.image_style = images_mod.default_style()
         except Exception:
             st.session_state.image_style = "kk"
+
+
+def remember_user(user: str) -> None:
+    """Persist the chosen user profile so the next session opens to it.
+    Called by the sidebar profile selectbox when the user changes it."""
+    prefs = _load_preferences()
+    prefs["selected_user"] = user
+    _save_preferences(prefs)
 
 
 def clear_run() -> None:
