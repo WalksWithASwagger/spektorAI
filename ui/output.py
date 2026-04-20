@@ -245,6 +245,37 @@ def _build_bundle() -> notion.ContentBundle:
             f"{os.getenv('TRANSCRIPTION_BACKEND', 'openai')} transcribe"
         )
 
+    # Run metrics — folded into the bundle so the Notion page + markdown
+    # export carry their own receipt instead of forcing a cross-ref against
+    # history.json. Safe on partial runs: estimate_cost() returns zeroes
+    # when the ledger is empty, duration is None when timestamps aren't set.
+    b = cost_mod.estimate_cost()
+    started = s.get("pipeline_started_at")
+    ended = s.get("pipeline_ended_at")
+    duration = (ended - started) if (started and ended) else None
+    run_metrics = {
+        "total_usd": round(b.total_usd, 6),
+        "llm_usd": round(b.llm_usd, 6),
+        "asr_usd": round(b.asr_usd, 6),
+        "cache_savings_usd": round(b.cache_savings_usd, 6),
+        "calls": b.calls,
+        "input_tokens": b.input_tokens,
+        "output_tokens": b.output_tokens,
+        "cache_read_tokens": b.cache_read_tokens,
+        "cache_write_tokens": b.cache_write_tokens,
+        "duration_seconds": duration,
+        "backend": os.getenv("TRANSCRIPTION_BACKEND", "openai"),
+        "flags": {
+            "agentic": bool(s.agentic_drafting),
+            "fact_check": bool(s.fact_check_ran),
+            "chapters": bool(s.chapters),
+            "images": bool(s.generated_images),
+            "rag": s.get("rag_mode", "auto") != "never",
+            "compare": bool(s.get("article_compare")),
+            "personas": bool(s.get("persona_articles")),
+        },
+    }
+
     return notion.ContentBundle(
         title=title,
         transcript=transcript,
@@ -264,6 +295,7 @@ def _build_bundle() -> notion.ContentBundle:
         article_critique=s.article_critique,
         fact_check_flags=s.fact_check_flags or [],
         fact_check_ran=bool(s.fact_check_ran),
+        run_metrics=run_metrics,
     )
 
 

@@ -146,6 +146,30 @@ def markdown_from_bundle(bundle: ContentBundle,
             parts.append("✅ No claims flagged — article grounded in source.")
             parts.append("")
 
+    if bundle.run_metrics:
+        m = bundle.run_metrics
+        def _usd(k: str) -> str:
+            v = m.get(k)
+            return f"${v:.4f}" if isinstance(v, (int, float)) else "—"
+        def _i(k: str) -> str:
+            v = m.get(k)
+            return f"{int(v):,}" if isinstance(v, (int, float)) else "—"
+        dur = m.get("duration_seconds")
+        dur_str = f"{int(round(dur))}s" if isinstance(dur, (int, float)) and dur > 0 else "—"
+        if isinstance(dur, (int, float)) and dur >= 60:
+            mins = int(dur) // 60
+            secs = int(dur) % 60
+            dur_str = f"{mins}m {secs:02d}s"
+        flags = m.get("flags") or {}
+        enabled = [k for k, v in flags.items() if v]
+        flag_line = ", ".join(enabled) if enabled else "none"
+        parts.append("## Run metrics\n")
+        parts.append(f"- **Total:** {_usd('total_usd')}  ·  **LLM:** {_usd('llm_usd')}  ·  **ASR:** {_usd('asr_usd')}")
+        parts.append(f"- **Cache savings:** {_usd('cache_savings_usd')}  ·  **Calls:** {_i('calls')}  ·  **Duration:** {dur_str}")
+        parts.append(f"- **Tokens in/out:** {_i('input_tokens')} / {_i('output_tokens')}  ·  **Cache read/write:** {_i('cache_read_tokens')} / {_i('cache_write_tokens')}")
+        parts.append(f"- **Backend:** {m.get('backend') or '—'}  ·  **Flags on:** {flag_line}")
+        parts.append("")
+
     if bundle.audio_filename:
         parts.append("## Metadata\n")
         parts.append(f"- **Original audio:** {bundle.audio_filename}")

@@ -176,3 +176,113 @@ class TestEstimateTokens:
         assert long > short
         # 4000 chars @ 4 chars/token = 1000 tokens, plus 1000 overhead
         assert 1900 <= long <= 2100
+
+
+class TestRunMetricsBlock:
+    """Run metrics toggle carries the cost/token/duration/flags receipt."""
+
+    def _toggles(self, bundle):
+        return [
+            b for b in notion.build_blocks(bundle)
+            if b["type"] == "toggle"
+        ]
+
+    def _toggle_labels(self, bundle):
+        return [
+            b["toggle"]["rich_text"][0]["text"]["content"]
+            for b in self._toggles(bundle)
+        ]
+
+    def test_no_metrics_no_block(self):
+        bundle = notion.ContentBundle(title="no-metrics")
+        assert "Run metrics" not in self._toggle_labels(bundle)
+
+    def test_metrics_present_renders_toggle(self):
+        bundle = notion.ContentBundle(
+            title="with-metrics",
+            run_metrics={
+                "total_usd": 0.0123,
+                "llm_usd": 0.0100,
+                "asr_usd": 0.0023,
+                "cache_savings_usd": 0.0051,
+                "calls": 7,
+                "input_tokens": 1200,
+                "output_tokens": 800,
+                "cache_read_tokens": 5000,
+                "cache_write_tokens": 600,
+                "duration_seconds": 34.5,
+                "backend": "openai",
+                "flags": {"agentic": True, "fact_check": False,
+                          "chapters": True, "images": False},
+            },
+        )
+        labels = self._toggle_labels(bundle)
+        assert "Run metrics" in labels
+        # Extract the rendered text of the Run metrics toggle.
+        metrics = next(
+            b for b in self._toggles(bundle)
+            if b["toggle"]["rich_text"][0]["text"]["content"] == "Run metrics"
+        )
+        body = "\n".join(
+            p["paragraph"]["rich_text"][0]["text"]["content"]
+            for p in metrics["toggle"]["children"]
+        )
+        assert "$0.0123" in body      # total
+        assert "$0.0051" in body      # cache savings
+        assert "34s" in body          # duration under a minute
+        assert "openai" in body       # backend
+        assert "agentic" in body      # only enabled flags listed
+        assert "fact_check" not in body
+        assert "1,200" in body        # input tokens with comma
+        assert "5,000" in body        # cache read
+        assert "7" in body            # calls
+
+    def test_duration_over_minute_formats_mm_ss(self):
+        bundle = notion.ContentBundle(
+            title="long",
+            run_metrics={"duration_seconds": 134.0, "calls": 1},
+        )
+        metrics = next(
+            b for b in notion.build_blocks(bundle)
+            if b["type"] == "toggle"
+            and b["toggle"]["rich_text"][0]["text"]["content"] == "Run metrics"
+        )
+        body = "\n".join(
+            p["paragraph"]["rich_text"][0]["text"]["content"]
+            for p in metrics["toggle"]["children"]
+        )
+        assert "2m 14s" in body
+
+    def test_no_flags_enabled_shows_none(self):
+        bundle = notion.ContentBundle(
+            title="bare",
+            run_metrics={"flags": {"agentic": False, "images": False}},
+        )
+        metrics = next(
+            b for b in notion.build_blocks(bundle)
+            if b["type"] == "toggle"
+            and b["toggle"]["rich_text"][0]["text"]["content"] == "Run metrics"
+        )
+        body = "\n".join(
+            p["paragraph"]["rich_text"][0]["text"]["content"]
+            for p in metrics["toggle"]["children"]
+        )
+        assert "Flags on:** none" in body
+
+    def test_metrics_appears_before_metadata_heading(self):
+        """Receipt should sit above the Metadata heading, not after."""
+        bundle = notion.ContentBundle(
+            title="order",
+            run_metrics={"total_usd": 0.01, "calls": 1},
+        )
+        blocks = notion.build_blocks(bundle)
+        # Find indices.
+        metrics_idx = next(
+            i for i, b in enumerate(blocks)
+            if b["type"] == "toggle"
+            and b["toggle"]["rich_text"][0]["text"]["content"] == "Run metrics"
+        )
+        heading_idx = next(
+            i for i, b in enumerate(blocks) if b["type"] == "heading_2"
+        )
+        assert metrics_idx < heading_idx

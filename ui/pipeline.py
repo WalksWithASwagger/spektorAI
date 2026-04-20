@@ -7,6 +7,7 @@ paths (Transcribe-only, Full-pipeline) funnel through.
 
 from __future__ import annotations
 
+import time
 from typing import Optional
 
 import streamlit as st
@@ -65,6 +66,11 @@ def _execute_run() -> None:
     s = st.session_state
     adapters = adapters_mod.get_adapters()
     kb = prompts_mod.load_knowledge_base(s.selected_user) if s.selected_user else {}
+
+    # Capture a start timestamp so the Run metrics block can report
+    # wall-clock duration. End timestamp is written in `finally`.
+    s.pipeline_started_at = time.time()
+    s.pipeline_ended_at = None
 
     with st.status("Running pipeline…", expanded=True) as status:
         try:
@@ -170,6 +176,11 @@ def _execute_run() -> None:
             s.persona_articles = result.persona_articles or []
             s.pipeline_stage_idx = len(_STAGES) - 1
 
+            # Freeze the pipeline duration here — before the Notion
+            # auto-save, so the Run metrics block doesn't double-count the
+            # save roundtrip in the duration number.
+            s.pipeline_ended_at = time.time()
+
             status.update(label="Pipeline complete — see Output below.",
                           state="complete", expanded=False)
 
@@ -191,4 +202,8 @@ def _execute_run() -> None:
             status.update(label=f"Pipeline error: {e}", state="error")
             st.toast(f"Pipeline failed: {e}", icon=":material/error:")
         finally:
+            # Stamp an end time if we didn't already (error path before
+            # the explicit set above).
+            if not s.pipeline_ended_at:
+                s.pipeline_ended_at = time.time()
             s.pipeline_running = False

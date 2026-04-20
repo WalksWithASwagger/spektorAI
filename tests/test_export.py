@@ -87,6 +87,37 @@ class TestMarkdownRendering:
         md = export.markdown_from_bundle(_bundle())
         assert "> One sentence." in md
 
+    def test_run_metrics_section_renders(self):
+        md = export.markdown_from_bundle(_bundle(
+            run_metrics={
+                "total_usd": 0.0234,
+                "llm_usd": 0.02,
+                "asr_usd": 0.0034,
+                "cache_savings_usd": 0.012,
+                "calls": 9,
+                "input_tokens": 2500,
+                "output_tokens": 1100,
+                "cache_read_tokens": 8000,
+                "cache_write_tokens": 200,
+                "duration_seconds": 72.0,
+                "backend": "whisperx",
+                "flags": {"agentic": True, "images": True, "fact_check": False},
+            },
+        ))
+        assert "## Run metrics" in md
+        assert "$0.0234" in md       # total cost
+        assert "$0.0120" in md       # cache savings
+        assert "1m 12s" in md        # duration > minute
+        assert "whisperx" in md
+        assert "agentic" in md
+        assert "images" in md
+        assert "fact_check" not in md  # only enabled flags
+        assert "2,500" in md         # tokens with commas
+
+    def test_no_run_metrics_no_section(self):
+        md = export.markdown_from_bundle(_bundle())
+        assert "## Run metrics" not in md
+
 
 class TestExportToDisk:
     def test_creates_file_with_expected_shape(self, tmp_path):

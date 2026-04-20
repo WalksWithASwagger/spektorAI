@@ -58,6 +58,11 @@ class ContentBundle:
     # ``fact_check_ran``.
     fact_check_flags: List[dict] = field(default_factory=list)
     fact_check_ran: bool = False
+    # Per-run metrics — cost breakdown, token counts, feature flags, duration.
+    # Optional; when None the Notion page + markdown export skip the Run
+    # metrics section entirely. Shape is the union of cost.CostBreakdown
+    # fields and ui/pipeline's run-state flags (agentic, fact_check, ...).
+    run_metrics: Optional[dict] = None
 
 
 def _client() -> Client:
@@ -113,6 +118,56 @@ def _format_timestamp(seconds: float) -> str:
     if h:
         return f"{h}:{m:02d}:{sec:02d}"
     return f"{m}:{sec:02d}"
+
+
+def _format_duration(seconds: Optional[float]) -> str:
+    """Format a float seconds value as e.g. '2m 14s' or '48s'."""
+    if not isinstance(seconds, (int, float)) or seconds <= 0:
+        return "—"
+    s = int(round(seconds))
+    m, sec = divmod(s, 60)
+    if m:
+        return f"{m}m {sec:02d}s"
+    return f"{sec}s"
+
+
+def _run_metrics_block(metrics: dict) -> dict:
+    """Render a ``Run metrics`` toggle with cost/tokens/flags/duration.
+
+    Expected keys (all optional, missing = "—"):
+      - total_usd, llm_usd, asr_usd, cache_savings_usd (floats)
+      - calls, input_tokens, output_tokens, cache_read_tokens,
+        cache_write_tokens (ints)
+      - duration_seconds (float)
+      - backend (str — transcription backend id)
+      - flags (dict[str, bool] — agentic/fact_check/chapters/images/rag)
+    """
+    def _usd(k: str) -> str:
+        v = metrics.get(k)
+        return f"${v:.4f}" if isinstance(v, (int, float)) else "—"
+
+    def _int(k: str) -> str:
+        v = metrics.get(k)
+        return f"{int(v):,}" if isinstance(v, (int, float)) else "—"
+
+    flags = metrics.get("flags") or {}
+    enabled = [k for k, v in flags.items() if v]
+    flag_line = ", ".join(enabled) if enabled else "none"
+
+    lines = [
+        f"**Total:** {_usd('total_usd')}  ·  "
+        f"**LLM:** {_usd('llm_usd')}  ·  "
+        f"**ASR:** {_usd('asr_usd')}",
+        f"**Cache savings:** {_usd('cache_savings_usd')}  ·  "
+        f"**Calls:** {_int('calls')}  ·  "
+        f"**Duration:** {_format_duration(metrics.get('duration_seconds'))}",
+        f"**Tokens in/out:** {_int('input_tokens')} / {_int('output_tokens')}  ·  "
+        f"**Cache read/write:** {_int('cache_read_tokens')} / {_int('cache_write_tokens')}",
+        f"**Backend:** {metrics.get('backend') or '—'}  ·  "
+        f"**Flags on:** {flag_line}",
+    ]
+    body = "\n\n".join(lines)
+    return _toggle_section("Run metrics", "gray_background", body)
 
 
 def _chapters_toggle(chapters: List[dict]) -> dict:
@@ -238,6 +293,11 @@ def build_blocks(bundle: ContentBundle) -> List[dict]:
                 },
             }
         )
+
+    # Run metrics — cost + tokens + flags + duration. Sits just above the
+    # Metadata heading so it reads as the "receipt" for this save.
+    if bundle.run_metrics:
+        blocks.append(_run_metrics_block(bundle.run_metrics))
 
     # Metadata footer
     blocks.append({"type": "divider", "divider": {}})

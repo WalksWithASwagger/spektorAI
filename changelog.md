@@ -5,6 +5,21 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-04-19
+
+### Added
+- **Per-run metrics block in Notion** — every saved page now carries its own receipt: total $, LLM $, ASR $, cache savings, call count, input/output/cache-read/cache-write tokens, wall-clock duration, transcription backend, and which features fired (agentic, fact-check, chapters, images, RAG, compare, personas). Renders as a `Run metrics` toggle (gray) between the last content section and the Metadata heading so it reads like the footer of a receipt.
+- **Markdown mirror** — same fields appear as a `## Run metrics` bullet list in the exported `.md`, sitting in the same slot above `## Metadata`.
+- **Duration tracking** — `ui/pipeline._execute_run()` stamps `pipeline_started_at` before stage 0 and freezes `pipeline_ended_at` right after pipeline completion (before the auto-save), so the duration number captures the pipeline itself, not the Notion roundtrip.
+- **ContentBundle.run_metrics** — optional dict field. When None, both Notion and markdown rendering skip the block entirely so manual/test bundles stay clean.
+
+### Why
+- Previously every run dumped cost data into `history.json` — useful for `📜 Runs` but invisible on the saved Notion page itself. Now each page is self-contained: you can eyeball "this run cost $0.04, saved $0.01 to cache, agentic + images on, ran 2m 14s" without cross-referencing.
+
+### Tests
+- `tests/test_notion.py` — 5 new (no-metrics → no block; full metrics render with $/tokens/duration/flags; sub-minute formats as `34s`, 134s formats as `2m 14s`; empty flag set shows `none`; metrics sits above Metadata heading).
+- `tests/test_export.py` — 2 new (markdown rendering with full metrics; no metrics → no section). **141 total.**
+
 ## [0.8.3] - 2026-04-19
 
 ### Added
