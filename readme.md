@@ -58,6 +58,38 @@ base.
 
 ---
 
+## Interface
+
+Three zones: header, sidebar + main stream, fixed bottom status bar.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  WhisperForge // Control_Center              Wed 19 Apr · 17:00  │
+├──────────┬───────────────────────────────────────────────────────┤
+│ PROFILE  │  ┌─ Input ─────────────────────────────────────────┐ │
+│  KK ▾    │  │ [📂 Upload] [🎙 Record] [✎ Paste]                │ │
+│          │  └─────────────────────────────────────────────────┘ │
+│ PROVIDER │  ┌─ Pipeline ──────────────────────────────────────┐ │
+│  Haiku ▾ │  │ ● Transcribe ● Clean ● Wisdom ○ Article ○ ...   │ │
+│          │  │ Streaming status logs (st.status)                │ │
+│ ⚙ More   │  └─────────────────────────────────────────────────┘ │
+│ 📜 Runs  │  ┌─ Output ────────────────────────────────────────┐ │
+│ ✎ Prompts│  │ 📝 Article · 🎯 Wisdom · 🗺 Outline · 🖼 Images │ │
+│ 📚 KB    │  │ 👍👎 feedback per section · 📤 Save to Notion   │ │
+│          │  └─────────────────────────────────────────────────┘ │
+├──────────┴───────────────────────────────────────────────────────┤
+│ Cost $0.12 · Calls 4 · Cache saved $0.03 · Claude Haiku 4.5      │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+All heavy trees (Prompt editor, Knowledge Base manager, Run history) live
+in `@st.dialog` modals triggered from the sidebar — the sidebar itself
+stays compact. Generation Settings (cleanup, chapters, agentic, fact-check,
+images + style/ratio/model) live in the `⚙ More` popover.
+
+The bottom bar polls cost + cache savings every 2 s via `@st.fragment`
+without rerunning the pipeline.
+
 ## Architecture
 
 ```

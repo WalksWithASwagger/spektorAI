@@ -87,91 +87,6 @@ CSS = """
     opacity: 0.8;
 }
 
-/* Compact status cards */
-.status-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 12px 0 18px 0;
-}
-
-.status-card {
-    background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-    border-radius: var(--card-radius);
-    padding: 12px;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    position: relative;
-    overflow: hidden;
-}
-
-.status-card:hover {
-    border: 1px solid rgba(121, 40, 202, 0.3);
-    box-shadow: 0 0 10px rgba(121, 40, 202, 0.15);
-}
-
-.status-card::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1.5px;
-    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.status-card:hover::after {
-    opacity: 1;
-}
-
-.status-card h3 {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 500;
-}
-
-.status-value {
-    font-size: 1.15rem;
-    font-weight: 600;
-    text-align: center;
-    color: var(--text-primary);
-    font-family: var(--terminal-font);
-}
-
-/* Quick access buttons */
-.quick-access {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin: 12px 0;
-}
-
-.quick-button {
-    background: rgba(121, 40, 202, 0.1);
-    border-radius: var(--card-radius);
-    padding: 10px;
-    text-align: center;
-    color: var(--text-primary);
-    transition: all 0.2s ease;
-    cursor: pointer;
-    border: 1px solid rgba(121, 40, 202, 0.1);
-    font-size: 0.85rem;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
-.quick-button:hover {
-    background: rgba(121, 40, 202, 0.15);
-    border-color: rgba(121, 40, 202, 0.3);
-    transform: translateY(-2px);
-}
-
 /* Section headers with subtle underline */
 .section-header {
     color: var(--text-primary);
@@ -261,15 +176,17 @@ CSS = """
     transform: translateY(0px);
 }
 
-/* "I'm Feeling Lucky" special button */
-.lucky-button {
-    background: linear-gradient(110deg, rgba(54, 211, 153, 0.1) 0%, rgba(255, 0, 128, 0.05) 100%) !important;
-    border: 1px solid rgba(54, 211, 153, 0.3) !important;
+/* Primary button emphasis — applied by type="primary" */
+.stButton > button[kind="primary"] {
+    background: linear-gradient(110deg, rgba(121, 40, 202, 0.25) 0%, rgba(255, 0, 128, 0.12) 100%);
+    border-color: rgba(121, 40, 202, 0.5);
+    box-shadow: 0 0 12px rgba(121, 40, 202, 0.15);
 }
 
-.lucky-button:hover {
-    background: linear-gradient(110deg, rgba(54, 211, 153, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%) !important;
-    border-color: rgba(54, 211, 153, 0.5) !important;
+.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(110deg, rgba(121, 40, 202, 0.35) 0%, rgba(255, 0, 128, 0.18) 100%);
+    border-color: rgba(121, 40, 202, 0.7);
+    box-shadow: 0 0 18px rgba(121, 40, 202, 0.25);
 }
 
 /* Audio player styling */
@@ -356,183 +273,145 @@ audio {
     font-size: 1rem;
 }
 
-/* Content section styling */
-.content-section {
-    background: linear-gradient(120deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-    border-radius: var(--card-radius);
-    padding: 15px;
-    margin: 12px 0;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+/* ────────────────────────────────────────────────────────────────
+   0.6.0 three-zone refactor additions
+   ──────────────────────────────────────────────────────────────── */
+
+/* Bordered cards (st.container(border=True)) — soften the default white
+   border to match the brand palette. */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border: 1px solid rgba(121, 40, 202, 0.15) !important;
+    border-radius: var(--card-radius) !important;
+    background: linear-gradient(
+        160deg,
+        rgba(26, 26, 36, 0.6) 0%,
+        rgba(18, 18, 24, 0.6) 100%
+    );
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
-.content-section h3 {
-    color: var(--text-primary);
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-weight: 500;
-    font-size: 1rem;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+/* Segmented control (sidebar provider picker) — echo the pill-button
+   gradient so the chrome feels consistent. */
+[data-testid="stSegmentedControl"] button {
+    background: transparent !important;
+    border: 1px solid rgba(121, 40, 202, 0.15) !important;
+    color: var(--text-secondary) !important;
+    font-size: 0.8rem !important;
+}
+[data-testid="stSegmentedControl"] button[aria-pressed="true"] {
+    background: linear-gradient(110deg, rgba(121, 40, 202, 0.25) 0%, rgba(255, 0, 128, 0.1) 100%) !important;
+    border-color: rgba(121, 40, 202, 0.5) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 8px rgba(121, 40, 202, 0.2);
 }
 
-/* Terminal-style output */
-.terminal-output {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-left: 2px solid var(--accent-primary);
-    border-radius: var(--border-radius);
-    padding: 10px 15px;
-    font-family: var(--terminal-font);
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    margin: 10px 0;
+/* st.status container — keep it from taking over the page */
+[data-testid="stStatusWidget"] {
+    border-radius: var(--card-radius) !important;
+    border: 1px solid rgba(121, 40, 202, 0.2) !important;
+    background: rgba(18, 18, 24, 0.7);
 }
 
-/* Process indicator */
-.process-indicator {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg-secondary);
-    padding: 10px;
-    border-radius: var(--border-radius);
-    margin: 15px 0;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+/* sac.steps — recolor the AntD defaults to match our palette */
+.ant-steps-item-icon {
+    background: rgba(121, 40, 202, 0.15) !important;
+    border-color: rgba(121, 40, 202, 0.3) !important;
+}
+.ant-steps-item-process .ant-steps-item-icon {
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)) !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 10px rgba(121, 40, 202, 0.4);
+}
+.ant-steps-item-finish .ant-steps-item-icon {
+    background: rgba(54, 211, 153, 0.15) !important;
+    border-color: var(--success) !important;
+}
+.ant-steps-item-finish .ant-steps-icon {
+    color: var(--success) !important;
 }
 
-.process-indicator .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    margin-right: 10px;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.4; }
-    50% { opacity: 1; }
-    100% { opacity: 0.4; }
-}
-
-.process-status {
-    flex-grow: 1;
-    font-size: 0.85rem;
-}
-
-/* Notion button styling */
-.notion-button {
-    display: inline-block;
-    background: linear-gradient(110deg, rgba(121, 40, 202, 0.1) 0%, rgba(255, 0, 128, 0.05) 100%);
-    border: 1px solid rgba(121, 40, 202, 0.25);
-    border-radius: var(--border-radius);
-    padding: 8px 15px;
-    color: var(--text-primary);
-    text-decoration: none;
-    font-family: var(--system-font);
-    transition: all 0.2s ease;
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-top: 10px;
-}
-
-.notion-button:hover {
-    background: linear-gradient(110deg, rgba(121, 40, 202, 0.15) 0%, rgba(255, 0, 128, 0.08) 100%);
-    border-color: rgba(121, 40, 202, 0.4);
-    transform: translateY(-1px);
-}
-
-/* Footer styling */
-.app-footer {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(121, 40, 202, 0.15);
-    font-size: 0.8rem;
-    text-align: center;
+/* Sidebar status footer — compact dot row replacing the old app-footer */
+.sidebar-status {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(121, 40, 202, 0.12);
+    font-size: 0.72rem;
     color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.03em;
 }
 
-.footer-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.footer-status {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin: 10px 0;
-}
-
-.footer-status span {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.footer-status-dot {
+/* Colored status dots (reused inline in the sidebar footer) */
+.status-dot {
+    display: inline-block;
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    display: inline-block;
+    margin: 0 2px 0 4px;
+    vertical-align: middle;
+}
+.status-dot.status-secure       { background: var(--success);         box-shadow: 0 0 5px var(--success); }
+.status-dot.status-sovereignty  { background: var(--accent-primary);  box-shadow: 0 0 5px var(--accent-primary); }
+.status-dot.status-offline      { background: var(--info);            box-shadow: 0 0 5px var(--info); }
+
+/* Bottom bar — pinned via streamlit-extras bottom_container. The library
+   handles positioning; we handle the look. */
+.bottom-bar {
+    border-top: 1px solid rgba(121, 40, 202, 0.25);
+    padding: 10px 14px 2px 14px;
+    background: linear-gradient(
+        180deg,
+        rgba(18, 18, 24, 0.85) 0%,
+        rgba(12, 12, 18, 0.95) 100%
+    );
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-family: var(--terminal-font);
 }
 
-.status-secure .footer-status-dot {
-    background-color: var(--success);
-    box-shadow: 0 0 5px var(--success);
+.bottom-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 2px 6px;
 }
-
-.status-sovereignty .footer-status-dot {
-    background-color: var(--accent-primary);
-    box-shadow: 0 0 5px var(--accent-primary);
+.bottom-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
-
-.status-offline .footer-status-dot {
-    background-color: var(--info);
-    box-shadow: 0 0 5px var(--info);
-}
-
-/* Animations and effects */
-.scanner-line {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-    opacity: 0.4;
-    z-index: 1000;
-    animation: scanner-move 8s linear infinite;
-}
-
-@keyframes scanner-move {
-    0% { top: 0; }
-    100% { top: 100%; }
-}
-
-/* Toast notifications */
-.toast-notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--bg-secondary);
-    border-radius: var(--border-radius);
-    padding: 10px 15px;
-    border-left: 3px solid var(--success);
+.bottom-value {
+    font-size: 0.95rem;
     color: var(--text-primary);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    font-size: 0.85rem;
-    animation: toast-in 0.3s ease forwards;
+    font-weight: 500;
+    font-family: var(--terminal-font);
 }
 
-@keyframes toast-in {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+/* Dialog modal — soften the default border, match palette */
+[data-testid="stDialog"] > div {
+    background: linear-gradient(160deg, var(--bg-secondary) 0%, var(--bg-primary) 100%) !important;
+    border: 1px solid rgba(121, 40, 202, 0.3) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Popover (sidebar ⚙ More uses these) */
+[data-testid="stPopover"] {
+    background: var(--bg-secondary) !important;
+    border: 1px solid rgba(121, 40, 202, 0.25) !important;
+    border-radius: var(--card-radius) !important;
+}
+
+/* Feedback widgets (thumbs on output sections) — subtle, not neon */
+[data-testid="stFeedback"] button {
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    border: 1px solid rgba(121, 40, 202, 0.1) !important;
+}
+[data-testid="stFeedback"] button[aria-pressed="true"] {
+    color: var(--accent-primary) !important;
+    border-color: rgba(121, 40, 202, 0.4) !important;
 }
 </style>
-
-<!-- Add the scanner line animation -->
-<div class="scanner-line"></div>
 """

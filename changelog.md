@@ -5,6 +5,37 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-19
+
+### Added
+- **Three-zone app shell** (header / sidebar + main / fixed bottom bar), Cursor/Claude-Code style. `app.py` shrunk from 970 → 55 LoC; feature code moved to a new `ui/` package.
+- **`ui/` package** split by concern:
+  - `session.py` — single `init_all_state()` entrypoint; every session-state key lives in one place. New `clear_run()` preserves settings, zeros per-run state. Per-provider model memory via `remember_model_for_provider()`.
+  - `shell.py` — header + `render_bottom_bar()` wrapped in `streamlit-extras.bottom_container` + `@st.fragment(run_every="2s")` for live cost/cache/calls/model readout without rerunning the pipeline.
+  - `sidebar.py` — compact profile / provider (`st.segmented_control`) / model pickers + four dialog-opening action buttons.
+  - `dialogs.py` — four `@st.dialog` modals for prompt editor (selectbox + one text_area, replacing 5 stacked editors), knowledge base manager, run history (`st.data_editor` + `LinkColumn` on Notion URLs), and clear-run confirm.
+  - `input.py` — three tabs (Upload / Record / Paste) that all write to one `pending_input`, replacing ~400 LoC of near-duplicate handler code.
+  - `pipeline.py` — `sac.steps` horizontal stage indicator plus `st.status` collapsible progress container with per-stage `write()` lines. Single entrypoint routes both Transcribe-only and Full-pipeline modes.
+  - `output.py` — one bordered card per section via `st.container(border=True)`, `st.feedback("thumbs")` per section, single unified Save-to-Notion path (replaced three).
+- Dependencies: `streamlit-extras>=0.4.0`, `streamlit-antd-components>=0.3.2`. Streamlit pin bumped to `>=1.37` for `@st.fragment`.
+- New CSS components: `.bottom-bar`/`.bottom-metric`, `.sidebar-status`, `.status-dot.*` variants, segmented-control palette overrides, sac.steps palette overrides, dialog + popover styling — all matching the existing cyberpunk vibe.
+
+### Changed
+- Recording-tab auto-save-to-Notion (old behavior) replaced by the single explicit "Save to Notion" button in the unified Output card. All three input tabs now behave identically after submit.
+- `st.spinner` + `st.empty` + manual markdown replaced by `st.status("…", expanded=True)` streaming per-stage log lines.
+- `st.success` banners replaced by `st.toast` ephemeral notifications.
+
+### Removed (9 dead CSS selectors + 2 broken scripts from styles.py)
+- `.lucky-button`, `.quick-access`, `.quick-button`, `.content-section`, `.terminal-output`, `.process-indicator` (+ `@keyframes pulse`), `.notion-button`, `.scanner-line` (+ `@keyframes scanner-move` + its broken inline HTML), `.toast-notification` (+ `@keyframes toast-in`).
+- `.status-container` / `.status-card` / `.status-value` — the old "System Status" three-card row whose JS tried to `innerHTML` static elements Streamlit just rerendered.
+- `.app-footer` / `.footer-content` / `.footer-status` / `.footer-status-dot` / `.status-secure/.status-sovereignty/.status-offline .footer-status-dot` — replaced by the compact `.sidebar-status` line.
+
+### Verified
+- `pytest tests/ -q` → 103 pass (no regressions; UI isn't unit-tested by design).
+- `tests/smoke.sh` → HTTP 200 on `/_stcore/health`.
+- Every `.class` in `styles.py` has a matching emitter in `app.py` or `ui/*.py` (verified by a grep-both-ways script).
+- Live boot: `streamlit run app.py` → three zones render, no exceptions in the server log, index HTML clean.
+
 ## [0.5.0] - 2026-04-19
 
 ### Added
