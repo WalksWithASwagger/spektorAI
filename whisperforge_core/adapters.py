@@ -55,6 +55,7 @@ class Processor(Protocol):
         image_style: Optional[str] = None,
         image_aspect_ratio: str = "16:9",
         image_model: str = "gemini-2.5-flash-image",
+        article_length_words: int = 1500,
     ) -> pipeline_mod.PipelineResult: ...
 
 
@@ -84,13 +85,15 @@ class LocalProcessor:
                      agentic=False, fact_check=False,
                      generate_images=False, image_style=None,
                      image_aspect_ratio="16:9",
-                     image_model="gemini-2.5-flash-image"):
+                     image_model="gemini-2.5-flash-image",
+                     article_length_words=1500):
         return pipeline_mod.run(
             transcript, provider, model, prompts=prompts,
             knowledge_base=knowledge_base, progress=progress,
             segments=segments, agentic=agentic, fact_check=fact_check,
             generate_images=generate_images, image_style=image_style,
             image_aspect_ratio=image_aspect_ratio, image_model=image_model,
+            article_length_words=article_length_words,
         )
 
 

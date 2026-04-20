@@ -75,6 +75,7 @@ def run(
     image_aspect_ratio: str = "16:9",
     image_model: str = "gemini-2.5-flash-image",
     image_output_dir: Optional[str] = None,
+    article_length_words: int = 1500,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -178,7 +179,13 @@ def run(
     )
     _report(0.8, _STAGES[3][1])
 
-    # Stage 5: article draft (always runs — first pass of the agentic flow)
+    # Stage 5: article draft (always runs — first pass of the agentic flow).
+    # Length budget: ~1.4 tokens/word + 30% headroom for headings/structure.
+    article_max_tokens = max(800, int(article_length_words * 1.8))
+    article_user_prefix = (
+        f"Target length: approximately {article_length_words} words. "
+        f"Adjust depth and section count to fit, but never pad with filler.\n\n"
+    )
     _report(0.8, _STAGES[4][1])
     draft = llm.generate(
         "article_writing",
@@ -186,11 +193,13 @@ def run(
             "transcript": transcript,
             "wisdom": result.wisdom or "",
             "outline": result.outline or "",
+            "_user_prefix": article_user_prefix,   # consumed by context builder if present
         },
         provider,
         model,
         prompt=prompts.get("article_writing"),
         knowledge_base=knowledge_base,
+        max_tokens=article_max_tokens,
     )
     result.article = draft
     result.article_draft = draft
@@ -225,11 +234,13 @@ def run(
                     "transcript": transcript,
                     "wisdom": result.wisdom or "",
                     "outline": result.outline or "",
+                    "_user_prefix": article_user_prefix,
                 },
                 provider,
                 model,
                 prompt=prompts.get("article_revise"),
                 knowledge_base=knowledge_base,
+                max_tokens=article_max_tokens,
             )
             if revised:
                 result.article = revised

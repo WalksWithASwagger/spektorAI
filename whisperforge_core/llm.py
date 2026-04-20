@@ -54,8 +54,9 @@ _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
         f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
     ),
     "article_writing": lambda ctx: (
-        f"TRANSCRIPT EXCERPT:\n{ctx['transcript'][:1000]}...\n\n"
-        f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
+        ctx.get("_user_prefix", "")
+        + f"TRANSCRIPT EXCERPT:\n{ctx['transcript'][:1000]}...\n\n"
+        + f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
     ),
     # Critique receives the draft + full source context.
     "article_critique": lambda ctx: (
@@ -65,12 +66,15 @@ _CONTEXT_BUILDERS: Dict[str, Callable[[dict], str]] = {
         f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
     ),
     # Revise receives draft + critique + source so it can ground changes.
+    # The optional ``_user_prefix`` ride-along is how the pipeline injects
+    # the article-length directive without mutating the prompt template.
     "article_revise": lambda ctx: (
-        f"DRAFT ARTICLE:\n{ctx['article']}\n\n"
-        f"---\nCRITIQUE\n---\n{ctx['critique']}\n\n"
-        f"---\nSOURCE MATERIAL\n---\n"
-        f"TRANSCRIPT:\n{ctx['transcript']}\n\n"
-        f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
+        ctx.get("_user_prefix", "")
+        + f"DRAFT ARTICLE:\n{ctx['article']}\n\n"
+        + f"---\nCRITIQUE\n---\n{ctx['critique']}\n\n"
+        + f"---\nSOURCE MATERIAL\n---\n"
+        + f"TRANSCRIPT:\n{ctx['transcript']}\n\n"
+        + f"WISDOM:\n{ctx['wisdom']}\n\nOUTLINE:\n{ctx['outline']}"
     ),
     # Fact-check reads the article + full transcript (no summaries — need
     # direct quote-level grounding).

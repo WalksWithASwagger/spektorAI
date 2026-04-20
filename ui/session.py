@@ -42,6 +42,12 @@ _SETTINGS_DEFAULTS: Dict[str, Any] = {
     "image_style": None,                         # None = use images.default_style()
     "image_aspect": "16:9",
     "image_model": "gemini-2.5-flash-image",
+    # Article length target — fed into article_writing + article_revise.
+    # "Brief": ~500 words, "Standard": ~1500, "Long-form": ~3000.
+    "article_length": "Standard",
+    # Auto-save to Notion when the pipeline finishes — restores the old
+    # Record-tab "I'm Feeling Lucky" behavior as an opt-out toggle.
+    "auto_save_notion": True,
     # Dialog open-state — streamlit modals can't auto-open but we track this
     # for our own animations/toasts.
     "_dialog_open": None,

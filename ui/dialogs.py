@@ -51,6 +51,24 @@ def generation_settings() -> None:
         value=s.fact_check_enabled, key="gs_factcheck",
     )
 
+    st.markdown("**Article length**")
+    s.article_length = st.segmented_control(
+        "Length", options=["Brief", "Standard", "Long-form"],
+        default=s.article_length, key="gs_length",
+        label_visibility="collapsed",
+        help="Brief ≈ 500 words · Standard ≈ 1500 · Long-form ≈ 3000. "
+             "Applied to the article + revise stages.",
+    ) or s.article_length
+
+    st.divider()
+    st.markdown("**Output**")
+    s.auto_save_notion = st.checkbox(
+        "Auto-save to Notion when pipeline finishes",
+        value=s.auto_save_notion, key="gs_autosave",
+        help="Save the run automatically once the article stage completes. "
+             "Disable if you want to review before publishing.",
+    )
+
     st.divider()
     st.markdown("**Image generation** (Nano Banana / Gemini)")
     s.images_enabled = st.checkbox(

@@ -132,6 +132,8 @@ def _execute_run() -> None:
                     last_label["value"] = label
                     s.pipeline_stage_idx = _stage_to_idx.get(label, s.pipeline_stage_idx)
 
+            length_map = {"Brief": 500, "Standard": 1500, "Long-form": 3000}
+            article_words = length_map.get(s.article_length, 1500)
             result = adapters.processor.run_pipeline(
                 s.transcription,
                 s.ai_provider, s.ai_model,
@@ -144,6 +146,7 @@ def _execute_run() -> None:
                 image_style=s.image_style,
                 image_aspect_ratio=s.image_aspect,
                 image_model=s.image_model,
+                article_length_words=article_words,
             )
 
             s.wisdom = result.wisdom or ""
@@ -161,6 +164,20 @@ def _execute_run() -> None:
 
             status.update(label="Pipeline complete — see Output below.",
                           state="complete", expanded=False)
+
+            # Auto-save to Notion if enabled. Lazy import avoids the
+            # ui.output ↔ ui.pipeline circular path at module load time.
+            if s.get("auto_save_notion", True):
+                from . import output as output_mod
+                status.write("📤 Auto-saving to Notion…")
+                url = output_mod._save_to_notion()
+                if url:
+                    s.last_notion_url = url
+                    st.toast("Auto-saved to Notion!",
+                             icon=":material/cloud_done:")
+                else:
+                    st.toast("Auto-save failed — check the Output card.",
+                             icon=":material/error:")
 
         except Exception as e:
             status.update(label=f"Pipeline error: {e}", state="error")
