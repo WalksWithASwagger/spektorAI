@@ -10,23 +10,51 @@ base.
 
 ## Features
 
-- **Audio transcription** (MP3, WAV, OGG, M4A) via OpenAI Whisper, with
-  automatic chunking for files above 20 MB.
-- **Three provider lanes**: OpenAI (cloud), Anthropic (cloud), or any local
-  model running via Ollama (`localhost:11434`). Ollama models are
-  auto-discovered at UI load.
-- **Local-first transcription** available: MLX Whisper (Apple Silicon native)
-  or whisper.cpp as alternates to the cloud Whisper API.
-- **Five-stage pipeline** per run: wisdom → outline → social media → image
-  prompts → full article draft.
+**Audio in**
+- MP3 / WAV / OGG / M4A upload OR record live in the browser via
+  `st.audio_input` — no external recorder needed.
+- Four transcription backends: OpenAI cloud Whisper (`gpt-4o-mini-transcribe`
+  default), **MLX Whisper** (Apple Silicon native), **whisper.cpp** (CPU/Metal),
+  **WhisperX** with word-level timestamps + optional pyannote speaker
+  diarization.
+- Silero VAD-based chunker (opt-in) cuts on silences instead of byte size.
+
+**Pipeline**
+- Three LLM provider lanes: **OpenAI**, **Anthropic**, or local **Ollama**
+  (auto-discovers installed models at UI load).
+- Default: **Claude Haiku 4.5** — fast, cheap, in your voice.
+- Stages: transcript cleanup → chapters → wisdom → outline → social → image
+  prompts → article → optional critique/revise → optional fact-check →
+  optional image generation.
+- **Agentic drafting**: draft → critique → revise for publishable long-form.
+- **Fact-check pass**: flags article claims not grounded in the transcript.
+- **Chapterization**: topical segmentation with `[M:SS]` timestamps when
+  WhisperX is the backend; JSON-schema-enforced output.
+- **Anthropic prompt caching** on the knowledge-base prefix — ~67% input-
+  token cost reduction per 5-stage run.
 - **Per-user voice**: prompts + knowledge base live under `prompts/<user>/`
   and are injected into the system prompt on every call.
 - **Text-input mode**: paste prose instead of uploading audio and run the same
   pipeline (useful for imported transcripts).
-- **Structured Notion export**: collapsible toggles per section, color-coded,
-  AI-generated title + tags + summary, respecting Notion's block limits.
-- **Two deployment modes**: single-process monolith for local use, or
-  FastAPI microservices via `docker-compose` — same code, same UI.
+
+**Image generation**
+- Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
+  output into real PNGs — ~$0.039/image flash, ~$0.10/image pro.
+- Four style presets (`kk`, `hopecode`, `bcai`, `upgrade`) with brand-specific
+  prompt suffixes; see `styles/image_styles.yaml`.
+- Aspect-ratio presets (16:9, 1:1, 9:16) for LinkedIn, Instagram, Stories.
+
+**Output**
+- Structured **Notion export**: collapsible toggles per section, color-coded,
+  AI-generated title + tags + summary, Chapters with `[M:SS]` jump prefixes,
+  Revision Notes + Fact Check toggles when agentic/fact-check ran.
+- **Cost tracker** (session total + cache savings) and **Run history**
+  (clickable list of recent Notion pages) in the sidebar.
+
+**Deployment**
+- Single-process **monolith** for local use.
+- **Microservices** via `docker-compose` — same UI, FastAPI workers wrap the
+  same shared-logic package.
 
 ---
 
@@ -93,9 +121,16 @@ ANTHROPIC_API_KEY=sk-...
 NOTION_API_KEY=secret_...
 NOTION_DATABASE_ID=<your-database-id>
 
+# Only needed for image generation (Nano Banana / Gemini):
+GOOGLE_API_KEY=AIzaSy...
+
 # Only needed for services mode (docker compose):
 SERVICE_TOKEN=<any-shared-secret>
 ```
+
+If you haven't created a Notion database yet, invite your integration to any
+Notion database with `Name` and `Tags` properties — WhisperForge will
+auto-discover it via the integration's `search` API.
 
 ### Create your prompt profile (first run only)
 
@@ -249,6 +284,7 @@ tests/smoke.sh            # boots streamlit, hits /_stcore/health
 | `WHISPERX_DEVICE`        | `cpu` (default) or `cuda`                    | no            |
 | `WHISPERX_DIARIZATION`   | `1` to label speakers via pyannote           | no            |
 | `WHISPERX_HF_TOKEN`      | HuggingFace token (required when diarization is on) | diar only |
+| `GOOGLE_API_KEY`         | Gemini API key for image generation          | images only   |
 | `WHISPER_MODEL`          | Cloud Whisper model (default `gpt-4o-mini-transcribe`; also `gpt-4o-transcribe` or `whisper-1`) | no |
 | `MLX_WHISPER_MODEL`      | HF repo for mlx-whisper (default whisper-medium-mlx) | no    |
 | `WHISPER_CPP_MODEL`      | Path to ggml bin for `whisper_cpp` backend   | whisper_cpp only |
