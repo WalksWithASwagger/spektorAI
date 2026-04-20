@@ -5,6 +5,17 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-19
+
+### Added
+- **Auto-save to Notion** at end of pipeline (default ON, opt-out via ⚙ Generation Settings). Restores the old Record-tab "I'm Feeling Lucky" auto-save behavior as a flag. Lazy-imports `ui.output._save_to_notion` from `ui.pipeline` to avoid circular dependency. `st.toast` confirms or warns.
+- **Article length targeting** — segmented control (Brief / Standard / Long-form) maps to ~500 / 1500 / 3000 words. Routed into both `article_writing` and `article_revise` stages with `max_tokens` budget (1.8× target words for headroom) AND a `_user_prefix` ride-along that injects `"Target length: approximately N words"` into the user content.
+
+### Verified
+- Live A/B: same transcript at Brief vs Long-form produced 579 vs 3113 words (5.4× ratio, both within 16% of targets).
+- Prompt-cache hit confirmed on every stage after the 0.6.1 default-user fix landed: `cache_read=5821` per call.
+- 103 tests still pass.
+
 ## [0.6.1] - 2026-04-19
 
 ### Restored
