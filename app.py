@@ -14,7 +14,7 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
-from whisperforge_core import adapters, audio, cost, history, llm, notion, pipeline
+from whisperforge_core import adapters, audio, cost, history, images, llm, notion, pipeline
 from whisperforge_core import prompts as prompts_mod
 from whisperforge_core.config import DEFAULT_PROMPTS, LLM_MODELS
 
@@ -199,11 +199,16 @@ def process_all_content(text, ai_provider, model, knowledge_base=None):
     segments = getattr(st.session_state, "transcription_segments", None) or None
     agentic = bool(getattr(st.session_state, "agentic_drafting", False))
     fact_check = bool(getattr(st.session_state, "fact_check_enabled", False))
+    gen_images = bool(getattr(st.session_state, "images_enabled", False))
     result = _adapters.processor.run_pipeline(
         text, ai_provider, model,
         knowledge_base=knowledge_base,
         segments=segments, progress=cb,
         agentic=agentic, fact_check=fact_check,
+        generate_images=gen_images,
+        image_style=st.session_state.get("image_style"),
+        image_aspect_ratio=st.session_state.get("image_aspect", "16:9"),
+        image_model=st.session_state.get("image_model", "gemini-2.5-flash-image"),
     )
     status.text("Content generation complete!")
     # Stash editorial intermediates + cleaned transcript so
@@ -211,6 +216,7 @@ def process_all_content(text, ai_provider, model, knowledge_base=None):
     st.session_state.article_critique = result.article_critique
     st.session_state.fact_check_flags = result.fact_check_flags or []
     st.session_state.fact_check_ran = bool(fact_check)
+    st.session_state.generated_images = result.generated_images or []
     st.session_state.chapters = result.chapters or []
     if result.cleaned_transcript:
         st.session_state.cleaned_transcript = result.cleaned_transcript
@@ -333,23 +339,71 @@ def main():
         )
         st.session_state.ai_model = selected_model
 
-        # Pipeline-quality toggles. Both default off — agentic drafting
-        # roughly doubles the cost/time of the article stage (one extra
-        # critique call + one extra revise call) but produces publishable
-        # output where single-shot drafting produces OK output.
-        st.session_state.agentic_drafting = st.checkbox(
-            "Agentic drafting (draft → critique → revise)",
-            value=st.session_state.get("agentic_drafting", False),
-            help="Three-pass article generation. ~2x cost/time for a big "
-                 "quality jump on long-form.",
-        )
-        st.session_state.fact_check_enabled = st.checkbox(
-            "Fact-check article against transcript",
-            value=st.session_state.get("fact_check_enabled", False),
-            help="Flags claims in the article that aren't grounded in the "
-                 "source transcript. Adds one extra call; output lands in a "
-                 "'Fact Check' toggle in Notion.",
-        )
+        # --- Generation Settings dashboard -----------------------------
+        # One consolidated panel for every knob that affects a pipeline
+        # run. Keeps the sidebar from becoming a pile of unrelated
+        # checkboxes and gives new options a natural home.
+        with st.expander("⚙️  Generation Settings", expanded=False):
+            st.markdown("**Content pipeline**")
+            st.session_state.cleanup_enabled = st.checkbox(
+                "Clean transcript (remove fillers/false-starts)",
+                value=st.session_state.get("cleanup_enabled", True),
+                help="Stage 0 — strips 'um/uh/you know' and self-corrections "
+                     "before downstream stages see the transcript.",
+            )
+            st.session_state.chapters_enabled = st.checkbox(
+                "Chapter segmentation",
+                value=st.session_state.get("chapters_enabled", True),
+                help="Split the transcript into topical chapters with "
+                     "optional [M:SS] timestamps (needs WhisperX backend).",
+            )
+            st.session_state.agentic_drafting = st.checkbox(
+                "Agentic drafting (draft → critique → revise)",
+                value=st.session_state.get("agentic_drafting", False),
+                help="Three-pass article generation. ~2x cost/time for a "
+                     "big quality jump on long-form.",
+            )
+            st.session_state.fact_check_enabled = st.checkbox(
+                "Fact-check article against transcript",
+                value=st.session_state.get("fact_check_enabled", False),
+                help="Flags claims in the article that aren't grounded in "
+                     "the source transcript. Output lands in a 'Fact Check' "
+                     "toggle in Notion.",
+            )
+
+            st.markdown("**Image generation** (Nano Banana / Gemini)")
+            st.session_state.images_enabled = st.checkbox(
+                "Generate images from image_prompts",
+                value=st.session_state.get("images_enabled", False),
+                help="Turn the image_prompts stage output into real PNGs via "
+                     "Google Gemini. ~$0.039/image with gemini-2.5-flash-image. "
+                     "Needs GOOGLE_API_KEY in .env.",
+            )
+            style_options = list(images.list_styles().keys()) + ["none"]
+            default_style = st.session_state.get("image_style") or images.default_style()
+            st.session_state.image_style = st.selectbox(
+                "Image style",
+                options=style_options,
+                index=style_options.index(default_style) if default_style in style_options else 0,
+                help="Brand style suffix appended to every image prompt. "
+                     "See styles/image_styles.yaml.",
+            )
+            aspect_options = ["16:9", "1:1", "9:16"]
+            st.session_state.image_aspect = st.selectbox(
+                "Aspect ratio",
+                options=aspect_options,
+                index=aspect_options.index(st.session_state.get("image_aspect", "16:9")),
+                help="16:9 for LinkedIn / Twitter / hero, 1:1 for Instagram, "
+                     "9:16 for Stories / Reels.",
+            )
+            st.session_state.image_model = st.selectbox(
+                "Image model",
+                options=["gemini-2.5-flash-image", "gemini-3-pro-image-preview"],
+                index=0,
+                help="flash-image is fast and cheap (~$0.039/image); "
+                     "pro-image-preview is higher fidelity (~$0.10/image) "
+                     "and supports 2K/4K.",
+            )
 
         # Session cost readout — reads the accumulating ledger that llm._call
         # writes to on every provider call. Includes the Anthropic cache
@@ -832,7 +886,38 @@ def main():
             if 'image_prompts' in st.session_state and st.session_state.image_prompts:
                 st.markdown("### Image Generation Prompts")
                 st.markdown(st.session_state.image_prompts)
-            
+
+            # Generated images gallery — populated when image generation
+            # was enabled for this run. Shows successful images as a grid
+            # and flagged failures with their error.
+            gen_imgs = st.session_state.get("generated_images") or []
+            if gen_imgs:
+                succeeded = [g for g in gen_imgs if g.get("succeeded")]
+                failed = [g for g in gen_imgs if not g.get("succeeded")]
+                st.markdown(f"### Generated Images ({len(succeeded)} of {len(gen_imgs)})")
+                if succeeded:
+                    cols = st.columns(min(3, len(succeeded)))
+                    for i, img in enumerate(succeeded):
+                        with cols[i % len(cols)]:
+                            st.image(img["path"], use_container_width=True)
+                            st.caption(img["prompt"][:120] + ("..." if len(img["prompt"]) > 120 else ""))
+                            try:
+                                with open(img["path"], "rb") as f:
+                                    st.download_button(
+                                        "Download",
+                                        data=f.read(),
+                                        file_name=os.path.basename(img["path"]),
+                                        mime="image/png",
+                                        key=f"dl_{i}_{img['path']}",
+                                    )
+                            except OSError:
+                                pass
+                for img in failed:
+                    st.warning(
+                        f"⚠️ Image failed: {img.get('error', 'unknown error')[:200]}\n\n"
+                        f"**Prompt:** {img['prompt'][:200]}"
+                    )
+
             if 'article' in st.session_state and st.session_state.article:
                 st.markdown("### Full Article")
                 st.markdown(st.session_state.article)

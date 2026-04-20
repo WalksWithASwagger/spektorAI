@@ -1,0 +1,30 @@
+# Image Generation Style Registry
+#
+# Defines visual styles for the Nano Banano image generator.
+# Each style includes a suffix that gets appended to prompts.
+
+styles:
+  kk:
+    name: "BC + AI Brand"
+    default: true
+    description: "Professional, modern editorial style with dark backgrounds"
+    suffix: |
+      Style guidelines: Dark background (#0f0f1a to #1a1a2e gradient), teal (#00c8b4) and purple (#9333ea) accent colors, high contrast, modern editorial illustration style, professional and polished.
+
+  hopecode:
+    name: "HOPECODE"
+    description: "Solarpunk mycelial mapping, anti-corporate, organic aesthetic"
+    suffix: |
+      Style guidelines: Solarpunk mycelial mapping aesthetic. Linework: Jittered, hand-drawn, non-Euclidean, meandering paths with human imperfection. Color: Earth tones (ochre, ash, rust, moss) with spectral interference (iridescent oil slick, electric fungi glow) - atmospheric, not flat. Texture: Paper grain, analog bleed, archival rot, photocopy scars - should look found, not made. Typography: Monospace code font crossbred with field notes and marginalia. Tone: Irreverent, embodied, visionary, anti-colonial. Structure: Nodes (people/places/values), Branches (non-linear relationships), Zones (contexts/vibes), Glyphs (layered symbols). Organic, anti-corporate, mycelial network visualization.
+
+  bcai:
+    name: "BC AI Community Centre"
+    description: "Mycelial network ecosystem, organic-professional, BC natural environment"
+    suffix: |
+      Style guidelines: BC AI Community Centre mycelial network aesthetic. Metaphor: Visualize as interconnected mycelial network - organic, branching connections like forest fungal networks. Philosophy: Organic over mechanical, connection over isolation, growth over stasis. Color Palette: Deep Forest Green (#1E3A2B), Coast Blue (#175E7C), Earth Brown (#78552B) as primary colors. Birch White (#F7F4E9), Twilight Purple (#523E7B), Sunrise Orange (#D35C37) as secondary accents. Growth Green (#68B091) for highlights. Visual Elements: Organic branching connections with subtle glowing edges, nodes with radial gradients from center to edge, varying node sizes showing importance. Connection paths should be irregular and natural, not perfectly symmetrical. Typography: Modern sans-serif for clarity (Montserrat Bold for headings, Open Sans for body). Nodes: Circular with soft edges, light drop shadows. Layout: Radial from center or distributed network, never purely hierarchical. Composition: Minimum 15% white space, emphasize natural flow and organic growth patterns. Professional yet rooted in BC's natural environment - rainforest meets innovation.
+
+  upgrade:
+    name: "The Upgrade AI"
+    description: "Bold transformation aesthetic, energetic, empowerment-focused"
+    suffix: |
+      Style guidelines: The Upgrade AI brand aesthetic - bold transformation and empowerment. Color Palette: Deep Purple (wisdom, transformation - primary), Bright Orange (energy, action - accent), Light Blue (technology, trust - secondary), White (clarity - background). Use prism colors for callouts and highlights. High contrast, energetic color combinations that feel both professional and dynamic. Typography: Sans-serif bold for headings (confident, modern), clean readable serif for body text (approachable wisdom), sans-serif all caps for calls-to-action (energy, urgency). Visual Metaphors: Transformation imagery (before/after, upgrades, leveling up), technology empowerment, human + AI partnership, professional growth, skill development, breakthrough moments. Tone: Bold and energetic yet welcoming, tech-forward but human-centered, edgy yet accessible. "Creative chaos meets polished execution" - professional with personality. Imagery: Abstract technological graphics (never intimidating), approachable instructor/professional headshots, before/after transformation visuals, arrows pointing upward, progress indicators, unlock/level-up metaphors. Avoid: robotic AI clichés, dystopian tech, anything cold or alienating. Composition: Dynamic layouts with clear focal points, CTAs prominently placed, enough white space for clarity but with energetic use of accent colors. Visual hierarchy should guide eye toward transformation story. Brand Promise: AI amplifies human potential, technology in service of people, accessible expertise, collaborative learning community. Every visual should feel empowering, never overwhelming.

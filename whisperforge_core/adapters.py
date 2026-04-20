@@ -51,6 +51,10 @@ class Processor(Protocol):
         segments: Optional[list] = None,
         agentic: bool = False,
         fact_check: bool = False,
+        generate_images: bool = False,
+        image_style: Optional[str] = None,
+        image_aspect_ratio: str = "16:9",
+        image_model: str = "gemini-2.5-flash-image",
     ) -> pipeline_mod.PipelineResult: ...
 
 
@@ -77,11 +81,16 @@ class LocalProcessor:
 
     def run_pipeline(self, transcript, provider, model, prompts=None,
                      knowledge_base=None, progress=None, segments=None,
-                     agentic=False, fact_check=False):
+                     agentic=False, fact_check=False,
+                     generate_images=False, image_style=None,
+                     image_aspect_ratio="16:9",
+                     image_model="gemini-2.5-flash-image"):
         return pipeline_mod.run(
             transcript, provider, model, prompts=prompts,
             knowledge_base=knowledge_base, progress=progress,
             segments=segments, agentic=agentic, fact_check=fact_check,
+            generate_images=generate_images, image_style=image_style,
+            image_aspect_ratio=image_aspect_ratio, image_model=image_model,
         )
 
 

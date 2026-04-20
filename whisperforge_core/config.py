@@ -169,8 +169,19 @@ DEFAULT_PROMPTS = {
         "(Twitter, LinkedIn, Instagram) based on the key insights."
     ),
     "image_prompts": (
-        "Create detailed image generation prompts that visualize the key "
-        "concepts and metaphors from the content."
+        "Generate 3-5 distinct image-generation prompts for this content. "
+        "Each prompt visualizes ONE key concept or metaphor — don't describe "
+        "the whole article in one image.\n\n"
+        "Each prompt must include: subject, scene, mood, lighting, "
+        "composition, and visual style. Write in present tense, describe "
+        "the image not the narrative, avoid internal monologue.\n\n"
+        "Format: a numbered markdown list. One prompt per item. Each item "
+        "starts with a short label in bold, then the prompt text:\n\n"
+        "1. **Hero Image**: [prompt text — one paragraph, 40-80 words]\n"
+        "2. **Supporting Visual**: [prompt text]\n"
+        "3. **Section Divider**: [prompt text]\n\n"
+        "Return ONLY the numbered list. No preamble, no article body, no "
+        "commentary between items."
     ),
     "article_writing": (
         "Write a comprehensive article based on the provided outline and "

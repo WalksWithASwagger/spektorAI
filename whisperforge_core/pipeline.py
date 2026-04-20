@@ -8,7 +8,7 @@ progress via an optional callback instead of hardcoded Streamlit progress bars.
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional
 
-from . import llm
+from . import images, llm
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -36,12 +36,17 @@ class PipelineResult:
     # Fact-check flags — populated when fact_check=True. Shape:
     # [{"claim": str, "issue": str}]. Empty list means clean.
     fact_check_flags: list = None  # type: ignore[assignment]
+    # Generated images (populated when generate_images=True). Shape:
+    # [{"path": str, "prompt": str, "succeeded": bool, "error": Optional[str]}]
+    generated_images: list = None  # type: ignore[assignment]
 
     def __post_init__(self):
         if self.chapters is None:
             self.chapters = []
         if self.fact_check_flags is None:
             self.fact_check_flags = []
+        if self.generated_images is None:
+            self.generated_images = []
 
 
 _STAGES = [
@@ -65,6 +70,11 @@ def run(
     segments: Optional[list] = None,
     agentic: bool = False,
     fact_check: bool = False,
+    generate_images: bool = False,
+    image_style: Optional[str] = None,
+    image_aspect_ratio: str = "16:9",
+    image_model: str = "gemini-2.5-flash-image",
+    image_output_dir: Optional[str] = None,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -223,6 +233,40 @@ def run(
             )
             if revised:
                 result.article = revised
+
+    # Stage 7.5: optional image generation. Parses the image_prompts output
+    # into distinct prompts and generates one PNG per prompt via nano-banana.
+    # Sits after the article stage (even under agentic mode) so the critique
+    # can inform the prompts if Kris ever wires that feedback loop; today
+    # it just consumes whatever image_prompts stage 4 emitted.
+    if generate_images and result.image_prompts:
+        _report(0.92, "Generating images...")
+        try:
+            prompts_list = images.extract_prompts(result.image_prompts)
+            if prompts_list:
+                out_dir = (
+                    images.run_output_dir()
+                    if not image_output_dir else
+                    images.Path(image_output_dir)
+                )
+                image_results = images.generate_images(
+                    prompts_list,
+                    out_dir,
+                    model=image_model,
+                    aspect_ratio=image_aspect_ratio,
+                    style=image_style,
+                )
+                result.generated_images = [
+                    {
+                        "path": str(r.output_path),
+                        "prompt": r.prompt,
+                        "succeeded": r.succeeded,
+                        "error": r.error,
+                    }
+                    for r in image_results
+                ]
+        except Exception as e:
+            logger.warning("image generation failed: %s", e)
 
     # Stage 8: optional fact-check pass. Runs against whichever article is
     # current (revised if agentic ran, draft otherwise). Output is

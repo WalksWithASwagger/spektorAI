@@ -35,11 +35,18 @@ PRICING: Dict[Tuple[str, str], Tuple[float, float]] = {
     # Local backends (Ollama, MLX) cost $0 by design.
 }
 
-# Per-minute rates for cloud transcription APIs.
+# Per-minute rates for cloud transcription APIs. Google image models
+# are also billed here (per-image-as-one-minute) so they flow through the
+# same estimator without a separate code path.
 ASR_PRICING_PER_MINUTE: Dict[str, float] = {
     "whisper-1": 0.006,
     "gpt-4o-transcribe": 0.006,
     "gpt-4o-mini-transcribe": 0.003,
+    # Google Nano Banana pricing: ~$0.039/image (2025 public rate).
+    # Recorded as audio_seconds=60 in images.generate_image so the
+    # per-minute rate = per-image rate.
+    "gemini-2.5-flash-image": 0.039,
+    "gemini-3-pro-image-preview": 0.10,
 }
 
 

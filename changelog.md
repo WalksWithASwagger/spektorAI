@@ -5,6 +5,18 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-19
+
+### Added
+- **Image generation via Google Nano Banana** (Gemini 2.5 Flash Image). Ported from `kk-ai-ecosystem/tools/image-gen/generate.py` — just the core generator, not the CLI or markdown-file parser. New `whisperforge_core/images.py` with `generate_image()`, `generate_images()` batch, `extract_prompts()` parser, and a YAML-backed style registry (`styles/image_styles.yaml` — kk, hopecode, bcai, upgrade). Pipeline gains `generate_images=True` flag that turns the `image_prompts` stage output into real PNGs saved to `.cache/images/<run>/`. Cost tracked per-image at ~$0.039 (flash) / ~$0.10 (pro preview).
+- **Settings dashboard** in the sidebar: one "⚙️ Generation Settings" expander consolidates every pipeline knob (cleanup, chapters, agentic, fact-check, image generation + style + aspect ratio + model).
+- **Image gallery** in the main area: after a run, generated images render as a 3-column grid with per-image download button; failures show a warning with the API error.
+- Tightened the `image_prompts` DEFAULT_PROMPT to produce a numbered list with bold labels, which made the extractor reliable (5/5 prompts parsed in live test vs 1 before).
+
+### Changed
+- `extract_prompts()` now tries numbered-list → blockquote → numbered-heading → whole-text-fallback in priority order, tolerating multiple LLM output formats.
+- `whisperforge_core/__init__.py` re-exports the `images` module.
+
 ## [0.4.0] - 2026-04-19
 
 ### Added
