@@ -2,8 +2,10 @@
 
 Layout:
     prompts/<user>/
+        profile.yaml        -- optional profile manifest
         prompts/*.md         -- prompt templates by name
         knowledge_base/*.md  -- voice/style context
+        personas/*.md        -- user-defined persona directives
         custom_prompts/*.txt -- per-type overrides (e.g. wisdom_extraction.txt)
 
 Paths are anchored via config.PROMPTS_DIR (project root / "prompts") so they
@@ -12,12 +14,19 @@ while streamlit runs from the project directory.
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
-from .config import DEFAULT_PROMPTS, PROMPTS_DIR
+try:
+    import yaml
+except ImportError:  # pragma: no cover - exercised only in stripped installs
+    yaml = None
+
+from .config import DEFAULT_PROMPTS, PERSONAS, PROMPTS_DIR
 from .logging import get_logger
 
 logger = get_logger(__name__)
+
+MANIFEST_NAME = "profile.yaml"
 
 
 def list_users() -> List[str]:
@@ -73,7 +82,120 @@ def load_user_prompts(user: str) -> Dict[str, str]:
                 prompts[path.stem] = path.read_text(encoding="utf-8")
             except OSError as e:
                 logger.warning("Failed to read custom prompt %s: %s", path, e)
+    prompts.update(_manifest_prompts(user_dir, load_profile_manifest(user)))
     return prompts
+
+
+def load_profile_manifest(user: str) -> Dict[str, Any]:
+    """Load optional prompts/<user>/profile.yaml metadata.
+
+    Existing profile directories do not need a manifest; missing or empty
+    manifests resolve to {}.
+    """
+    manifest_path = PROMPTS_DIR / user / MANIFEST_NAME
+    if not manifest_path.exists():
+        return {}
+    if yaml is None:
+        logger.warning("PyYAML is not installed; ignoring %s", manifest_path)
+        return {}
+    try:
+        data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as e:
+        logger.warning("Failed to parse profile manifest %s: %s", manifest_path, e)
+        return {}
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        logger.warning("Profile manifest %s must be a mapping", manifest_path)
+        return {}
+    return data
+
+
+def load_profile(user: str) -> Dict[str, Any]:
+    """Return the prompt-layer view of a profile, including manifest overlays."""
+    manifest = load_profile_manifest(user)
+    return {
+        "user": user,
+        "display_name": str(
+            manifest.get("display_name") or manifest.get("name") or user
+        ),
+        "manifest": manifest,
+        "prompts": load_user_prompts(user),
+        "knowledge_base": load_knowledge_base(user),
+        "personas": list_personas(user),
+    }
+
+
+def list_personas(user: str | None = None) -> Dict[str, str]:
+    """Return built-in personas plus optional user-defined persona directives."""
+    personas = dict(PERSONAS)
+    if not user:
+        return personas
+
+    user_dir = PROMPTS_DIR / user
+    personas_dir = user_dir / "personas"
+    if personas_dir.exists():
+        for path in sorted(personas_dir.glob("*.md")):
+            try:
+                personas[path.stem] = path.read_text(encoding="utf-8")
+            except OSError as e:
+                logger.warning("Failed to read persona %s: %s", path, e)
+
+    personas.update(_manifest_personas(user_dir, load_profile_manifest(user)))
+    return personas
+
+
+def _manifest_prompts(user_dir: Path, manifest: Dict[str, Any]) -> Dict[str, str]:
+    raw_prompts = manifest.get("prompts", {})
+    if not isinstance(raw_prompts, dict):
+        return {}
+    loaded: Dict[str, str] = {}
+    for key, value in raw_prompts.items():
+        text = _manifest_text(user_dir, value)
+        if text is not None:
+            loaded[str(key)] = text
+    return loaded
+
+
+def _manifest_personas(user_dir: Path, manifest: Dict[str, Any]) -> Dict[str, str]:
+    raw_personas = manifest.get("personas", {})
+    loaded: Dict[str, str] = {}
+    if isinstance(raw_personas, dict):
+        items = raw_personas.items()
+    elif isinstance(raw_personas, list):
+        items = (
+            (item.get("name"), item)
+            for item in raw_personas
+            if isinstance(item, dict) and item.get("name")
+        )
+    else:
+        return loaded
+
+    for name, value in items:
+        text = _manifest_text(user_dir, value)
+        if text is not None:
+            loaded[str(name)] = text
+    return loaded
+
+
+def _manifest_text(user_dir: Path, value: Any) -> str | None:
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, dict):
+        return None
+    for key in ("content", "directive", "prompt", "template"):
+        text = value.get(key)
+        if isinstance(text, str):
+            return text
+    file_value = value.get("file") or value.get("path")
+    if not isinstance(file_value, str):
+        return None
+    path = user_dir / file_value
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as e:
+        logger.warning("Failed to read manifest file %s: %s", path, e)
+        return None
 
 
 def load_all_users() -> Tuple[List[str], Dict[str, Dict[str, str]]]:

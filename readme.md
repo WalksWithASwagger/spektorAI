@@ -180,20 +180,29 @@ docs into `prompts/<YourName>/knowledge_base/`.
 ### Monolith (local, recommended for daily use)
 
 ```bash
-streamlit run app.py
+make app
 # → http://localhost:8501
 ```
+
+Override the port with `PORT=8502 make app`. The target defaults missing API
+keys to dummy values so agents can verify the Streamlit shell without touching
+real services.
 
 ### Microservices (docker-compose)
 
 ```bash
-docker compose up --build
+make services-run
 # → http://localhost:8501
 ```
 
 Four containers come up: `transcription`, `processing`, `storage`, `frontend`.
 The frontend's `DEPLOY_MODE=services` env var tells it to HTTP-call the
 backends.
+
+Use `make services-smoke` for an operations smoke: it builds and starts the
+compose stack, waits for container health checks, curls the frontend
+`/_stcore/health` endpoint, and then stops the stack. Services mode requires
+Docker and a local `.env` with `SERVICE_TOKEN`.
 
 ### CLI (transcription only)
 
@@ -284,10 +293,15 @@ voice and with your context.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/ -q          # 148 unit tests, ~2s
-tests/smoke.sh            # boots streamlit, hits /_stcore/health
+make test                 # unit tests
+make smoke                # boots streamlit, hits /_stcore/health
+SMOKE_PORT=8601 make smoke
 venv/bin/python tests/ui_smoke.py  # renders the Streamlit shell without a browser driver
 ```
+
+Run `make help` for the full operations command list. The Makefile is the
+preferred command surface for agents and CI snippets; the underlying commands
+remain plain `pytest`, `streamlit`, and `docker compose`.
 
 ### Directory structure for day-to-day work
 

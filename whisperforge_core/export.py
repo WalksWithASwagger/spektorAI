@@ -77,6 +77,43 @@ def _timestamp_prefix(seconds) -> str:
     return f"[{h}:{m:02d}:{sec:02d}] " if h else f"[{m}:{sec:02d}] "
 
 
+def _source_receipts(bundle: ContentBundle) -> list:
+    receipts = getattr(bundle, "source_receipts", None)
+    if receipts is None and isinstance(bundle.run_metrics, dict):
+        receipts = bundle.run_metrics.get("source_receipts")
+    if not receipts:
+        return []
+    if isinstance(receipts, (str, dict)):
+        return [receipts]
+    return list(receipts)
+
+
+def _format_receipt(receipt) -> str:
+    if isinstance(receipt, str):
+        return f"- {receipt.strip()}"
+    if not isinstance(receipt, dict):
+        return f"- {receipt}"
+
+    label = (
+        receipt.get("label")
+        or receipt.get("title")
+        or receipt.get("name")
+        or receipt.get("source")
+        or "Source"
+    )
+    details = []
+    for key, value in receipt.items():
+        if key in {"label", "title", "name"} or value in (None, "", [], {}):
+            continue
+        detail_label = key.replace("_", " ").title()
+        details.append(f"**{detail_label}:** {value}")
+
+    line = f"- **{label}**"
+    if details:
+        line += " — " + "; ".join(details)
+    return line
+
+
 def markdown_from_bundle(bundle: ContentBundle,
                         *, notion_url: Optional[str] = None) -> str:
     """Render the bundle as a full markdown document string.
@@ -168,6 +205,12 @@ def markdown_from_bundle(bundle: ContentBundle,
         parts.append(f"- **Cache savings:** {_usd('cache_savings_usd')}  ·  **Calls:** {_i('calls')}  ·  **Duration:** {dur_str}")
         parts.append(f"- **Tokens in/out:** {_i('input_tokens')} / {_i('output_tokens')}  ·  **Cache read/write:** {_i('cache_read_tokens')} / {_i('cache_write_tokens')}")
         parts.append(f"- **Backend:** {m.get('backend') or '—'}  ·  **Flags on:** {flag_line}")
+        parts.append("")
+
+    receipts = _source_receipts(bundle)
+    if receipts:
+        parts.append("## Source receipts\n")
+        parts.extend(_format_receipt(receipt) for receipt in receipts)
         parts.append("")
 
     if bundle.audio_filename:

@@ -63,8 +63,10 @@ Every GitHub and Linear issue should include:
 
 Use the smallest verification that proves the work:
 
-- Python/unit work: `venv/bin/python -m pytest tests/ -q`
-- Streamlit import/server health: `tests/smoke.sh`
+- Python/unit work: `make test`
+- Streamlit import/server health: `make smoke`
+- Local app start: `make app`
+- Service-mode run/smoke: `make services-run` / `make services-smoke`
 - Roadmap registry changes: `python3 -m json.tool ops/roadmap/features.json`
 - Markdown/checklist changes: `git diff --check`
 - Service-mode work: add or update a docker-compose/service smoke before
