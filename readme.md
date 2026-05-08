@@ -284,7 +284,7 @@ voice and with your context.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/ -q          # 38 unit tests, ~1s
+pytest tests/ -q          # 148 unit tests, ~2s
 tests/smoke.sh            # boots streamlit, hits /_stcore/health
 ```
 
@@ -331,6 +331,11 @@ tests/smoke.sh            # boots streamlit, hits /_stcore/health
 See [`changelog.md`](changelog.md). The 2026-04-19 refactor (0.2.0) collapsed
 the previous two parallel implementations into a single shared-logic package,
 dropped Grok, fixed `requirements.txt`, and added the test suite.
+
+## Roadmap
+
+See [`ROADMAP.md`](ROADMAP.md) for the current stabilization and product
+direction.
 
 ## License
 
