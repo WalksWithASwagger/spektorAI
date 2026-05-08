@@ -335,7 +335,10 @@ dropped Grok, fixed `requirements.txt`, and added the test suite.
 ## Roadmap
 
 See [`ROADMAP.md`](ROADMAP.md) for the current stabilization and product
-direction.
+direction. The Linear/GitHub delivery workflow lives in
+[`docs/LINEAR-GITHUB-PIPELINE.md`](docs/LINEAR-GITHUB-PIPELINE.md), with the
+machine-readable backlog in [`ops/roadmap/features.json`](ops/roadmap/features.json).
+Current handoff state lives in [`STATUS.md`](STATUS.md).
 
 ## License
 

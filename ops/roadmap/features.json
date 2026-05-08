@@ -1,0 +1,194 @@
+{
+  "project": {
+    "name": "WhisperForge Roadmap",
+    "repo": "WalksWithASwagger/spektorAI",
+    "linearProjectUrl": "https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537",
+    "linearTeam": "Bc-ai",
+    "linearTeamKey": "BC",
+    "roadmap": "ROADMAP.md",
+    "workflowDoc": "docs/LINEAR-GITHUB-PIPELINE.md",
+    "lastSeededAt": "2026-05-08"
+  },
+  "labels": {
+    "repo": "repo:spektorAI",
+    "ready": "agent:ready",
+    "review": "agent:review",
+    "blocked": "status:blocked"
+  },
+  "features": [
+    {
+      "id": "wf-delivery-pipeline",
+      "title": "Restore Linear/GitHub delivery pipeline",
+      "phase": "Phase 0",
+      "priority": "P0",
+      "kind": "ops",
+      "githubIssue": 1,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/1",
+      "linearIssue": "BC-57",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-57/restore-lineargithub-delivery-pipeline",
+      "acceptance": [
+        "Add ops/roadmap/features.json as the canonical machine-readable backlog registry.",
+        "Add a human-readable Linear/GitHub workflow doc for this repo.",
+        "Record Linear project/team, issue-key usage, labels, acceptance criteria, and verification expectations.",
+        "Update README or roadmap to point at the workflow doc.",
+        "Initial backlog records GitHub issue numbers and Linear issue keys after seeding."
+      ],
+      "verification": [
+        "python3 -m json.tool ops/roadmap/features.json",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-repo-hygiene-status",
+      "title": "Clean repo hygiene and add current status handoff",
+      "phase": "Phase 0",
+      "priority": "P0",
+      "kind": "docs",
+      "githubIssue": 2,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/2",
+      "linearIssue": "BC-58",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-58/clean-repo-hygiene-and-add-current-status-handoff",
+      "acceptance": [
+        "git ls-files whisperforge-env | wc -l returns 0.",
+        "STATUS.md exists and names latest verification commands/results.",
+        "README or roadmap points to STATUS.md if appropriate.",
+        "No cache, venv, or generated artifacts are newly tracked."
+      ],
+      "verification": [
+        "git ls-files whisperforge-env | wc -l",
+        "venv/bin/python -m pytest tests/ -q",
+        "tests/smoke.sh",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-browser-verification",
+      "title": "Add browser-level Streamlit verification",
+      "phase": "Phase 1",
+      "priority": "P1",
+      "kind": "qa",
+      "githubIssue": 3,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/3",
+      "linearIssue": "BC-63",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-63/add-browser-level-streamlit-verification",
+      "acceptance": [
+        "A documented command can boot the app and inspect the rendered page.",
+        "The command fails if Streamlit displays an exception or expected UI shell is missing.",
+        "Existing tests/smoke.sh still works.",
+        "Verification docs mention health smoke vs browser smoke."
+      ],
+      "verification": [
+        "venv/bin/python -m pytest tests/ -q",
+        "tests/smoke.sh"
+      ]
+    },
+    {
+      "id": "wf-services-parity",
+      "title": "Bring services mode to pipeline parity",
+      "phase": "Phase 2",
+      "priority": "P1",
+      "kind": "feature",
+      "githubIssue": 4,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/4",
+      "linearIssue": "BC-73",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-73/bring-services-mode-to-pipeline-parity",
+      "acceptance": [
+        "Services mode accepts all modern pipeline options or clearly documents unsupported options.",
+        "Full PipelineResult fields can round-trip through HTTP adapters.",
+        "Storage can save modern Notion/export fields without dropping data.",
+        "Tests cover the payload contract."
+      ],
+      "verification": [
+        "venv/bin/python -m pytest tests/ -q",
+        "A docker-compose/service smoke test or documented local equivalent",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-run-recovery",
+      "title": "Make long runs recoverable and retryable",
+      "phase": "Phase 3",
+      "priority": "P1",
+      "kind": "feature",
+      "githubIssue": 5,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/5",
+      "linearIssue": "BC-83",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-83/make-long-runs-recoverable-and-retryable",
+      "acceptance": [
+        "A partially completed run can be inspected from local artifacts.",
+        "Save/export retry does not duplicate or corrupt history unexpectedly.",
+        "Run history can link to local artifacts as well as Notion URLs.",
+        "Tests cover run-record/checkpoint behavior."
+      ],
+      "verification": [
+        "venv/bin/python -m pytest tests/ -q",
+        "Manual or automated run-interruption/retry smoke documented in STATUS.md"
+      ]
+    },
+    {
+      "id": "wf-profile-manifests",
+      "title": "Add profile manifests and user-defined personas",
+      "phase": "Phase 4",
+      "priority": "P2",
+      "kind": "feature",
+      "githubIssue": 6,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/6",
+      "linearIssue": "BC-88",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-88/add-profile-manifests-and-user-defined-personas",
+      "acceptance": [
+        "Existing profiles continue to work without a manifest.",
+        "prompts/<user>/profile.yaml can override defaults without code changes.",
+        "User-defined personas appear in the same UI selector as built-ins.",
+        "Tests cover manifest loading and persona precedence."
+      ],
+      "verification": [
+        "venv/bin/python -m pytest tests/ -q",
+        "Manual UI check: persona selector includes a test user-defined persona"
+      ]
+    },
+    {
+      "id": "wf-editorial-evals",
+      "title": "Add source receipts and editorial eval fixtures",
+      "phase": "Phase 5",
+      "priority": "P2",
+      "kind": "qa",
+      "githubIssue": 7,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/7",
+      "linearIssue": "BC-90",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-90/add-source-receipts-and-editorial-eval-fixtures",
+      "acceptance": [
+        "Fixture evals can run without external credentials or clearly document credential requirements.",
+        "Source receipts are preserved in markdown/Notion where applicable.",
+        "Tests cover rendering/serialization of source receipts or eval metadata.",
+        "The feature does not make short/simple runs noisy."
+      ],
+      "verification": [
+        "venv/bin/python -m pytest tests/ -q",
+        "New eval command or documented fixture check"
+      ]
+    },
+    {
+      "id": "wf-ops-commands",
+      "title": "Add deployment and operations commands",
+      "phase": "Phase 6",
+      "priority": "P2",
+      "kind": "ops",
+      "githubIssue": 8,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/8",
+      "linearIssue": "BC-91",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-91/add-deployment-and-operations-commands",
+      "acceptance": [
+        "One command runs the local unit suite.",
+        "One command runs health smoke.",
+        "One command starts the local app.",
+        "Services mode has an explicit smoke/run command or is documented as deferred.",
+        "Docs reference the command surface."
+      ],
+      "verification": [
+        "New command for tests exits 0.",
+        "New command for smoke exits 0.",
+        "git diff --check"
+      ]
+    }
+  ]
+}
