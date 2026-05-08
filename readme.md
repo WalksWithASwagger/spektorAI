@@ -286,6 +286,7 @@ voice and with your context.
 pip install -r requirements-dev.txt
 pytest tests/ -q          # 148 unit tests, ~2s
 tests/smoke.sh            # boots streamlit, hits /_stcore/health
+venv/bin/python tests/ui_smoke.py  # renders the Streamlit shell without a browser driver
 ```
 
 ### Directory structure for day-to-day work

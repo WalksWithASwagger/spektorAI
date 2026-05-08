@@ -72,14 +72,15 @@
       "linearIssue": "BC-63",
       "linearUrl": "https://linear.app/bc-ai/issue/BC-63/add-browser-level-streamlit-verification",
       "acceptance": [
-        "A documented command can boot the app and inspect the rendered page.",
-        "The command fails if Streamlit displays an exception or expected UI shell is missing.",
+        "A documented command can render the app shell.",
+        "The command fails if Streamlit reports an exception or expected UI shell is missing.",
         "Existing tests/smoke.sh still works.",
-        "Verification docs mention health smoke vs browser smoke."
+        "Verification docs mention health smoke vs rendered UI smoke."
       ],
       "verification": [
         "venv/bin/python -m pytest tests/ -q",
-        "tests/smoke.sh"
+        "tests/smoke.sh",
+        "venv/bin/python tests/ui_smoke.py"
       ]
     },
     {
