@@ -64,6 +64,7 @@ _SETTINGS_DEFAULTS: Dict[str, Any] = {
     # Selected persona names (multi-select). Pipeline re-runs article_writing
     # once per persona with a voice directive appended.
     "selected_personas": [],
+    "selected_recipe_id": "manual",
     # Dialog open-state — streamlit modals can't auto-open but we track this
     # for our own animations/toasts.
     "_dialog_open": None,
@@ -104,6 +105,9 @@ _PER_RUN_DEFAULTS: Dict[str, Any] = {
     # Durable local run artifacts under .cache/runs/<run_id>/.
     "run_id": None,
     "run_artifact_dir": None,
+    "active_recipe_id": None,
+    "active_recipe": None,
+    "recipe_effective_settings": None,
     # Wall-clock timestamps for per-run duration. pipeline.py sets
     # pipeline_started_at before stage 0 and _build_bundle reads both to
     # compute duration_seconds for the Run metrics block.

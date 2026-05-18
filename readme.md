@@ -42,6 +42,9 @@ base.
 - **KB health + retrieval inspection**: the Knowledge Base dialog inventories
   files, flags stale/duplicate/private-looking signals, and can show the exact
   RAG chunks, scores, and voice anchors selected for a sample query.
+- **Recipe command palette**: choose reusable workflows such as article with
+  receipts, brief/social pack, or issue handoff; recipes apply saved defaults
+  while preserving the manual controls.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -257,8 +260,9 @@ a ggml bin path).
 3. **Upload audio, paste text, or paste Wispr Flow dictation.** Each submitted
    input is normalized into a capture record.
 4. **Generate** — run individual stages (Extract Wisdom, Create Outline,
-   Social, Image Prompts, Full Article) or use "I'm Feeling Lucky" to run the
-   whole pipeline sequentially with a progress bar.
+   Social, Image Prompts, Full Article), use "I'm Feeling Lucky" for manual
+   settings, or pick a recipe from the command palette and run it from the
+   current capture/input.
 5. **Save to Notion** — builds a single page with color-coded toggles per
    section, an AI-generated title, summary callout, tags, run metrics, and
    metadata footer. A local markdown export can be written alongside the
@@ -315,6 +319,15 @@ the concrete retrieved chunks for a stage/query.
 
 **Persona** files at `prompts/<user>/personas/*.md` appear beside the built-in
 persona variants in Generation Settings.
+
+**Recipes** are small YAML or JSON manifests that describe reusable command
+palette workflows. Defaults live in
+`whisperforge_core/recipe_defaults.yaml`; profile-specific recipes can be added
+under `prompts/<user>/recipes/*.yaml` or the `recipes:` section of
+`prompts/<user>/profile.yaml`. A recipe can declare `inputs`, `stages`,
+`defaults` (`provider`, `model`, `kb_mode`, `article_length`, `cleanup`,
+`chapters`, `agentic`, `fact_check`, `images`, `auto_export_markdown`),
+`output_sections`, `eval_checks`, and `handoff_targets`.
 
 ---
 

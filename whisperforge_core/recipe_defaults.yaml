@@ -1,0 +1,117 @@
+recipes:
+  article_with_receipts:
+    name: Article with receipts
+    description: Full editorial article workflow with receipts, KB grounding, and optional markdown export.
+    inputs:
+      - upload
+      - record
+      - wispr_flow
+      - paste
+    stages:
+      - transcription
+      - transcript_cleanup
+      - chapters
+      - wisdom_extraction
+      - outline_creation
+      - social_media
+      - image_prompts
+      - article_writing
+      - save
+    defaults:
+      provider: Anthropic
+      model: claude-sonnet-4-5
+      kb_mode: auto
+      article_length: Standard
+      cleanup: true
+      chapters: true
+      agentic: false
+      fact_check: true
+      images: false
+      auto_export_markdown: true
+    output_sections:
+      - transcript
+      - wisdom
+      - outline
+      - social_content
+      - image_prompts
+      - article
+      - source_receipts
+    eval_checks:
+      - source_receipts
+      - fact_check_flags
+    handoff_targets:
+      - notion
+      - markdown
+
+  brief_social_pack:
+    name: Brief and social pack
+    description: Fast brief, quote bank, and social-ready copy from a capture.
+    inputs:
+      - wispr_flow
+      - paste
+      - upload
+      - record
+    stages:
+      - transcription
+      - transcript_cleanup
+      - wisdom_extraction
+      - outline_creation
+      - social_media
+    defaults:
+      provider: Anthropic
+      model: claude-haiku-4-5
+      kb_mode: auto
+      article_length: Brief
+      cleanup: true
+      chapters: false
+      agentic: false
+      fact_check: false
+      images: false
+      auto_export_markdown: true
+    output_sections:
+      - wisdom
+      - outline
+      - social_content
+      - source_receipts
+    eval_checks:
+      - source_receipts
+    handoff_targets:
+      - markdown
+
+  issue_handoff:
+    name: Issue and handoff brief
+    description: Convert a capture into an agent-ready implementation brief with source receipts.
+    inputs:
+      - wispr_flow
+      - paste
+      - upload
+      - record
+    stages:
+      - transcription
+      - transcript_cleanup
+      - wisdom_extraction
+      - outline_creation
+      - article_writing
+    defaults:
+      provider: Anthropic
+      model: claude-sonnet-4-5
+      kb_mode: auto
+      article_length: Brief
+      cleanup: true
+      chapters: true
+      agentic: true
+      fact_check: true
+      images: false
+      auto_export_markdown: true
+    output_sections:
+      - wisdom
+      - outline
+      - article
+      - source_receipts
+    eval_checks:
+      - source_receipts
+      - fact_check_flags
+    handoff_targets:
+      - github
+      - linear
+      - markdown

@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Retrieval inspector metadata** — RAG retrieval can now report per-stage
   hits, scores, context roles, and voice anchors, with run-artifact persistence
   and a UI inspection path from the benchmark dialog.
+- **Prompt recipe command palette** — built-in and profile-level recipe
+  manifests can declare inputs, stages, defaults, outputs, eval checks, and
+  handoff targets; selected recipes are persisted into run artifacts.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.
