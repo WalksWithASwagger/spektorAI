@@ -72,13 +72,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation audit artifact** — `docs/DOCUMENTATION-AUDIT-2026-05-17.md`
   captures the current sync state, verification commands, stale-doc fixes, and
   remaining blockers.
+- **Current audit and roadmap artifact** —
+  `docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md` records the completed
+  issue wave, full repo audit findings, from-here roadmap, and human decision
+  questions.
 
 ### Changed
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 192 passing tests, the current prompt profile
+- Root docs now describe 229 passing tests, the current prompt profile
   layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
   the current services-mode parity boundary.
+- `ROADMAP.md` and `STATUS.md` now describe the post-swarm state instead of
+  the pre-implementation planning baseline.
 - `ROADMAP.md` is now a concise index into the 2026 master plan and active
   issue registry, instead of a stale long-form status dump.
 - User-defined personas now flow through both the Generation Settings selector

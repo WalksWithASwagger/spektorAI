@@ -2,6 +2,13 @@
 
 Date: 2026-05-18
 
+## Delivery Status
+
+The implementation wave seeded from this plan has shipped. GitHub issues
+`#13` through `#24` are closed, PRs `#25` through `#35` are merged, and the
+current from-here audit lives in
+[`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md).
+
 This plan resets WhisperForge around the current voice-product landscape and
 the repo's now-large KK knowledge base. It assumes Wispr Flow remains the
 primary live dictation layer. WhisperForge should become the place where

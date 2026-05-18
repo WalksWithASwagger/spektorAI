@@ -4,11 +4,14 @@
     "repo": "WalksWithASwagger/spektorAI",
     "linearProjectUrl": "https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537",
     "linearTeam": "Bc-ai",
-    "linearTeamKey": "BC",
-    "roadmap": "ROADMAP.md",
-    "workflowDoc": "docs/LINEAR-GITHUB-PIPELINE.md",
-    "lastSeededAt": "2026-05-18"
-  },
+        "linearTeamKey": "BC",
+        "roadmap": "ROADMAP.md",
+        "workflowDoc": "docs/LINEAR-GITHUB-PIPELINE.md",
+        "lastSeededAt": "2026-05-18",
+        "lastAuditedAt": "2026-05-18",
+        "deliveryState": "seeded-wave-complete",
+        "currentAudit": "docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md"
+    },
   "labels": {
     "repo": "repo:spektorAI",
     "ready": "agent:ready",

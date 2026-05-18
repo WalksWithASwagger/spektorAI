@@ -2,119 +2,130 @@
 
 Last reviewed: 2026-05-18
 
-This roadmap now points at the 2026 product reset rather than trying to hold
-every detail inline. The master plan is
-[`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md).
+The May 2026 reset wave is now complete. The strategic anchor remains
+[`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md);
+the current audit and from-here plan is
+[`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md).
 
-## Current State
+## Current Product Shape
 
-WhisperForge is a single-user voice-to-content workbench with a direct
-Streamlit app, shared Python core, optional FastAPI services mode, local run
-artifacts, source receipts, profile manifests, RAG benchmarking, and an
-agentic GitHub/Linear delivery loop.
+WhisperForge is now a single-user voice-to-knowledge workbench:
 
-Verified baseline before this planning branch:
+- capture inbox for Wispr Flow text, notes, uploads, and recordings;
+- profile/KB audit, retrieval inspection, RAG benchmarking, and profile OS
+  metadata;
+- recipe command palette for repeatable article, social, issue-handoff, and
+  SongForge workflows;
+- source-grounded review surface with receipts, excerpts, scorecards, claim
+  flags, compare/persona variants, and handoff drafts;
+- local run workspace with manifests, stage artifacts, reopen, and downstream
+  export retry;
+- local report-only resurfacing digest;
+- text-first SongForge creative pack mode.
 
-- Branch: `main`, synced with `origin/main`.
-- Commit: `e607252 feat: add agentic delivery contract`.
-- GitHub repo: `WalksWithASwagger/spektorAI`.
-- Open GitHub issues/PRs before this wave: none.
-- Linear project: [WhisperForge Roadmap](https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537).
-- Previous Linear wave `BC-57`, `BC-58`, `BC-63`, `BC-73`, `BC-83`,
-  `BC-88`, `BC-90`, and `BC-91`: Done.
-- Previous verification: `make test` passed with 192 tests, plus
-  `make eval-fixture`, `make smoke`, `venv/bin/python tests/ui_smoke.py`,
-  `python3 -m json.tool ops/roadmap/features.json`, and `git diff --check`.
+## Delivery State
 
-## Product Direction
+- GitHub issues `#13` through `#24`: closed.
+- Pull requests `#25` through `#35`: merged.
+- Current baseline: `3371af2 feat: add SongForge creative pack mode`.
+- Open GitHub issues/PRs at audit time: none.
+- Current unit baseline: `229 passed`.
 
-The product should not clone Wispr Flow. Wispr Flow is already a strong live
-dictation layer. WhisperForge should sit after capture and win at durable
-knowledge work:
+## Roadmap From Here
 
-1. Capture spoken thought from audio, pasted transcripts, Wispr Flow output,
-   and imported notes.
-2. Ground work in the KK knowledge base, profile docs, source packs, and prior
-   outputs.
-3. Compose articles, briefs, social drafts, source receipts, follow-ups,
-   issue drafts, and creative prompt packs.
-4. Preserve runs so outputs, settings, receipts, and costs can be reopened.
-5. Resurface the best material so the knowledge base does not trap signal.
+### 1. Dogfood The Full Loop
 
-## Phases
+Run real Wispr Flow captures through the whole system and measure friction:
+capture inbox, recipe selection, review, markdown/Notion export, handoff draft,
+run reopen, and resurfacing digest.
 
-### Phase 1: Voice Inbox And Capture Handoff
+Success looks like a documented session report with concrete UX gaps, not more
+architecture.
 
-Build a central capture inbox for Wispr Flow text, pasted notes, uploaded
-audio, imported transcripts, and future voice tools.
+### 2. Add End-To-End Browser Coverage
 
-### Phase 2: Knowledge Base Intelligence
+The test suite is broad, but the riskiest product surface is still the rendered
+Streamlit workflow. Add browser-level or Streamlit interaction tests that prove
+the primary loop works with real UI state transitions.
 
-Make profile and knowledge-base files inspectable, searchable, scored, and
-auditable. Add stale, duplicate, and privacy warnings before the KB confuses
-generation.
+Focus first on paste input, recipe run, review tab rendering, markdown export,
+run reopen, and digest generation.
 
-### Phase 3: Recipe And Command System
+### 3. Choose The Release Target
 
-Move repeated workflows into recipe manifests and a command palette so the app
-can run "article with receipts," "client brief," "issue wave," or
-"SongForge prompt pack" without new code.
+Decide whether the next milestone is:
 
-### Phase 4: Source-Grounded Composition Studio
+- local-first personal workbench,
+- private hosted Streamlit app,
+- services-mode deployment,
+- or packageable desktop/local workflow.
 
-Show drafted output beside evidence, quotes, claim flags, compare/persona
-variants, and revision notes.
+This decision affects auth, secrets, storage, Notion behavior, and whether
+Docker/services parity matters now or later.
 
-### Phase 5: Modern Speech And Privacy Matrix
+### 4. Turn The Provider Matrix Into A Router
 
-Keep transcription current with a clear provider/router matrix for cloud,
-local, streaming, timestamps, diarization, vocabulary, cost, and privacy.
+The transcription matrix identifies the next provider choices. The next code
+step is a tested router with realistic fixtures for diarization, timestamps,
+local/private mode, and vocabulary/proper-noun handling.
 
-### Phase 6: Evaluation And Trust
+No runtime default should change until the router has fixtures and a clear
+privacy/cost statement.
 
-Add voice, grounding, usefulness, and recipe-compliance scorecards that can run
-against fixtures and recent outputs.
+### 5. Govern The Knowledge Base
 
-### Phase 7: Agentic Handoffs And Resurfacing
+The KB is now visible, but it still needs operating discipline: canonical
+packs, private-file policy, stale-file review cadence, voice-anchor ownership,
+and a migration path for profile metadata.
 
-Turn captures and plans into GitHub/Linear issues, Notion/markdown/social
-handoffs, follow-up queues, and periodic resurfacing digests.
+The product should help agents avoid using stale or sensitive context before
+generation starts.
 
-### Phase 8: Recovery And Run Workspace
+### 6. Add Human-Gated Routing
 
-Expose local run artifacts as a user-facing workspace: reopen, resume, retry,
-compare, and export.
+Handoff drafts and resurfacing digests are intentionally dry-run/report-only.
+The next useful step is explicit approval UI or CLI routing for:
 
-### Phase 9: SongForge Creative Lane
+- create GitHub issue,
+- create/update Linear issue,
+- add follow-up queue item,
+- publish/send digest,
+- save selected output to Notion/markdown.
 
-Prototype a bounded lyric/spoken-word/prompt-pack mode that turns transcripts
-and KB clusters into song-ready materials without pretending to be a full
-music studio.
+### 7. Expand SongForge Carefully
 
-## Active Issue Wave
+SongForge is now a source-linked text pack. Next steps should improve creative
+quality while preserving originality and source receipts: optional LLM polish,
+more song structures, prompt-pack variants, and export presets.
 
-The next wave is tracked in
-[`ops/roadmap/features.json`](ops/roadmap/features.json). Implementation issues
-should keep the agentic issue shape required by
-[`docs/AGENTIC-DELIVERY.md`](docs/AGENTIC-DELIVERY.md):
+Do not wire direct music-generation service calls until the text workflow is
+useful in real sessions.
 
-- `## Context`
-- `## Acceptance Criteria`
-- `## Tests/Evals`
-- `## Verification`
-- `## Agent Instructions`
-- `## Out of Scope`
+## Proposed Next Issue Wave
+
+Create these only after the human decisions in the audit doc are answered:
+
+| ID | Priority | Title | Gate |
+| --- | --- | --- | --- |
+| `wf-dogfood-loop` | P0 | Run and document a real Wispr Flow-to-output dogfood session | Human supplies real capture/export target |
+| `wf-e2e-browser` | P0 | Add end-to-end UI coverage for paste recipe and export loop | Test harness chosen |
+| `wf-release-target` | P0 | Decide and implement the next release target | Human chooses local/hosted/services |
+| `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Provider/privacy choice confirmed |
+| `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
+| `wf-handoff-routing` | P1 | Add human-approved GitHub/Linear/follow-up routing | Approval boundary confirmed |
+| `wf-digest-automation` | P2 | Add optional resurfacing digest schedule/report flow | Cadence and destination confirmed |
+| `wf-songforge-polish` | P2 | Improve SongForge creative quality and exports | Target use case confirmed |
 
 ## Verification Defaults
 
-- Docs/registry: `python3 -m json.tool ops/roadmap/features.json` and
-  `git diff --check`
-- Python/core: `make test`
-- Streamlit shell: `venv/bin/python tests/ui_smoke.py`
-- Health smoke: `make smoke`
+- Registry/docs: `python3 -m json.tool ops/roadmap/features.json`, `git diff --check`
+- Core Python: `make test`
 - Editorial/source receipts: `make eval-fixture`
-- Services mode: `make services-smoke` or a documented local equivalent
-- Agentic issue lint: `python3 scripts/agentic/issue_lint.py --issue-file issue.md --labels agent:ready`
+- Rendered Streamlit shell: `venv/bin/python tests/ui_smoke.py`
+- Streamlit health: `make smoke`
+- Services mode: `make services-smoke` when Docker/.env are in scope
+- Agentic issue readiness:
+  `python3 scripts/agentic/issue_lint.py --issue-file issue.md --labels agent:ready`
 
 ## Deferred On Purpose
 
