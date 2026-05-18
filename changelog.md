@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Composition review surface** — the Output card now includes a source-
   grounded review tab that keeps the draft beside receipts, excerpts, claim
   flags, revision notes, compare variants, and persona variants.
+- **Transcription provider matrix** —
+  `docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md` records current backends,
+  candidate providers, privacy/cost tradeoffs, and the smallest next
+  diarization integration path.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.

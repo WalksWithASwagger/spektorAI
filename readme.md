@@ -16,7 +16,9 @@ base.
 - Four transcription backends: OpenAI cloud Whisper (`gpt-4o-mini-transcribe`
   default), **MLX Whisper** (Apple Silicon native), **whisper.cpp** (CPU/Metal),
   **WhisperX** with word-level timestamps + optional pyannote speaker
-  diarization.
+  diarization. See
+  [`docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md`](docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md)
+  before adding another provider or changing defaults.
 - Silero VAD-based chunker (opt-in) cuts on silences instead of byte size.
 
 **Pipeline**
@@ -251,7 +253,9 @@ The installed Ollama models are auto-discovered at sidebar load, so new
 `ollama pull`s appear without restarting. Transcription backends available:
 `openai` (cloud default), `mlx` (local Apple Silicon via `mlx-whisper`), and
 `whisper_cpp` (local via the `whisper-cli` binary; set `WHISPER_CPP_MODEL` to
-a ggml bin path).
+a ggml bin path), and `whisperx` (word timestamps plus optional pyannote
+diarization). Provider tradeoffs and candidate integrations are tracked in
+[`docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md`](docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md).
 
 ---
 
