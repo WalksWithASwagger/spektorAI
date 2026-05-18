@@ -114,6 +114,14 @@ def _format_receipt(receipt) -> str:
     return line
 
 
+def _scorecard(bundle: ContentBundle) -> dict:
+    if isinstance(bundle.run_metrics, dict):
+        summary = bundle.run_metrics.get("scorecard")
+        if isinstance(summary, dict):
+            return summary
+    return {}
+
+
 def markdown_from_bundle(bundle: ContentBundle,
                         *, notion_url: Optional[str] = None) -> str:
     """Render the bundle as a full markdown document string.
@@ -182,6 +190,24 @@ def markdown_from_bundle(bundle: ContentBundle,
             parts.append("## Fact check\n")
             parts.append("✅ No claims flagged — article grounded in source.")
             parts.append("")
+
+    scorecard = _scorecard(bundle)
+    if scorecard:
+        parts.append("## Scorecard\n")
+        parts.append(
+            f"- **Verdict:** {scorecard.get('verdict_label', 'Review')} "
+            f"({scorecard.get('average_score', '—')}/100)"
+        )
+        parts.append("- **Mode:** Advisory only; saves are not blocked.")
+        for dimension in scorecard.get("dimensions", []):
+            notes = dimension.get("notes") or []
+            note = f" — {notes[0]}" if notes else ""
+            parts.append(
+                f"- **{dimension.get('label', 'Dimension')}:** "
+                f"{dimension.get('score', '—')}/100 · "
+                f"{dimension.get('status', 'review')}{note}"
+            )
+        parts.append("")
 
     if bundle.run_metrics:
         m = bundle.run_metrics

@@ -287,6 +287,38 @@ class TestRunMetricsBlock:
         )
         assert metrics_idx < heading_idx
 
+    def test_scorecard_renders_as_advisory_toggle(self):
+        bundle = notion.ContentBundle(
+            title="scorecard",
+            run_metrics={
+                "scorecard": {
+                    "verdict_label": "Review",
+                    "average_score": 72,
+                    "dimensions": [
+                        {
+                            "label": "Grounding",
+                            "score": 68,
+                            "status": "review",
+                            "notes": ["Partial source overlap."],
+                        }
+                    ],
+                }
+            },
+        )
+        scorecard = next(
+            b for b in notion.build_blocks(bundle)
+            if b["type"] == "toggle"
+            and b["toggle"]["rich_text"][0]["text"]["content"] == "Scorecard"
+        )
+        body = "\n".join(
+            p["paragraph"]["rich_text"][0]["text"]["content"]
+            for p in scorecard["toggle"]["children"]
+        )
+
+        assert "Review (72/100)" in body
+        assert "Advisory only" in body
+        assert "Grounding" in body
+
 
 class TestSourceReceiptsBlock:
     def test_source_receipts_render_before_metadata(self):

@@ -5,7 +5,7 @@ export, prompt management, capture records, KB audits, caching, and logging. Imp
 Streamlit monolith and the FastAPI microservices — must NOT import streamlit.
 """
 
-from . import adapters, audio, cache, captures, composition_review, config, cost, export, history, images, kb_audit, llm, notion, pipeline, prompts, recipes, run_artifacts
+from . import adapters, audio, cache, captures, composition_review, config, cost, export, history, images, kb_audit, llm, notion, pipeline, prompts, recipes, run_artifacts, scorecards
 from . import logging as logging_module
 
 __all__ = [
@@ -27,4 +27,5 @@ __all__ = [
     "prompts",
     "recipes",
     "run_artifacts",
+    "scorecards",
 ]

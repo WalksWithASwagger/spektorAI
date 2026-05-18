@@ -50,6 +50,9 @@ base.
 - **Composition review**: the Output card includes a Review tab where the draft
   sits beside source receipts, excerpts, claim flags, revision notes, compare
   variants, and persona variants before export.
+- **Advisory scorecards**: deterministic, credential-free checks summarize
+  voice, grounding, usefulness, recipe compliance, and handoff readiness without
+  blocking saves.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -62,6 +65,8 @@ base.
 - Structured **Notion export**: collapsible toggles per section, color-coded,
   AI-generated title + tags + summary, Chapters with `[M:SS]` jump prefixes,
   Revision Notes + Fact Check toggles when agentic/fact-check ran.
+- **Markdown + Notion scorecards**: advisory verdicts travel with saved/exported
+  runs and show up in Recent Runs.
 - **Cost tracker** (session total + cache savings) and **Run history**
   (clickable list of recent Notion pages) in the sidebar.
 
@@ -130,7 +135,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        192 tests + health/rendered UI smokes
+tests/                        215 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -278,8 +283,10 @@ diarization). Provider tradeoffs and candidate integrations are tracked in
 Use the Output card's **Review** tab when a draft needs source-grounded
 judgment before publishing. It summarizes available receipts, transcript/KB
 excerpts, fact-check flags, revision notes, compare output, and persona
-variants. It is a review surface, not a collaborative editor; edits still
-happen by rerunning with adjusted prompts, recipes, or settings.
+variants, plus an advisory scorecard for voice, grounding, usefulness, recipe
+compliance, and handoff readiness. It is a review surface, not a collaborative
+editor; edits still happen by rerunning with adjusted prompts, recipes, or
+settings.
 
 ### Notion page layout
 
@@ -296,9 +303,10 @@ WHISPER: <AI-generated title>
   ▶ Draft Post              (purple)
   ▶ Article · <compare>     (when A/B compare ran)
   ▶ Persona · <name>        (one per selected persona)
+  ▶ Scorecard               (advisory verdict + dimension scores)
+  ▶ Original Audio          (red; only if audio was uploaded)
   ▶ Source Receipts         (transcript/evidence/composition review receipts)
   ▶ Run metrics             (cost, cache, settings, duration)
-  ▶ Original Audio          (red; only if audio was uploaded)
   ─── Metadata ───
   Original Audio · Created · Models Used · Estimated Tokens
 Properties: Name, Tags (multi-select, AI-generated)

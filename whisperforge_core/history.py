@@ -38,6 +38,7 @@ class RunRecord:
     cost_usd: float = 0.0
     cache_savings_usd: float = 0.0
     flags: dict = field(default_factory=dict)   # {"agentic": bool, "fact_check": bool, "chapters": bool, "backend": str}
+    scorecard: dict = field(default_factory=dict)
 
     def to_json_line(self) -> str:
         return json.dumps(asdict(self), separators=(",", ":"))

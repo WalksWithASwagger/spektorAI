@@ -173,6 +173,29 @@ class TestMarkdownRendering:
         assert "**Quotes:** 4" in md
         assert "**Claim Flags:** 1" in md
 
+    def test_scorecard_section_renders_from_run_metrics(self):
+        md = export.markdown_from_bundle(_bundle(
+            run_metrics={
+                "scorecard": {
+                    "verdict_label": "Ready",
+                    "average_score": 84,
+                    "dimensions": [
+                        {
+                            "label": "Voice",
+                            "score": 80,
+                            "status": "strong",
+                            "notes": ["KB voice anchors used."],
+                        }
+                    ],
+                }
+            },
+        ))
+
+        assert "## Scorecard" in md
+        assert "**Verdict:** Ready (84/100)" in md
+        assert "**Voice:** 80/100" in md
+        assert "Advisory only" in md
+
 
 class TestExportToDisk:
     def test_creates_file_with_expected_shape(self, tmp_path):

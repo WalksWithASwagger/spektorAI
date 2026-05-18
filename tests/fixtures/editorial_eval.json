@@ -22,6 +22,8 @@
     "## Source receipts",
     "**credential-free transcript fixture**",
     "**Fixture:** tests/fixtures/editorial_eval.json",
+    "## Scorecard",
+    "**Verdict:**",
     "## Fact check",
     "Every claim points back to the source."
   ]

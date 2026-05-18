@@ -18,6 +18,7 @@ from whisperforge_core import captures as captures_mod
 from whisperforge_core import prompts as prompts_mod
 from whisperforge_core import recipes as recipes_mod
 from whisperforge_core import run_artifacts
+from whisperforge_core import scorecards as scorecards_mod
 from whisperforge_core.logging import get_logger
 
 from . import session
@@ -214,7 +215,9 @@ def _execute_run() -> None:
             s.article_compare = result.article_compare
             s.compare_label = result.compare_label
             s.persona_articles = result.persona_articles or []
+            s.scorecard_summary = _build_scorecard_summary(s)
             s.pipeline_stage_idx = len(_STAGES) - 1
+            _write_run_stage(s, "scorecard", s.scorecard_summary)
             _write_run_stage(s, "session_output", {
                 "wisdom": s.wisdom,
                 "outline": s.outline,
@@ -227,6 +230,7 @@ def _execute_run() -> None:
                 "article_compare": s.article_compare,
                 "compare_label": s.compare_label,
                 "persona_articles": s.persona_articles,
+                "scorecard_summary": s.scorecard_summary,
             })
             _mark_run_status(s, "completed")
             _mark_capture_status(s, "completed")
@@ -351,6 +355,54 @@ def _inspect_retrieval(s, status) -> None:
         status.write(f"📚 Retrieval inspector captured {hit_count} KB hits.")
     except Exception as e:
         logger.warning("retrieval inspection failed: %s", e)
+
+
+def _build_scorecard_summary(s) -> dict:
+    transcript = s.get("cleaned_transcript") or s.get("transcription") or ""
+    return scorecards_mod.build_summary(
+        article=s.get("article") or "",
+        transcript=transcript,
+        wisdom=s.get("wisdom") or "",
+        outline=s.get("outline") or "",
+        social_content=s.get("social_content") or "",
+        image_prompts=s.get("image_prompts") or "",
+        chapters=s.get("chapters") or [],
+        source_receipts=_scorecard_source_receipts(s, transcript),
+        retrieval_inspector=s.get("retrieval_inspector"),
+        fact_check_flags=s.get("fact_check_flags") or [],
+        fact_check_ran=bool(s.get("fact_check_ran")),
+        recipe=s.get("active_recipe") or {},
+        recipe_effective_settings=s.get("recipe_effective_settings") or {},
+    )
+
+
+def _scorecard_source_receipts(s, transcript: str) -> list[dict]:
+    receipts = []
+    recipe_meta = s.get("recipe_effective_settings")
+    if recipe_meta:
+        receipts.append({
+            "source": "Recipe",
+            "name": recipe_meta.get("recipe_name"),
+        })
+    capture_meta = captures_mod.run_metadata(s.get("capture_id"))
+    if capture_meta:
+        receipts.append({
+            "source": "Capture",
+            "title": capture_meta.get("title"),
+        })
+    if transcript:
+        receipts.append({
+            "source": "Transcript",
+            "excerpt": transcript[:240],
+        })
+    retrieval_inspector = s.get("retrieval_inspector")
+    if retrieval_inspector:
+        stages = retrieval_inspector.get("stages") or {}
+        receipts.append({
+            "source": "Knowledge retrieval",
+            "hits": sum(len(hits) for hits in stages.values()),
+        })
+    return receipts
 
 
 def _write_run_stage(s, stage: str, payload: dict) -> None:
