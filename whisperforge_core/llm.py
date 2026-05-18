@@ -118,6 +118,10 @@ def _ollama() -> OpenAI:
     return OpenAI(api_key="ollama", base_url=OLLAMA_BASE_URL)
 
 
+def _ollama_discovery() -> OpenAI:
+    return OpenAI(api_key="ollama", base_url=OLLAMA_BASE_URL, timeout=2.0)
+
+
 def discover_ollama_models() -> Dict[str, str]:
     """Query the running Ollama daemon for installed models.
 
@@ -125,7 +129,7 @@ def discover_ollama_models() -> Dict[str, str]:
     callers should fall back to the static LLM_MODELS entry.
     """
     try:
-        resp = _ollama().models.list()
+        resp = _ollama_discovery().models.list()
     except Exception as e:
         logger.info("Ollama not reachable: %s", e)
         return {}
