@@ -11,16 +11,20 @@ heavy trees don't re-run on every keystroke somewhere else in the app.
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import streamlit as st
 
+from whisperforge_core import captures as captures_mod
 from whisperforge_core import history as history_mod
 from whisperforge_core import images as images_mod
+from whisperforge_core import kb_audit as kb_audit_mod
 from whisperforge_core import prompts as prompts_mod
 from whisperforge_core.config import DEFAULT_PROMPTS
+from .input import PendingInput
 
 
 # -----------------------------------------------------------------------
@@ -248,11 +252,50 @@ def knowledge_base_manager() -> None:
         st.info("Pick a user profile in the sidebar first.")
         return
 
+    audit = kb_audit_mod.audit_profile(user)
     kb = prompts_mod.load_knowledge_base(user)
     st.caption(
         f"Files under `prompts/{user}/knowledge_base/` are prepended to every "
         "LLM system prompt so the model writes in your voice."
     )
+
+    summary = audit.to_dict()["summary"]
+    st.markdown(
+        f"**Health:** {summary['documents']} files · "
+        f"{summary['approx_tokens']:,} est. tokens · "
+        f"{summary['warnings']} signal(s)"
+    )
+    audit_json = json.dumps(audit.to_dict(), indent=2)
+    st.download_button(
+        "Download audit JSON",
+        data=audit_json,
+        file_name=f"{user}-knowledge-base-audit.json",
+        mime="application/json",
+        use_container_width=True,
+    )
+    with st.expander("Copy audit report"):
+        st.code(audit_json, language="json")
+    if audit.warnings:
+        for warning in audit.warnings[:6]:
+            message = warning.message
+            if warning.severity == "warning":
+                st.warning(message)
+            else:
+                st.info(message)
+    if audit.documents:
+        st.dataframe(
+            [
+                {
+                    "File": Path(doc.path).name,
+                    "Role": doc.role,
+                    "Tokens": doc.approx_tokens,
+                    "Modified": doc.modified_at[:10],
+                }
+                for doc in audit.documents
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
 
     st.markdown("**Existing files**")
     if not kb:
@@ -284,6 +327,58 @@ def knowledge_base_manager() -> None:
                 st.rerun()
             except OSError as e:
                 st.error(f"Save failed: {e}")
+
+
+# -----------------------------------------------------------------------
+# Capture inbox — durable Wispr Flow / note / audio intake records.
+# -----------------------------------------------------------------------
+@st.dialog("Capture inbox", width="large")
+def capture_inbox() -> None:
+    records = captures_mod.list_captures(limit=100)
+    if not records:
+        st.info("No captures yet. Paste Wispr Flow text or run audio once to seed the inbox.")
+        return
+
+    rows = [
+        {
+            "When": r.created_at.replace("T", " ").replace("Z", ""),
+            "Source": r.source,
+            "Title": r.title,
+            "Status": r.status,
+            "Runs": len(r.run_ids),
+            "ID": r.capture_id,
+        }
+        for r in records
+    ]
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+    ids = [r.capture_id for r in records]
+    selected = st.selectbox(
+        "Load text capture",
+        options=ids,
+        format_func=lambda cid: next(
+            (r.title for r in records if r.capture_id == cid),
+            cid,
+        ),
+        key="capture_pick",
+    )
+    record = next((r for r in records if r.capture_id == selected), None)
+    if record and record.input_path:
+        text = captures_mod.read_capture_text(record.capture_id)
+        st.text_area("Capture text", value=text, height=180, disabled=True)
+        if st.button("Use as pending input", type="primary", use_container_width=True):
+            st.session_state.pending_input = PendingInput(
+                source="wispr_flow" if record.source == "wispr_flow" else "paste",
+                payload=text,
+                filename=record.filename or f"{record.capture_id}.txt",
+                capture_id=record.capture_id,
+                title=record.title,
+            )
+            st.session_state.capture_id = record.capture_id
+            st.toast("Capture loaded into the input queue.", icon=":material/inbox:")
+            st.rerun()
+    elif record:
+        st.caption("This capture has no text payload to load directly.")
 
 
 # -----------------------------------------------------------------------
@@ -380,6 +475,34 @@ def kb_benchmark() -> None:
                 f"before prompt caching. With Anthropic cache on the stable "
                 f"legacy block, the real-world gap narrows ~10×."
             )
+
+    if st.button("Inspect retrieval", use_container_width=True,
+                 key="bench_inspect"):
+        from whisperforge_core.rag import retriever
+
+        try:
+            hits = retriever.inspect(user, query=query, stage=stage)
+        except Exception as e:
+            st.error(f"Retrieval inspection failed: {e}")
+            return
+        if not hits:
+            st.info("No retrieval hits for this query.")
+            return
+        st.dataframe(
+            [
+                {
+                    "Role": hit.role,
+                    "Score": round(hit.score, 3),
+                    "Source": hit.chunk.doc_name,
+                    "Section": hit.chunk.section_path or "-",
+                    "Tokens": hit.chunk.token_count,
+                    "Excerpt": hit.chunk.text.strip()[:160],
+                }
+                for hit in hits
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
 
 
 # -----------------------------------------------------------------------

@@ -108,6 +108,8 @@ def render() -> None:
             if st.button("📊 Benchmark", use_container_width=True, key="btn_bench"):
                 dialogs.kb_benchmark()
         with c2:
+            if st.button("📥 Captures", use_container_width=True, key="btn_captures"):
+                dialogs.capture_inbox()
             if st.button("📜 Runs", use_container_width=True, key="btn_runs"):
                 dialogs.run_history()
             if st.button("⚙ More", use_container_width=True, key="btn_more"):

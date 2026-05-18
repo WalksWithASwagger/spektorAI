@@ -36,6 +36,12 @@ base.
   and are injected into the system prompt on every call.
 - **Text-input mode**: paste prose instead of uploading audio and run the same
   pipeline (useful for imported transcripts).
+- **Capture inbox**: Wispr Flow dictation, pasted notes, uploads, and browser
+  recordings become durable capture records under `.cache/captures/`, then link
+  to run artifacts and exports.
+- **KB health + retrieval inspection**: the Knowledge Base dialog inventories
+  files, flags stale/duplicate/private-looking signals, and can show the exact
+  RAG chunks, scores, and voice anchors selected for a sample query.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -248,7 +254,8 @@ a ggml bin path).
 1. **Pick your user profile** in the sidebar. Any directory under `prompts/`
    becomes a profile.
 2. **Select provider + model** (OpenAI, Anthropic, or Ollama).
-3. **Upload audio or paste text.** Large audio is chunked automatically.
+3. **Upload audio, paste text, or paste Wispr Flow dictation.** Each submitted
+   input is normalized into a capture record.
 4. **Generate** — run individual stages (Extract Wisdom, Create Outline,
    Social, Image Prompts, Full Article) or use "I'm Feeling Lucky" to run the
    whole pipeline sequentially with a progress bar.
@@ -300,6 +307,11 @@ Valid `<type>` values: `transcript_cleanup`, `chapters`,
 **Knowledge base** files at `prompts/<user>/knowledge_base/*.{md,txt}` are
 prepended to the system prompt on every LLM call, so the model writes in your
 voice and with your context.
+
+Use the sidebar's **KB** dialog to inventory the profile's KB files and catch
+empty, duplicate, stale, oversized, or private-looking docs before they confuse
+the pipeline. Use **Benchmark** to compare whole-KB injection vs RAG and inspect
+the concrete retrieved chunks for a stage/query.
 
 **Persona** files at `prompts/<user>/personas/*.md` appear beside the built-in
 persona variants in Generation Settings.
