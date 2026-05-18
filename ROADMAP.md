@@ -1,263 +1,127 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-17
+Last reviewed: 2026-05-18
 
-This roadmap is based on the current repository structure, documentation,
-unit tests, smoke test, and the recent refactor history. It favors surgical
-stabilization over new architecture: the direct Streamlit monolith is the
-working product surface; microservices mode should be brought back to parity
-only where it helps deployment or isolation.
+This roadmap now points at the 2026 product reset rather than trying to hold
+every detail inline. The master plan is
+[`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md).
 
 ## Current State
 
-WhisperForge is now a single-user content production workbench:
+WhisperForge is a single-user voice-to-content workbench with a direct
+Streamlit app, shared Python core, optional FastAPI services mode, local run
+artifacts, source receipts, profile manifests, RAG benchmarking, and an
+agentic GitHub/Linear delivery loop.
 
-- `app.py` is a thin Streamlit composition root.
-- `ui/` owns session state, dialogs, input, pipeline display, output, sidebar,
-  and shell chrome.
-- `whisperforge_core/` owns transcription, LLM calls, prompts, Notion export,
-  markdown export, cost/history, images, pipeline orchestration, cache, and RAG.
-- `services/` wraps selected core behavior with FastAPI for docker-compose mode.
-- `prompts/` holds user profiles, prompt overrides, profile manifests,
-  user-defined personas, and knowledge bases.
-- `patterns/` holds a large local prompt-pattern corpus.
-- `tests/` has a meaningful unit suite covering cost, cache, export, history,
-  prompts, audio, Notion rendering, markdown export, service contracts,
-  agentic pipeline behavior, and RAG.
+Verified baseline before this planning branch:
 
-Verified on this pass:
-
-- `git fetch --prune origin` completed; the current branch and all local
-  tracking branches were even with their upstreams.
-- `make test` passes: 177 tests. `pydub` still warns when `ffmpeg` is not on
-  `PATH`, but the unit fixtures no longer require it.
-- `make eval-fixture` runs a credential-free editorial/source-receipt fixture.
-- Direct-mode runs write inspectable manifests and stage checkpoints under
-  `.cache/runs/<run_id>/`.
-- `make smoke` passes on localhost port `8599`.
-- `venv/bin/python tests/ui_smoke.py` renders the Streamlit shell.
-- `python3 -m json.tool ops/roadmap/features.json` passes.
-- `whisperforge-env/` has been removed from the git index and remains ignored.
-- Current audit details live in `docs/DOCUMENTATION-AUDIT-2026-05-17.md`.
+- Branch: `main`, synced with `origin/main`.
+- Commit: `e607252 feat: add agentic delivery contract`.
+- GitHub repo: `WalksWithASwagger/spektorAI`.
+- Open GitHub issues/PRs before this wave: none.
+- Linear project: [WhisperForge Roadmap](https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537).
+- Previous Linear wave `BC-57`, `BC-58`, `BC-63`, `BC-73`, `BC-83`,
+  `BC-88`, `BC-90`, and `BC-91`: Done.
+- Previous verification: `make test` passed with 192 tests, plus
+  `make eval-fixture`, `make smoke`, `venv/bin/python tests/ui_smoke.py`,
+  `python3 -m json.tool ops/roadmap/features.json`, and `git diff --check`.
 
 ## Product Direction
 
-The strongest product path is not "more knobs." It is:
+The product should not clone Wispr Flow. Wispr Flow is already a strong live
+dictation layer. WhisperForge should sit after capture and win at durable
+knowledge work:
 
-1. Make the local monolith boringly reliable.
-2. Preserve the visual identity and fast daily workflow.
-3. Make every run recoverable, inspectable, and exportable.
-4. Use benchmark-driven KB/RAG decisions instead of guessing.
-5. Turn voice/persona/profile management into a first-class creative system.
-6. Only then harden containerized services and external deployment.
+1. Capture spoken thought from audio, pasted transcripts, Wispr Flow output,
+   and imported notes.
+2. Ground work in the KK knowledge base, profile docs, source packs, and prior
+   outputs.
+3. Compose articles, briefs, social drafts, source receipts, follow-ups,
+   issue drafts, and creative prompt packs.
+4. Preserve runs so outputs, settings, receipts, and costs can be reopened.
+5. Resurface the best material so the knowledge base does not trap signal.
 
-## Roadmap
+## Phases
 
-### Phase 0: Repo And Documentation Hygiene
+### Phase 1: Voice Inbox And Capture Handoff
 
-Goal: make the project restartable by any future session without archaeology.
+Build a central capture inbox for Wispr Flow text, pasted notes, uploaded
+audio, imported transcripts, and future voice tools.
 
-Success criteria:
+### Phase 2: Knowledge Base Intelligence
 
-- `readme.md`, `changelog.md`, and this roadmap agree on current capabilities.
-- The root docs clearly distinguish direct mode from services mode.
-- No virtualenv, cache, or generated artifacts are tracked.
-- A short `STATUS.md` exists with the latest verified commands and known risks.
+Make profile and knowledge-base files inspectable, searchable, scored, and
+auditable. Add stale, duplicate, and privacy warnings before the KB confuses
+generation.
 
-Work:
+### Phase 3: Recipe And Command System
 
-- Keep README test count and pipeline description aligned with the current
-  suite and output features.
-- Keep the compact root `STATUS.md` current after each meaningful work session.
-- Keep local envs, caches, and generated artifacts ignored and untracked.
-- Document the tested Python version matrix and the recommended venv name.
-- Add a "known service-mode gaps" section so docs do not overpromise.
+Move repeated workflows into recipe manifests and a command palette so the app
+can run "article with receipts," "client brief," "issue wave," or
+"SongForge prompt pack" without new code.
 
-### Phase 1: Stabilize The Daily Local App
+### Phase 4: Source-Grounded Composition Studio
 
-Goal: the Streamlit app should be safe to use for real content without
-session-state surprises or hidden data loss.
+Show drafted output beside evidence, quotes, claim flags, compare/persona
+variants, and revision notes.
 
-Success criteria:
+### Phase 5: Modern Speech And Privacy Matrix
 
-- Smoke test stays green.
-- A small browser/UI verification checklist exists for the main flows.
-- A failed Notion save, image generation call, or LLM call does not erase the
-  run output.
-- Auto-save, markdown export, history, and run metrics behave consistently.
+Keep transcription current with a clear provider/router matrix for cloud,
+local, streaming, timestamps, diarization, vocabulary, cost, and privacy.
 
-Work:
+### Phase 6: Evaluation And Trust
 
-- Maintain `tests/ui_smoke.py` as the rendered-shell check beyond the health
-  endpoint.
-- Add focused tests for run-metrics assembly and auto-export behavior around
-  `_build_bundle`.
-- Keep the save/export path idempotent enough to retry without duplicating
-  local markdown filenames or corrupting history.
-- Review session-state defaults for mutable values and hidden widget-key drift.
-- Keep the visual treatment in `styles.py`, but document the key selectors that
-  must survive Streamlit upgrades.
+Add voice, grounding, usefulness, and recipe-compliance scorecards that can run
+against fixtures and recent outputs.
 
-### Phase 2: Bring Services Mode To Feature Parity
+### Phase 7: Agentic Handoffs And Resurfacing
 
-Goal: docker-compose mode should either match direct mode or be explicitly
-scoped as legacy/minimal.
+Turn captures and plans into GitHub/Linear issues, Notion/markdown/social
+handoffs, follow-up queues, and periodic resurfacing digests.
 
-Success criteria:
+### Phase 8: Recovery And Run Workspace
 
-- `HttpProcessor.run_pipeline()` accepts every option that
-  `LocalProcessor.run_pipeline()` accepts.
-- Processing service schemas carry cleanup, chapters, segments, images, article
-  length, RAG mode, compare model, personas, and fact-check options.
-- Storage service can save the full modern `ContentBundle`, including chapters,
-  cleaned transcript, critique, fact-check flags, generated images, compare,
-  personas, markdown/export metadata, and run metrics.
-- Transcription service can return detailed segments when the backend supports
-  them.
-- docker-compose smoke test verifies all service health endpoints and one
-  minimal end-to-end text pipeline request.
+Expose local run artifacts as a user-facing workspace: reopen, resume, retry,
+compare, and export.
 
-Work:
+### Phase 9: SongForge Creative Lane
 
-- Keep the expanded Pydantic request/response models in
-  `services/processing/service.py` covered by `tests/test_services_contract.py`.
-- Keep `whisperforge_core/http_adapters.py` round-tripping the full
-  processing/storage payload contract.
-- Keep `services/storage/service.py` aligned with modern `ContentBundle`
-  fields, and expand `HttpStorage.save()` to preserve the same fields.
-- Keep tests that compare HTTP adapter and service payload shapes.
-- Keep the implementation thin: wrappers should call `whisperforge_core`, not
-  fork business logic.
+Prototype a bounded lyric/spoken-word/prompt-pack mode that turns transcripts
+and KB clusters into song-ready materials without pretending to be a full
+music studio.
 
-### Phase 3: Make Runs Recoverable
+## Active Issue Wave
 
-Goal: long content runs should survive interruptions and be easy to inspect.
+The next wave is tracked in
+[`ops/roadmap/features.json`](ops/roadmap/features.json). Implementation issues
+should keep the agentic issue shape required by
+[`docs/AGENTIC-DELIVERY.md`](docs/AGENTIC-DELIVERY.md):
 
-Success criteria:
+- `## Context`
+- `## Acceptance Criteria`
+- `## Tests/Evals`
+- `## Verification`
+- `## Agent Instructions`
+- `## Out of Scope`
 
-- Every run has a stable local run ID.
-- Intermediate stage outputs are checkpointed.
-- The user can resume or export a partial run.
-- Cost, token, cache, model, settings, and source metadata are attached to the
-  run record before Notion save.
+## Verification Defaults
 
-Work:
-
-- Keep `history.RunRecord` linked to stable local run IDs and artifact paths.
-- Maintain stage output writes to `.cache/runs/<run_id>/` as the pipeline
-  progresses.
-- Add a file-based resume UI for reopening a partial run from its manifest.
-- Add retry affordances for image generation and failed downstream stages.
-- Keep history records linked to local run artifacts as well as Notion URLs.
-
-### Phase 4: Upgrade Voice, Profiles, And Knowledge Base
-
-Goal: the user's voice system becomes a deliberate asset, not just a folder of
-files.
-
-Success criteria:
-
-- Profiles can define prompts, knowledge-base docs, personas, and style
-  settings in one discoverable structure.
-- Built-in personas and user-defined personas share one loading path.
-- RAG default behavior is explained and measurable from the UI.
-- Sensitive/private profile files are clearly separated from distributable
-  defaults.
-
-Work:
-
-- Extend `prompts/<user>/profile.yaml` beyond prompt/persona overrides to cover
-  defaults such as provider, model, style, RAG mode, and Notion target.
-- Keep user persona discovery under `prompts/<user>/personas/*.md` covered by
-  tests.
-- Add a profile audit dialog: missing prompts, KB size, RAG benchmark summary,
-  private file warning, and stale profile settings.
-- Promote the KB benchmark into a preflight recommendation: Auto can explain
-  why it chose legacy or RAG for the current profile.
-- Split sample/default prompts from private working profiles if this repo will
-  ever be shared.
-
-### Phase 5: Improve Editorial Quality And Grounding
-
-Goal: output should feel less like a pipeline and more like an editor that
-knows the source.
-
-Success criteria:
-
-- Article drafts cite or quote source moments where useful.
-- Fact-check output is actionable and visible before save.
-- Persona and compare outputs can be judged quickly.
-- A small evaluation set catches regressions in voice, grounding, and length.
-
-Work:
-
-- Expand the current credential-free editorial fixture into a broader `evals/`
-  set with representative transcripts and expected qualitative checks.
-- Add structured critique categories and expose them in the UI.
-- Generate richer claim-level source receipts from the pipeline. Transcript
-  receipts already render in both Notion and markdown, and markdown/Notion
-  rendering has fixture coverage.
-- Add side-by-side compare scoring for selected providers/personas.
-- Tune article length behavior with tests around max token budgets and observed
-  word counts from fixture outputs.
-
-### Phase 6: Deployment And Operations
-
-Goal: deployment is a choice, not a science project.
-
-Success criteria:
-
-- A clean machine can bootstrap the repo from documented commands.
-- Secrets are documented by deployment mode.
-- Direct mode, services mode, and fully-local mode each have a tested runbook.
-- CI runs unit tests and a lightweight smoke test.
-
-Work:
-
-- Keep the `Makefile` as the agent-facing command surface for test, smoke,
-  app, and services operations.
-- Add GitHub Actions for tests, lint/import checks, and smoke where feasible.
-- Add docker-compose end-to-end smoke for service mode.
-- Document model/provider availability checks and fallback behavior.
-- Decide whether microservices are truly needed for production; if not, remove
-  or archive them after the parity decision.
-
-## Near-Term Backlog
-
-P0:
-
-- Keep README feature details current.
-- Keep local envs and generated artifacts untracked.
-- Keep `STATUS.md` current with verified commands and current risks.
-- Document services-mode parity gaps.
-
-P1:
-
-- Add direct-vs-services payload parity tests.
-- Add timestamped transcription segment serialization for services mode.
-- Add run checkpointing for save/export retry.
-
-P2:
-
-- Expand profile manifests into provider/model/style/RAG defaults.
-- Expand source receipts and the editorial eval fixture set.
-- Add CI once local commands are stable.
+- Docs/registry: `python3 -m json.tool ops/roadmap/features.json` and
+  `git diff --check`
+- Python/core: `make test`
+- Streamlit shell: `venv/bin/python tests/ui_smoke.py`
+- Health smoke: `make smoke`
+- Editorial/source receipts: `make eval-fixture`
+- Services mode: `make services-smoke` or a documented local equivalent
+- Agentic issue lint: `python3 scripts/agentic/issue_lint.py --issue-file issue.md --labels agent:ready`
 
 ## Deferred On Purpose
 
+- Generic live dictation overlay behavior already handled well by Wispr Flow
+  and peer apps.
 - Multi-user auth and database-backed accounts.
 - A new frontend framework.
-- A new orchestration framework for the pipeline.
-- Provider sprawl before existing OpenAI, Anthropic, Ollama, and image lanes
-  are verified.
-- Large cleanup of the `patterns/` corpus before deciding whether it is product
-  data, profile data, or archival material.
-
-## Decision Log
-
-- Direct mode is the primary product surface until services mode reaches parity.
-- RAG is a measured optimization, not a default ideology. Keep benchmark-first
-  behavior.
-- The visual identity is part of the product. Refactors should preserve the
-  gradient, motion, and control-center feel unless intentionally redesigned.
-- Documentation should describe verified behavior, not planned behavior.
+- Provider sprawl without a tested routing matrix.
+- Full music generation before the SongForge lyric, structure, and prompt-pack
+  workflow proves useful.

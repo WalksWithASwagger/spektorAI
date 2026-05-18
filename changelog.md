@@ -5,9 +5,13 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-05-17
+## [Unreleased] - 2026-05-18
 
 ### Added
+- **2026 master plan** — `docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`
+  resets WhisperForge around Wispr Flow-era capture, knowledge-base
+  intelligence, source-grounded composition, agentic handoffs, recovery, and a
+  bounded SongForge creative lane.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.
@@ -34,9 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 177 passing tests, the current prompt profile
+- Root docs now describe 192 passing tests, the current prompt profile
   layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
   the current services-mode parity boundary.
+- `ROADMAP.md` is now a concise index into the 2026 master plan and active
+  issue registry, instead of a stale long-form status dump.
 - User-defined personas now flow through both the Generation Settings selector
   and the pipeline resolver instead of being limited to built-ins at run time.
 - Run history now upserts by stable `run_id` and stores local artifact links

@@ -1,6 +1,6 @@
 # Linear/GitHub Delivery Pipeline
 
-Last updated: 2026-05-08
+Last updated: 2026-05-18
 
 This repo follows the same delivery shape that worked for the kk-kb/cmvan
 workflow: a roadmap registry in git, implementation issues in GitHub, and
@@ -49,8 +49,10 @@ Use these Linear labels consistently:
 - `agent:review`
 - `status:blocked`
 
-GitHub labels are optional for now. GitHub issue bodies should carry enough
-context, acceptance criteria, and verification commands to stand alone.
+GitHub labels are available for the active wave. Use `repo:spektorAI`,
+`priority:p0` / `priority:p1` / `priority:p2`, and the most specific
+`kind:*` label. Add `agent:ready` only when you intentionally want to trigger
+the agentic dev loop.
 
 ## Acceptance Criteria
 
@@ -89,3 +91,25 @@ The initial project seed created:
 | [#6](https://github.com/WalksWithASwagger/spektorAI/issues/6) | [BC-88](https://linear.app/bc-ai/issue/BC-88/add-profile-manifests-and-user-defined-personas) | Add profile manifests and user-defined personas |
 | [#7](https://github.com/WalksWithASwagger/spektorAI/issues/7) | [BC-90](https://linear.app/bc-ai/issue/BC-90/add-source-receipts-and-editorial-eval-fixtures) | Add source receipts and editorial eval fixtures |
 | [#8](https://github.com/WalksWithASwagger/spektorAI/issues/8) | [BC-91](https://linear.app/bc-ai/issue/BC-91/add-deployment-and-operations-commands) | Add deployment and operations commands |
+
+## 2026 Master Plan Seed
+
+The 2026 product reset lives in
+[`WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](WHISPERFORGE-MASTER-PLAN-2026-05-18.md).
+The issue wave was created without the GitHub `agent:ready` label so the
+external trackers can be reviewed before starting a swarm.
+
+| GitHub | Linear | Title |
+| --- | --- | --- |
+| [#13](https://github.com/WalksWithASwagger/spektorAI/issues/13) | [BC-221](https://linear.app/bc-ai/issue/BC-221/build-wispr-flow-voice-inbox-and-capture-handoff) | Build Wispr Flow voice inbox and capture handoff |
+| [#14](https://github.com/WalksWithASwagger/spektorAI/issues/14) | [BC-222](https://linear.app/bc-ai/issue/BC-222/add-knowledge-base-inventory-and-health-audit) | Add knowledge-base inventory and health audit |
+| [#15](https://github.com/WalksWithASwagger/spektorAI/issues/15) | [BC-223](https://linear.app/bc-ai/issue/BC-223/add-source-grounded-retrieval-inspector) | Add source-grounded retrieval inspector |
+| [#16](https://github.com/WalksWithASwagger/spektorAI/issues/16) | [BC-224](https://linear.app/bc-ai/issue/BC-224/add-prompt-recipe-manifests-and-command-palette) | Add prompt recipe manifests and command palette |
+| [#17](https://github.com/WalksWithASwagger/spektorAI/issues/17) | [BC-226](https://linear.app/bc-ai/issue/BC-226/build-source-grounded-composition-studio) | Build source-grounded composition studio |
+| [#18](https://github.com/WalksWithASwagger/spektorAI/issues/18) | [BC-225](https://linear.app/bc-ai/issue/BC-225/add-modern-transcription-provider-and-privacy-matrix) | Add modern transcription provider and privacy matrix |
+| [#19](https://github.com/WalksWithASwagger/spektorAI/issues/19) | [BC-227](https://linear.app/bc-ai/issue/BC-227/add-voice-grounding-and-usefulness-scorecards) | Add voice, grounding, and usefulness scorecards |
+| [#20](https://github.com/WalksWithASwagger/spektorAI/issues/20) | [BC-228](https://linear.app/bc-ai/issue/BC-228/create-agentic-handoff-exports-for-issues-and-follow-ups) | Create agentic handoff exports for issues and follow-ups |
+| [#21](https://github.com/WalksWithASwagger/spektorAI/issues/21) | [BC-229](https://linear.app/bc-ai/issue/BC-229/add-run-artifact-reopen-resume-and-retry-ui) | Add run artifact reopen, resume, and retry UI |
+| [#22](https://github.com/WalksWithASwagger/spektorAI/issues/22) | [BC-230](https://linear.app/bc-ai/issue/BC-230/upgrade-profiles-into-a-voiceproject-operating-system) | Upgrade profiles into a voice/project operating system |
+| [#23](https://github.com/WalksWithASwagger/spektorAI/issues/23) | [BC-231](https://linear.app/bc-ai/issue/BC-231/add-resurfacing-digest-for-captures-and-generated-outputs) | Add resurfacing digest for captures and generated outputs |
+| [#24](https://github.com/WalksWithASwagger/spektorAI/issues/24) | [BC-232](https://linear.app/bc-ai/issue/BC-232/prototype-songforge-lyric-and-prompt-pack-mode) | Prototype SongForge lyric and prompt-pack mode |
