@@ -15,7 +15,8 @@ Last updated: 2026-05-08
 
 - `venv/bin/python -m pytest tests/ -q` -> `148 passed`
 - `tests/smoke.sh` -> Streamlit health OK on port `8599`
-- `git diff --check` -> clean before the delivery-pipeline edits
+- `venv/bin/python tests/ui_smoke.py` -> rendered shell OK
+- `git diff --check` -> clean before the BC-63 edits
 
 ## Active Handles
 
@@ -25,6 +26,7 @@ Last updated: 2026-05-08
 - GitHub issues: `#1` through `#8`
 - Linear issues: `BC-57`, `BC-58`, `BC-63`, `BC-73`, `BC-83`, `BC-88`, `BC-90`, `BC-91`
 - `whisperforge-env/` has been removed from the git index and remains ignored.
+- `BC-63` / GitHub `#3` is in progress for rendered UI verification.
 
 ## Known Risks
 

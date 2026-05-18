@@ -27,10 +27,9 @@ Verified on this pass:
 
 - `venv/bin/python -m pytest tests/ -q` passes: 148 tests.
 - `tests/smoke.sh` passes when allowed to bind localhost port `8599`.
-- The root docs are mostly current, but still contain stale test-count and
-  layout details.
-- The repo still has 33 tracked files under `whisperforge-env/`, despite
-  `.gitignore` now excluding that environment.
+- The root docs now link the roadmap, status handoff, and Linear/GitHub
+  delivery workflow.
+- `whisperforge-env/` has been removed from the git index and remains ignored.
 
 ## Product Direction
 
@@ -58,11 +57,10 @@ Success criteria:
 
 Work:
 
-- Update README test count and pipeline description to match the current
-  148-test suite and newer output features.
-- Add a compact root `STATUS.md` after each meaningful work session.
-- Remove tracked `whisperforge-env/` files from git while keeping local envs
-  ignored.
+- Keep README test count and pipeline description aligned with the current
+  suite and output features.
+- Keep the compact root `STATUS.md` current after each meaningful work session.
+- Keep local envs, caches, and generated artifacts ignored and untracked.
 - Document the tested Python version matrix and the recommended venv name.
 - Add a "known service-mode gaps" section so docs do not overpromise.
 
@@ -216,9 +214,9 @@ Work:
 
 P0:
 
-- Fix stale README test count and feature details.
-- Stop tracking `whisperforge-env/`.
-- Add `STATUS.md` with verified commands and current risks.
+- Keep README feature details current.
+- Keep local envs and generated artifacts untracked.
+- Keep `STATUS.md` current with verified commands and current risks.
 - Document services-mode parity gaps.
 
 P1:
