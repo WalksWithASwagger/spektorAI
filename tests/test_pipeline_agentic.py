@@ -180,6 +180,38 @@ class TestABCompare:
         assert result.article_compare is None
 
 
+class TestPersonaVariants:
+    def test_user_defined_persona_runs_with_selected_user(
+        self, mock_llm, tmp_path, monkeypatch
+    ):
+        from whisperforge_core import config, prompts as prompts_mod
+
+        user_dir = tmp_path / "alice" / "personas"
+        user_dir.mkdir(parents=True)
+        (user_dir / "Field reporter.md").write_text("Write from the scene.")
+        monkeypatch.setattr(config, "PROMPTS_DIR", tmp_path)
+        monkeypatch.setattr(prompts_mod, "PROMPTS_DIR", tmp_path)
+
+        result = pipeline.run(
+            "transcript", "Anthropic", "claude-haiku-4-5",
+            cleanup=False, chapters=False,
+            user="alice", personas=["Field reporter"],
+        )
+
+        assert result.persona_articles == [
+            {"name": "Field reporter", "text": "DRAFT VERSION"}
+        ]
+
+    def test_unknown_persona_is_skipped(self, mock_llm):
+        result = pipeline.run(
+            "transcript", "Anthropic", "claude-haiku-4-5",
+            cleanup=False, chapters=False,
+            user="alice", personas=["Not real"],
+        )
+
+        assert result.persona_articles == []
+
+
 class TestFactCheckParser:
     def test_empty_output_returns_empty(self):
         assert pipeline._parse_fact_check(None) == []

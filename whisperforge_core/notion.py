@@ -63,6 +63,10 @@ class ContentBundle:
     # metrics section entirely. Shape is the union of cost.CostBreakdown
     # fields and ui/pipeline's run-state flags (agentic, fact_check, ...).
     run_metrics: Optional[dict] = None
+    # Source receipts rendered in Notion and markdown. Shape is intentionally
+    # loose so pipeline-generated receipts, fixtures, and future adapters can
+    # add evidence without schema churn.
+    source_receipts: List[dict] = field(default_factory=list)
 
 
 def _client() -> Client:
@@ -168,6 +172,45 @@ def _run_metrics_block(metrics: dict) -> dict:
     ]
     body = "\n\n".join(lines)
     return _toggle_section("Run metrics", "gray_background", body)
+
+
+def _source_receipts(bundle: ContentBundle) -> list:
+    receipts = bundle.source_receipts
+    if not receipts and isinstance(bundle.run_metrics, dict):
+        receipts = bundle.run_metrics.get("source_receipts") or []
+    if isinstance(receipts, dict):
+        return [receipts]
+    if isinstance(receipts, str):
+        return [{"source": receipts}]
+    return list(receipts or [])
+
+
+def _source_receipts_block(receipts: list) -> dict:
+    lines = []
+    for receipt in receipts:
+        if isinstance(receipt, str):
+            lines.append(f"- {receipt}")
+            continue
+        if not isinstance(receipt, dict):
+            lines.append(f"- {receipt}")
+            continue
+        label = (
+            receipt.get("label")
+            or receipt.get("title")
+            or receipt.get("name")
+            or receipt.get("source")
+            or "Source"
+        )
+        details = []
+        for key, value in receipt.items():
+            if key in {"label", "title", "name"} or value in (None, "", [], {}):
+                continue
+            details.append(f"**{key.replace('_', ' ').title()}:** {value}")
+        line = f"- **{label}**"
+        if details:
+            line += " — " + "; ".join(details)
+        lines.append(line)
+    return _toggle_section("Source Receipts", "gray_background", "\n".join(lines))
 
 
 def _chapters_toggle(chapters: List[dict]) -> dict:
@@ -296,6 +339,10 @@ def build_blocks(bundle: ContentBundle) -> List[dict]:
 
     # Run metrics — cost + tokens + flags + duration. Sits just above the
     # Metadata heading so it reads as the "receipt" for this save.
+    receipts = _source_receipts(bundle)
+    if receipts:
+        blocks.append(_source_receipts_block(receipts))
+
     if bundle.run_metrics:
         blocks.append(_run_metrics_block(bundle.run_metrics))
 

@@ -118,6 +118,44 @@ class TestMarkdownRendering:
         md = export.markdown_from_bundle(_bundle())
         assert "## Run metrics" not in md
 
+    def test_source_receipts_render_from_bundle_metadata(self):
+        bundle = _bundle()
+        bundle.source_receipts = [
+            {
+                "label": "Transcript fixture",
+                "path": "fixtures/transcripts/bc90.txt",
+                "sha256": "abc123",
+                "excerpt": "Taste is leverage.",
+            }
+        ]
+
+        md = export.markdown_from_bundle(bundle)
+
+        assert "## Source receipts" in md
+        assert "**Transcript fixture**" in md
+        assert "**Path:** fixtures/transcripts/bc90.txt" in md
+        assert "**Sha256:** abc123" in md
+        assert "**Excerpt:** Taste is leverage." in md
+
+    def test_source_receipts_render_from_run_metrics_fixture_without_credentials(self):
+        md = export.markdown_from_bundle(_bundle(
+            run_metrics={
+                "backend": "fixture",
+                "source_receipts": [
+                    {
+                        "source": "credential-free eval",
+                        "fixture": "tests/fixtures/editorial_eval.json",
+                        "claim_count": 2,
+                    }
+                ],
+            },
+        ))
+
+        assert "## Source receipts" in md
+        assert "**credential-free eval**" in md
+        assert "**Fixture:** tests/fixtures/editorial_eval.json" in md
+        assert "**Claim Count:** 2" in md
+
 
 class TestExportToDisk:
     def test_creates_file_with_expected_shape(self, tmp_path):

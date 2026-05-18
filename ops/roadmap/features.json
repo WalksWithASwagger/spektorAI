@@ -165,7 +165,7 @@
       ],
       "verification": [
         "venv/bin/python -m pytest tests/ -q",
-        "New eval command or documented fixture check"
+        "make eval-fixture"
       ]
     },
     {

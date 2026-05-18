@@ -1,8 +1,9 @@
 """Tests for whisperforge_core.audio.
 
-Pydub requires a real audio file to load, so we generate a short silent
-AudioSegment programmatically and spill it to disk. Whisper API calls are
-mocked at the client boundary — no network traffic.
+Pydub requires a real audio file to load, so we generate short silent WAV
+fixtures programmatically and spill them to disk. WAV keeps the unit suite
+independent of an external ffmpeg binary. Whisper API calls are mocked at the
+client boundary — no network traffic.
 """
 
 from pathlib import Path
@@ -15,18 +16,18 @@ from whisperforge_core import audio
 
 
 @pytest.fixture
-def silent_mp3(tmp_path):
-    """A 3-second silent mp3 suitable for pydub's AudioSegment.from_file."""
-    path = tmp_path / "silent.mp3"
-    AudioSegment.silent(duration=3_000).export(str(path), format="mp3")
+def silent_wav(tmp_path):
+    """A 3-second silent WAV suitable for pydub's AudioSegment.from_file."""
+    path = tmp_path / "silent.wav"
+    AudioSegment.silent(duration=3_000).export(str(path), format="wav")
     return path
 
 
 @pytest.fixture
-def long_silent_mp3(tmp_path):
-    """A 2-minute silent mp3 large enough to trigger chunking at size thresholds."""
-    path = tmp_path / "long.mp3"
-    AudioSegment.silent(duration=120_000).export(str(path), format="mp3")
+def long_silent_wav(tmp_path):
+    """A 2-minute silent WAV large enough to trigger chunking at size thresholds."""
+    path = tmp_path / "long.wav"
+    AudioSegment.silent(duration=120_000).export(str(path), format="wav")
     return path
 
 
@@ -42,8 +43,8 @@ def mock_openai(monkeypatch):
 
 
 class TestChunkAudio:
-    def test_small_file_yields_single_chunk(self, silent_mp3):
-        chunks, tmp_dir = audio.chunk_audio(silent_mp3, target_size_mb=25)
+    def test_small_file_yields_single_chunk(self, silent_wav):
+        chunks, tmp_dir = audio.chunk_audio(silent_wav, target_size_mb=25)
         try:
             assert len(chunks) == 1
             assert all(Path(c).exists() for c in chunks)
@@ -52,9 +53,9 @@ class TestChunkAudio:
             if tmp_dir:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    def test_chunks_are_under_max_count(self, long_silent_mp3):
+    def test_chunks_are_under_max_count(self, long_silent_wav):
         # Tight target_size forces the cap at MAX_CHUNKS.
-        chunks, tmp_dir = audio.chunk_audio(long_silent_mp3, target_size_mb=1)
+        chunks, tmp_dir = audio.chunk_audio(long_silent_wav, target_size_mb=1)
         try:
             assert len(chunks) <= audio.MAX_CHUNKS
         finally:
@@ -69,21 +70,21 @@ class TestChunkAudio:
 
 
 class TestTranscribe:
-    def test_transcribe_chunk_calls_whisper(self, silent_mp3, mock_openai):
-        text = audio.transcribe_chunk(silent_mp3)
+    def test_transcribe_chunk_calls_whisper(self, silent_wav, mock_openai):
+        text = audio.transcribe_chunk(silent_wav)
         assert text == "transcribed text"
         mock_openai.audio.transcriptions.create.assert_called_once()
 
-    def test_transcribe_audio_path(self, silent_mp3, mock_openai):
-        text = audio.transcribe_audio(str(silent_mp3))
+    def test_transcribe_audio_path(self, silent_wav, mock_openai):
+        text = audio.transcribe_audio(str(silent_wav))
         assert text == "transcribed text"
 
-    def test_transcribe_audio_bytes_creates_temp(self, silent_mp3, mock_openai):
-        raw = silent_mp3.read_bytes()
-        text = audio.transcribe_audio(raw, suffix=".mp3")
+    def test_transcribe_audio_bytes_creates_temp(self, silent_wav, mock_openai):
+        raw = silent_wav.read_bytes()
+        text = audio.transcribe_audio(raw, suffix=".wav")
         assert text == "transcribed text"
 
-    def test_chunk_failure_yields_empty_string(self, silent_mp3, monkeypatch):
+    def test_chunk_failure_yields_empty_string(self, silent_wav, monkeypatch):
         def boom(*a, **k):
             raise RuntimeError("whisper is down")
 
@@ -91,4 +92,4 @@ class TestTranscribe:
         client.audio.transcriptions.create.side_effect = boom
         monkeypatch.setattr(audio, "_openai", lambda: client)
         # Single-chunk call returns "" on failure rather than raising.
-        assert audio.transcribe_chunk(silent_mp3) == ""
+        assert audio.transcribe_chunk(silent_wav) == ""

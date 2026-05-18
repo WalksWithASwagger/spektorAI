@@ -144,6 +144,8 @@ def _execute_run() -> None:
                 s.transcription,
                 s.ai_provider, s.ai_model,
                 knowledge_base=kb,
+                cleanup=bool(s.cleanup_enabled),
+                chapters=bool(s.chapters_enabled),
                 segments=s.transcription_segments or None,
                 progress=progress_cb,
                 agentic=bool(s.agentic_drafting),

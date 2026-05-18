@@ -1,6 +1,6 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-07
+Last reviewed: 2026-05-17
 
 This roadmap is based on the current repository structure, documentation,
 unit tests, smoke test, and the recent refactor history. It favors surgical
@@ -18,18 +18,25 @@ WhisperForge is now a single-user content production workbench:
 - `whisperforge_core/` owns transcription, LLM calls, prompts, Notion export,
   markdown export, cost/history, images, pipeline orchestration, cache, and RAG.
 - `services/` wraps selected core behavior with FastAPI for docker-compose mode.
-- `prompts/` holds user profiles, prompt overrides, and knowledge bases.
+- `prompts/` holds user profiles, prompt overrides, profile manifests,
+  user-defined personas, and knowledge bases.
 - `patterns/` holds a large local prompt-pattern corpus.
 - `tests/` has a meaningful unit suite covering cost, cache, export, history,
-  prompts, audio, Notion rendering, agentic pipeline behavior, and RAG.
+  prompts, audio, Notion rendering, markdown export, service contracts,
+  agentic pipeline behavior, and RAG.
 
 Verified on this pass:
 
-- `venv/bin/python -m pytest tests/ -q` passes: 148 tests.
-- `tests/smoke.sh` passes when allowed to bind localhost port `8599`.
-- The root docs now link the roadmap, status handoff, and Linear/GitHub
-  delivery workflow.
+- `git fetch --prune origin` completed; the current branch and all local
+  tracking branches were even with their upstreams.
+- `make test` passes: 169 tests. `pydub` still warns when `ffmpeg` is not on
+  `PATH`, but the unit fixtures no longer require it.
+- `make eval-fixture` runs a credential-free editorial/source-receipt fixture.
+- `make smoke` passes on localhost port `8599`.
+- `venv/bin/python tests/ui_smoke.py` renders the Streamlit shell.
+- `python3 -m json.tool ops/roadmap/features.json` passes.
 - `whisperforge-env/` has been removed from the git index and remains ignored.
+- Current audit details live in `docs/DOCUMENTATION-AUDIT-2026-05-17.md`.
 
 ## Product Direction
 
@@ -79,8 +86,8 @@ Success criteria:
 
 Work:
 
-- Add a local runtime verification script beyond healthcheck: load app, render
-  sidebar/settings/output shells, and assert no frontend exception text.
+- Maintain `tests/ui_smoke.py` as the rendered-shell check beyond the health
+  endpoint.
 - Add focused tests for run-metrics assembly and auto-export behavior around
   `_build_bundle`.
 - Make the save/export path idempotent enough to retry without duplicating
@@ -110,12 +117,13 @@ Success criteria:
 
 Work:
 
-- Expand Pydantic request/response models in `services/processing/service.py`.
-- Expand `whisperforge_core/http_adapters.py` to round-trip the full
-  `PipelineResult`.
-- Expand `services/storage/service.py` and `HttpStorage.save()` to preserve all
-  Notion/export fields.
-- Add tests that compare direct and HTTP adapter payload shapes.
+- Keep the expanded Pydantic request/response models in
+  `services/processing/service.py` covered by `tests/test_services_contract.py`.
+- Keep `whisperforge_core/http_adapters.py` round-tripping the full
+  processing/storage payload contract.
+- Keep `services/storage/service.py` aligned with modern `ContentBundle`
+  fields, and expand `HttpStorage.save()` to preserve the same fields.
+- Keep tests that compare HTTP adapter and service payload shapes.
 - Keep the implementation thin: wrappers should call `whisperforge_core`, not
   fork business logic.
 
@@ -133,7 +141,8 @@ Success criteria:
 
 Work:
 
-- Introduce a `RunRecord` or equivalent plain data model in core.
+- Extend the existing `history.RunRecord` into a stable local run record, or add
+  a separate model if checkpoint semantics need clearer boundaries.
 - Write stage outputs to `.cache/runs/<run_id>/` as the pipeline progresses.
 - Replace scattered session-only state with session state plus recoverable run
   files.
@@ -156,9 +165,10 @@ Success criteria:
 
 Work:
 
-- Add `prompts/<user>/profile.yaml` for defaults such as provider, model,
-  style, personas, RAG mode, and Notion target.
-- Implement user persona discovery under `prompts/<user>/personas/*.md`.
+- Extend `prompts/<user>/profile.yaml` beyond prompt/persona overrides to cover
+  defaults such as provider, model, style, RAG mode, and Notion target.
+- Keep user persona discovery under `prompts/<user>/personas/*.md` covered by
+  tests.
 - Add a profile audit dialog: missing prompts, KB size, RAG benchmark summary,
   private file warning, and stale profile settings.
 - Promote the KB benchmark into a preflight recommendation: Auto can explain
@@ -180,11 +190,12 @@ Success criteria:
 
 Work:
 
-- Add a local `evals/` fixture set with representative transcripts and expected
-  qualitative checks.
+- Expand the current credential-free editorial fixture into a broader `evals/`
+  set with representative transcripts and expected qualitative checks.
 - Add structured critique categories and expose them in the UI.
-- Add "source receipts": transcript quotes or chapter references beside key
-  claims in long-form outputs.
+- Generate richer claim-level source receipts from the pipeline. Transcript
+  receipts already render in both Notion and markdown, and markdown/Notion
+  rendering has fixture coverage.
 - Add side-by-side compare scoring for selected providers/personas.
 - Tune article length behavior with tests around max token budgets and observed
   word counts from fixture outputs.
@@ -202,8 +213,8 @@ Success criteria:
 
 Work:
 
-- Add `Makefile` or `justfile` commands for setup, test, smoke, run, services,
-  and clean.
+- Keep the `Makefile` as the agent-facing command surface for test, smoke,
+  app, and services operations.
 - Add GitHub Actions for tests, lint/import checks, and smoke where feasible.
 - Add docker-compose end-to-end smoke for service mode.
 - Document model/provider availability checks and fallback behavior.
@@ -221,16 +232,14 @@ P0:
 
 P1:
 
-- Add browser-level Streamlit verification.
 - Add direct-vs-services payload parity tests.
-- Expand HTTP/service schemas for modern pipeline options.
+- Add timestamped transcription segment serialization for services mode.
 - Add run checkpointing for save/export retry.
 
 P2:
 
-- Add profile manifests.
-- Add user-defined persona discovery.
-- Add source receipts and a small editorial eval fixture set.
+- Expand profile manifests into provider/model/style/RAG defaults.
+- Expand source receipts and the editorial eval fixture set.
 - Add CI once local commands are stable.
 
 ## Deferred On Purpose

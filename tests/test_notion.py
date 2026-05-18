@@ -286,3 +286,32 @@ class TestRunMetricsBlock:
             i for i, b in enumerate(blocks) if b["type"] == "heading_2"
         )
         assert metrics_idx < heading_idx
+
+
+class TestSourceReceiptsBlock:
+    def test_source_receipts_render_before_metadata(self):
+        bundle = notion.ContentBundle(
+            title="receipts",
+            source_receipts=[
+                {
+                    "source": "Transcript",
+                    "sha256": "abc123",
+                    "excerpt": "Taste is leverage.",
+                }
+            ],
+        )
+
+        blocks = notion.build_blocks(bundle)
+        receipts = next(
+            b for b in blocks
+            if b["type"] == "toggle"
+            and b["toggle"]["rich_text"][0]["text"]["content"] == "Source Receipts"
+        )
+        body = "\n".join(
+            p["paragraph"]["rich_text"][0]["text"]["content"]
+            for p in receipts["toggle"]["children"]
+        )
+
+        assert "Transcript" in body
+        assert "abc123" in body
+        assert "Taste is leverage." in body

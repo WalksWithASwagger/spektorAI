@@ -51,7 +51,9 @@ class HttpTranscriber:
 
 
 class HttpProcessor:
-    def generate(self, content_type, context, provider, model, prompt=None, knowledge_base=None):
+    def generate(self, content_type, context, provider, model, prompt=None,
+                 knowledge_base=None, max_tokens=None, user=None,
+                 rag_mode="auto"):
         payload = {
             "content_type": content_type,
             "context": context,
@@ -59,6 +61,9 @@ class HttpProcessor:
             "model": model,
             "prompt": prompt,
             "knowledge_base": knowledge_base,
+            "max_tokens": max_tokens,
+            "user": user,
+            "rag_mode": rag_mode,
         }
         r = requests.post(
             f"{PROCESSING_URL}/generate",
@@ -70,20 +75,42 @@ class HttpProcessor:
 
     def run_pipeline(self, transcript, provider, model, prompts=None,
                      knowledge_base=None, progress: Optional[Callable] = None,
+                     cleanup: bool = True, chapters: bool = True,
                      segments: Optional[list] = None,
-                     agentic: bool = False, fact_check: bool = False):
+                     agentic: bool = False, fact_check: bool = False,
+                     generate_images: bool = False,
+                     image_style: Optional[str] = None,
+                     image_aspect_ratio: str = "16:9",
+                     image_model: str = "gemini-2.5-flash-image",
+                     image_output_dir: Optional[str] = None,
+                     article_length_words: int = 1500,
+                     user: Optional[str] = None,
+                     rag_mode: str = "auto",
+                     compare_provider: Optional[str] = None,
+                     compare_model: Optional[str] = None,
+                     personas: Optional[list] = None):
         payload = {
             "transcript": transcript,
             "provider": provider,
             "model": model,
             "prompts": prompts,
             "knowledge_base": knowledge_base,
-            # Segments, agentic, and fact_check aren't read by the processing
-            # service yet; sending them keeps the HTTP contract forward-
-            # compatible so the service can adopt these without a client bump.
+            "cleanup": cleanup,
+            "chapters": chapters,
             "segments": segments,
             "agentic": agentic,
             "fact_check": fact_check,
+            "generate_images": generate_images,
+            "image_style": image_style,
+            "image_aspect_ratio": image_aspect_ratio,
+            "image_model": image_model,
+            "image_output_dir": image_output_dir,
+            "article_length_words": article_length_words,
+            "user": user,
+            "rag_mode": rag_mode,
+            "compare_provider": compare_provider,
+            "compare_model": compare_model,
+            "personas": personas,
         }
         r = requests.post(
             f"{PROCESSING_URL}/pipeline",
@@ -98,6 +125,16 @@ class HttpProcessor:
             social_posts=data.get("social_posts"),
             image_prompts=data.get("image_prompts"),
             article=data.get("article"),
+            raw_transcript=data.get("raw_transcript"),
+            cleaned_transcript=data.get("cleaned_transcript"),
+            chapters=data.get("chapters") or [],
+            article_draft=data.get("article_draft"),
+            article_critique=data.get("article_critique"),
+            fact_check_flags=data.get("fact_check_flags") or [],
+            generated_images=data.get("generated_images") or [],
+            article_compare=data.get("article_compare"),
+            compare_label=data.get("compare_label"),
+            persona_articles=data.get("persona_articles") or [],
         )
 
 
@@ -115,6 +152,15 @@ class HttpStorage:
             "tags": bundle.tags,
             "audio_filename": bundle.audio_filename,
             "models_used": bundle.models_used,
+            "chapters": bundle.chapters,
+            "article_compare": bundle.article_compare,
+            "compare_label": bundle.compare_label,
+            "persona_articles": bundle.persona_articles,
+            "article_critique": bundle.article_critique,
+            "fact_check_flags": bundle.fact_check_flags,
+            "fact_check_ran": bundle.fact_check_ran,
+            "run_metrics": bundle.run_metrics,
+            "source_receipts": bundle.source_receipts,
         }
         r = requests.post(
             f"{STORAGE_URL}/save",

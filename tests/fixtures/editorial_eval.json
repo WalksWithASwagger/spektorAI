@@ -1,0 +1,28 @@
+{
+  "title": "Credential-Free Editorial Eval",
+  "transcript": "Taste is leverage. The audience trusts us when every claim points back to the source.",
+  "article": "Taste is leverage when the finished piece preserves source evidence and editorial judgment.",
+  "summary": "A small fixture for source-receipt and fact-check rendering.",
+  "tags": ["editorial-eval", "source-receipts"],
+  "source_receipts": [
+    {
+      "source": "credential-free transcript fixture",
+      "fixture": "tests/fixtures/editorial_eval.json",
+      "claim_count": 1,
+      "excerpt": "Taste is leverage."
+    }
+  ],
+  "fact_check_flags": [
+    {
+      "claim": "Every claim points back to the source.",
+      "issue": "Keep receipt rendering visible in markdown before publishing."
+    }
+  ],
+  "expected_markdown": [
+    "## Source receipts",
+    "**credential-free transcript fixture**",
+    "**Fixture:** tests/fixtures/editorial_eval.json",
+    "## Fact check",
+    "Every claim points back to the source."
+  ]
+}

@@ -1,0 +1,54 @@
+"""Credential-free editorial fixture check for source receipts."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE = ROOT / "tests" / "fixtures" / "editorial_eval.json"
+
+sys.path.insert(0, str(ROOT))
+
+from whisperforge_core import export, notion
+
+
+def _load_fixture(path: Path = FIXTURE) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def run(path: Path = FIXTURE) -> None:
+    fixture = _load_fixture(path)
+    bundle = notion.ContentBundle(
+        title=fixture["title"],
+        transcript=fixture["transcript"],
+        article=fixture["article"],
+        summary=fixture["summary"],
+        tags=fixture["tags"],
+        fact_check_ran=True,
+        fact_check_flags=fixture["fact_check_flags"],
+        run_metrics={
+            "backend": "fixture",
+            "source_receipts": fixture["source_receipts"],
+        },
+    )
+    markdown = export.markdown_from_bundle(bundle)
+
+    for expected in fixture["expected_markdown"]:
+        if expected not in markdown:
+            raise AssertionError(f"missing expected markdown: {expected!r}")
+
+    print(
+        "editorial-eval: "
+        f"{len(fixture['source_receipts'])} receipt(s), "
+        f"{len(fixture['fact_check_flags'])} fact-check flag(s)"
+    )
+
+
+if __name__ == "__main__":
+    try:
+        run()
+    except Exception as exc:
+        print(f"editorial-eval failed: {exc}", file=sys.stderr)
+        raise SystemExit(1)

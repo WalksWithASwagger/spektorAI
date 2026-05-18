@@ -65,6 +65,13 @@ def _openai() -> OpenAI:
     return OpenAI(api_key=OPENAI_API_KEY)
 
 
+def _chunk_export_settings(audio_path: str | Path) -> tuple[str, str]:
+    suffix = Path(audio_path).suffix.lower()
+    if suffix == ".wav":
+        return ".wav", "wav"
+    return ".mp3", "mp3"
+
+
 def chunk_audio(
     audio_path: str | Path,
     target_size_mb: int = DEFAULT_CHUNK_TARGET_MB,
@@ -108,6 +115,7 @@ def _chunk_audio_size(
     chunk_length_ms = max(len(audio) // total_chunks, MIN_CHUNK_LENGTH_MS)
     temp_dir = tempfile.mkdtemp(prefix="whisperforge_chunks_")
     chunks: List[str] = []
+    chunk_suffix, chunk_format = _chunk_export_settings(audio_path)
 
     for i in range(0, len(audio), chunk_length_ms):
         piece = audio[i : i + chunk_length_ms]
@@ -115,8 +123,8 @@ def _chunk_audio_size(
             # Attach any trailing sliver to the last chunk instead of dropping it.
             continue
         idx = i // chunk_length_ms
-        chunk_path = os.path.join(temp_dir, f"chunk_{idx}.mp3")
-        piece.export(chunk_path, format="mp3")
+        chunk_path = os.path.join(temp_dir, f"chunk_{idx}{chunk_suffix}")
+        piece.export(chunk_path, format=chunk_format)
         chunks.append(chunk_path)
         if progress:
             progress(idx + 1, total_chunks, "chunking")
@@ -178,6 +186,7 @@ def _chunk_audio_vad(
     temp_dir = tempfile.mkdtemp(prefix="whisperforge_chunks_")
     chunks: List[str] = []
     total = len(groups)
+    chunk_suffix, chunk_format = _chunk_export_settings(audio_path)
     for idx, group in enumerate(groups):
         # Concatenate the underlying audio pieces (from the FULL-quality source,
         # not the 16 kHz mono probe) with tiny pads between to avoid clipping.
@@ -188,8 +197,8 @@ def _chunk_audio_vad(
             piece += audio[start_ms:end_ms]
         if len(piece) < MIN_CHUNK_LENGTH_MS:
             continue
-        chunk_path = os.path.join(temp_dir, f"chunk_{idx}.mp3")
-        piece.export(chunk_path, format="mp3")
+        chunk_path = os.path.join(temp_dir, f"chunk_{idx}{chunk_suffix}")
+        piece.export(chunk_path, format=chunk_format)
         chunks.append(chunk_path)
         if progress:
             progress(idx + 1, total, "chunking (vad)")

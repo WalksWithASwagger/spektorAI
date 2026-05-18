@@ -5,6 +5,47 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-05-17
+
+### Added
+- **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
+  `make app`, `make services-run`, `make services-smoke`, and
+  `make services-down` now provide the standard local operations entrypoints.
+- **Service contract tests** — `tests/test_services_contract.py` pins modern
+  processing/storage service payload fields for cleanup, chapters, images,
+  article length, RAG, compare, personas, fact-check output, and run metrics.
+- **HTTP adapter contract tests** — `tests/test_http_adapters.py` pins the
+  frontend HTTP clients against the same modern processing/storage payloads.
+- **Profile manifests and user personas** — `prompts/<user>/profile.yaml` can
+  define prompt/persona overrides, and `prompts/<user>/personas/*.md` joins the
+  built-in persona list.
+- **Markdown source receipts rendering** — markdown export can render source
+  receipt fixtures from bundle metadata or run metrics.
+- **Notion source receipts rendering** — saved Notion pages now carry source
+  receipts alongside run metrics when a bundle includes them.
+- **Credential-free editorial eval** — `make eval-fixture` checks fixture
+  source receipts and fact-check rendering without API keys.
+- **Documentation audit artifact** — `docs/DOCUMENTATION-AUDIT-2026-05-17.md`
+  captures the current sync state, verification commands, stale-doc fixes, and
+  remaining blockers.
+
+### Changed
+- Audio unit fixtures now use WAV so `make test` does not require machine-level
+  `ffmpeg` just to generate test audio.
+- Root docs now describe 169 passing tests, the current prompt profile
+  layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
+  the current services-mode parity boundary.
+- User-defined personas now flow through both the Generation Settings selector
+  and the pipeline resolver instead of being limited to built-ins at run time.
+
+### Fixed
+- `whisperforge_core/http_adapters.py` now forwards modern pipeline options and
+  round-trips the full `PipelineResult` fields exposed by the processing
+  service.
+- `HttpStorage.save()` now forwards modern `ContentBundle` fields such as
+  chapters, compare/persona variants, critique, fact-check flags, and run
+  metrics.
+
 ## [0.8.5] - 2026-04-20
 
 ### Added

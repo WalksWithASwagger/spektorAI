@@ -74,6 +74,103 @@ class TestPromptPrecedence:
         # Falls back to DEFAULT_PROMPTS
         assert "insights" in result.lower() or "wisdom" in result.lower()
 
+    def test_profile_manifest_prompt_overrides_custom_prompt(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        user.mkdir()
+        custom = user / "custom_prompts"
+        custom.mkdir()
+        (custom / "article_writing.txt").write_text("CUSTOM version")
+        (user / "profile.yaml").write_text(
+            "prompts:\n"
+            "  article_writing: MANIFEST version\n"
+        )
+
+        loaded = prompts.load_user_prompts("alice")
+
+        assert loaded["article_writing"] == "MANIFEST version"
+
+    def test_profile_manifest_prompt_can_reference_file(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        user.mkdir()
+        (user / "manifest_prompt.md").write_text("from file")
+        (user / "profile.yaml").write_text(
+            "prompts:\n"
+            "  social_media:\n"
+            "    file: manifest_prompt.md\n"
+        )
+
+        loaded = prompts.load_user_prompts("alice")
+
+        assert loaded["social_media"] == "from file"
+
+
+class TestProfiles:
+    def test_load_profile_preserves_profiles_without_manifest(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        user.mkdir()
+        (user / "summary.md").write_text("profile prompt")
+
+        profile = prompts.load_profile("alice")
+
+        assert profile["user"] == "alice"
+        assert profile["display_name"] == "alice"
+        assert profile["manifest"] == {}
+        assert profile["prompts"]["summary"] == "profile prompt"
+
+    def test_load_profile_uses_manifest_display_name(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        user.mkdir()
+        (user / "profile.yaml").write_text("display_name: Alice Example\n")
+
+        profile = prompts.load_profile("alice")
+
+        assert profile["display_name"] == "Alice Example"
+
+class TestPersonas:
+    def test_lists_builtin_personas_without_user(self, tmp_prompts_dir):
+        personas = prompts.list_personas()
+
+        assert "Industry analyst" in personas
+
+    def test_loads_user_persona_files(self, tmp_prompts_dir):
+        personas_dir = tmp_prompts_dir / "alice" / "personas"
+        personas_dir.mkdir(parents=True)
+        (personas_dir / "Field reporter.md").write_text("Write from the scene.")
+
+        personas = prompts.list_personas("alice")
+
+        assert personas["Field reporter"] == "Write from the scene."
+
+    def test_manifest_personas_override_file_personas(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        personas_dir = user / "personas"
+        personas_dir.mkdir(parents=True)
+        (personas_dir / "Field reporter.md").write_text("file directive")
+        (user / "profile.yaml").write_text(
+            "personas:\n"
+            "  Field reporter: manifest directive\n"
+            "  Strategy memo:\n"
+            "    directive: Write like a sharp operator.\n"
+        )
+
+        personas = prompts.list_personas("alice")
+
+        assert personas["Field reporter"] == "manifest directive"
+        assert personas["Strategy memo"] == "Write like a sharp operator."
+
+    def test_manifest_personas_accept_list_entries(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        user.mkdir()
+        (user / "profile.yaml").write_text(
+            "personas:\n"
+            "  - name: Builder note\n"
+            "    directive: Make it practical and concrete.\n"
+        )
+
+        personas = prompts.list_personas("alice")
+
+        assert personas["Builder note"] == "Make it practical and concrete."
+
 
 class TestSaveCustomPrompt:
     def test_writes_file_to_custom_prompts(self, tmp_prompts_dir):
