@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Prompt recipe command palette** — built-in and profile-level recipe
   manifests can declare inputs, stages, defaults, outputs, eval checks, and
   handoff targets; selected recipes are persisted into run artifacts.
+- **Composition review surface** — the Output card now includes a source-
+  grounded review tab that keeps the draft beside receipts, excerpts, claim
+  flags, revision notes, compare variants, and persona variants.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.
