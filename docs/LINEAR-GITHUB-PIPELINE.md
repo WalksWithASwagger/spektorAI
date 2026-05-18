@@ -32,6 +32,9 @@ project tracking in Linear.
 
 ## Labels
 
+Agentic delivery contract: [`agentic/contract.json`](../agentic/contract.json). v1 opens PRs only; humans remain the merge gate. Ready work uses `agent:ready`; `auto-implement` and `autonomous` are migration aliases.
+
+
 Use these Linear labels consistently:
 
 - `repo:spektorAI`
