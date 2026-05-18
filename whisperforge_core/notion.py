@@ -174,6 +174,23 @@ def _run_metrics_block(metrics: dict) -> dict:
     return _toggle_section("Run metrics", "gray_background", body)
 
 
+def _scorecard_block(scorecard: dict) -> dict:
+    lines = [
+        f"**Verdict:** {scorecard.get('verdict_label', 'Review')} "
+        f"({scorecard.get('average_score', '—')}/100)",
+        "**Mode:** Advisory only; saves are not blocked.",
+    ]
+    for dimension in scorecard.get("dimensions", []):
+        notes = dimension.get("notes") or []
+        note = f" — {notes[0]}" if notes else ""
+        lines.append(
+            f"**{dimension.get('label', 'Dimension')}:** "
+            f"{dimension.get('score', '—')}/100 · "
+            f"{dimension.get('status', 'review')}{note}"
+        )
+    return _toggle_section("Scorecard", "green_background", "\n\n".join(lines))
+
+
 def _source_receipts(bundle: ContentBundle) -> list:
     receipts = bundle.source_receipts
     if not receipts and isinstance(bundle.run_metrics, dict):
@@ -324,6 +341,9 @@ def build_blocks(bundle: ContentBundle) -> List[dict]:
                     "✅ No claims flagged — article grounded in source.",
                 )
             )
+
+    if isinstance(bundle.run_metrics, dict) and isinstance(bundle.run_metrics.get("scorecard"), dict):
+        blocks.append(_scorecard_block(bundle.run_metrics["scorecard"]))
 
     if bundle.audio_filename:
         blocks.append(

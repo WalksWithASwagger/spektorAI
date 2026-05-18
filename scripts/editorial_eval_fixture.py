@@ -11,7 +11,7 @@ FIXTURE = ROOT / "tests" / "fixtures" / "editorial_eval.json"
 
 sys.path.insert(0, str(ROOT))
 
-from whisperforge_core import export, notion
+from whisperforge_core import export, notion, scorecards
 
 
 def _load_fixture(path: Path = FIXTURE) -> dict:
@@ -31,6 +31,18 @@ def run(path: Path = FIXTURE) -> None:
         run_metrics={
             "backend": "fixture",
             "source_receipts": fixture["source_receipts"],
+            "scorecard": scorecards.build_summary(
+                article=fixture["article"],
+                transcript=fixture["transcript"],
+                source_receipts=fixture["source_receipts"],
+                fact_check_flags=fixture["fact_check_flags"],
+                fact_check_ran=True,
+                recipe_effective_settings={
+                    "output_sections": ["article", "source_receipts"],
+                    "eval_checks": ["source_receipts", "fact_check_flags"],
+                    "handoff_targets": ["markdown"],
+                },
+            ),
         },
     )
     markdown = export.markdown_from_bundle(bundle)
@@ -42,7 +54,8 @@ def run(path: Path = FIXTURE) -> None:
     print(
         "editorial-eval: "
         f"{len(fixture['source_receipts'])} receipt(s), "
-        f"{len(fixture['fact_check_flags'])} fact-check flag(s)"
+        f"{len(fixture['fact_check_flags'])} fact-check flag(s), "
+        "scorecard rendered"
     )
 
 

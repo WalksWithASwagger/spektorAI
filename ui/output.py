@@ -23,6 +23,7 @@ from whisperforge_core import history as history_mod
 from whisperforge_core import llm, notion
 from whisperforge_core import run_artifacts
 from whisperforge_core import captures as captures_mod
+from whisperforge_core import scorecards as scorecards_mod
 
 from . import session
 
@@ -116,6 +117,8 @@ def _section(label: str, content: str, *, key: str) -> None:
 def _review_panel() -> None:
     s = st.session_state
     summary = _review_summary_from_state(s)
+    scorecard = _scorecard_summary_from_state(s)
+    s.scorecard_summary = scorecard
     left, right = st.columns([2, 1])
     with left:
         with st.container(border=True):
@@ -144,6 +147,7 @@ def _review_panel() -> None:
             f"Retrieval hits: {retrieval.get('hits', 0)} · "
             f"Voice anchors: {len(retrieval.get('voice_anchors') or [])}"
         )
+        _scorecard_panel(scorecard)
         if summary["sources"]:
             st.markdown("**Receipts**")
             for source in summary["sources"]:
@@ -158,6 +162,25 @@ def _review_panel() -> None:
                 st.warning(f"{flag.get('claim', '')}\n\n{flag.get('issue', '')}")
         elif s.get("fact_check_ran"):
             st.success("No claim flags.")
+
+
+def _scorecard_panel(scorecard: dict) -> None:
+    st.markdown("**Scorecard**")
+    st.metric("Verdict", scorecards_mod.compact_verdict(scorecard))
+    st.caption("Advisory only; saves are not blocked.")
+    with st.expander("Scorecard details", expanded=False):
+        for dimension in scorecard.get("dimensions", []):
+            score = int(dimension.get("score", 0))
+            st.progress(
+                score / 100,
+                text=(
+                    f"{dimension.get('label', 'Dimension')}: "
+                    f"{score}/100 · {dimension.get('status', 'review')}"
+                ),
+            )
+            notes = dimension.get("notes") or []
+            if notes:
+                st.caption(notes[0])
 
 
 def _review_summary_from_state(s) -> dict:
@@ -199,6 +222,70 @@ def _review_summary_from_state(s) -> dict:
         persona_articles=s.get("persona_articles") or [],
         chapters=s.get("chapters") or [],
     )
+
+
+def _scorecard_summary_from_state(
+    s,
+    *,
+    source_receipts: Optional[list[dict]] = None,
+    exports: Optional[list[dict]] = None,
+) -> dict:
+    transcript = s.get("cleaned_transcript") or s.get("transcription") or ""
+    receipts = (
+        list(source_receipts)
+        if source_receipts is not None
+        else _scorecard_source_receipts_from_state(s, transcript)
+    )
+    if exports is None:
+        try:
+            exports = run_artifacts.load_manifest(s.get("run_id") or "").get("exports", [])
+        except Exception:
+            exports = []
+    return scorecards_mod.build_summary(
+        article=s.get("article") or "",
+        transcript=transcript,
+        wisdom=s.get("wisdom") or "",
+        outline=s.get("outline") or "",
+        social_content=s.get("social_content") or "",
+        image_prompts=s.get("image_prompts") or "",
+        chapters=s.get("chapters") or [],
+        source_receipts=receipts,
+        retrieval_inspector=s.get("retrieval_inspector"),
+        fact_check_flags=s.get("fact_check_flags") or [],
+        fact_check_ran=bool(s.get("fact_check_ran")),
+        recipe=s.get("active_recipe") or {},
+        recipe_effective_settings=s.get("recipe_effective_settings") or {},
+        exports=exports or [],
+    )
+
+
+def _scorecard_source_receipts_from_state(s, transcript: str) -> list[dict]:
+    receipts = []
+    recipe_meta = s.get("recipe_effective_settings")
+    if recipe_meta:
+        receipts.append({
+            "source": "Recipe",
+            "name": recipe_meta.get("recipe_name"),
+        })
+    capture_meta = captures_mod.run_metadata(s.get("capture_id"))
+    if capture_meta:
+        receipts.append({
+            "source": "Capture",
+            "title": capture_meta.get("title"),
+        })
+    if transcript:
+        receipts.append({
+            "source": "Transcript",
+            "excerpt": transcript[:240],
+        })
+    retrieval_inspector = s.get("retrieval_inspector")
+    if retrieval_inspector:
+        stages = retrieval_inspector.get("stages") or {}
+        receipts.append({
+            "source": "Knowledge retrieval",
+            "hits": sum(len(hits) for hits in stages.values()),
+        })
+    return receipts
 
 
 def _chapters_panel() -> None:
@@ -402,6 +489,11 @@ def _build_bundle() -> notion.ContentBundle:
         chapters=s.chapters or [],
     )
     source_receipts.append(review_mod.receipt_for_summary(review_summary))
+    scorecard_summary = _scorecard_summary_from_state(
+        s, source_receipts=source_receipts,
+    )
+    s.scorecard_summary = scorecard_summary
+    source_receipts.append(scorecards_mod.receipt_for_summary(scorecard_summary))
 
     # Run metrics — folded into the bundle so the Notion page + markdown
     # export carry their own receipt instead of forcing a cross-ref against
@@ -440,6 +532,7 @@ def _build_bundle() -> notion.ContentBundle:
         } if recipe_meta else None,
         "retrieval_inspector": retrieval_inspector,
         "composition_review": review_summary,
+        "scorecard": scorecard_summary,
     }
 
     return notion.ContentBundle(
@@ -517,6 +610,7 @@ def _save_to_notion() -> Optional[str]:
             "images": bool(s.generated_images),
             "backend": os.getenv("TRANSCRIPTION_BACKEND", "openai"),
         },
+        scorecard=s.get("scorecard_summary") or (bundle.run_metrics or {}).get("scorecard") or {},
     ))
     return url
 

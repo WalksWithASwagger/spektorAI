@@ -522,6 +522,8 @@ def run_history() -> None:
             "Model": r.model,
             "Cost": r.cost_usd or 0.0,
             "Saved": r.cache_savings_usd or 0.0,
+            "Verdict": (r.scorecard or {}).get("verdict_label", ""),
+            "Score": (r.scorecard or {}).get("average_score", None),
             "Notion": r.notion_url or "",
             "Artifacts": Path(r.run_path).resolve().as_uri() if r.run_path else "",
             "Agentic": bool((r.flags or {}).get("agentic")),
@@ -534,6 +536,7 @@ def run_history() -> None:
         column_config={
             "Cost": st.column_config.NumberColumn("Cost $", format="$%.4f"),
             "Saved": st.column_config.NumberColumn("Saved $", format="$%.4f"),
+            "Score": st.column_config.NumberColumn("Score", format="%d"),
             "Notion": st.column_config.LinkColumn(
                 "Notion", display_text="Open",
             ),

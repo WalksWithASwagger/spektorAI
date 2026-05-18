@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md` records current backends,
   candidate providers, privacy/cost tradeoffs, and the smallest next
   diarization integration path.
+- **Advisory scorecards** — deterministic, credential-free scorecards now rate
+  voice, grounding, usefulness, recipe compliance, and handoff readiness; the
+  verdict is stored with run artifacts/history and rendered in markdown/Notion
+  exports without blocking saves.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.
