@@ -156,6 +156,23 @@ class TestMarkdownRendering:
         assert "**Fixture:** tests/fixtures/editorial_eval.json" in md
         assert "**Claim Count:** 2" in md
 
+    def test_composition_review_receipt_is_preserved(self):
+        md = export.markdown_from_bundle(_bundle(
+            source_receipts=[
+                {
+                    "source": "Composition review",
+                    "sources": 3,
+                    "quotes": 4,
+                    "claim_flags": 1,
+                }
+            ],
+        ))
+
+        assert "**Composition review**" in md
+        assert "**Sources:** 3" in md
+        assert "**Quotes:** 4" in md
+        assert "**Claim Flags:** 1" in md
+
 
 class TestExportToDisk:
     def test_creates_file_with_expected_shape(self, tmp_path):

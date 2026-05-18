@@ -45,6 +45,9 @@ base.
 - **Recipe command palette**: choose reusable workflows such as article with
   receipts, brief/social pack, or issue handoff; recipes apply saved defaults
   while preserving the manual controls.
+- **Composition review**: the Output card includes a Review tab where the draft
+  sits beside source receipts, excerpts, claim flags, revision notes, compare
+  variants, and persona variants before export.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -268,6 +271,12 @@ a ggml bin path).
    metadata footer. A local markdown export can be written alongside the
    Notion save, and each run writes inspectable artifacts under `.cache/runs/`.
 
+Use the Output card's **Review** tab when a draft needs source-grounded
+judgment before publishing. It summarizes available receipts, transcript/KB
+excerpts, fact-check flags, revision notes, compare output, and persona
+variants. It is a review surface, not a collaborative editor; edits still
+happen by rerunning with adjusted prompts, recipes, or settings.
+
 ### Notion page layout
 
 ```
@@ -283,7 +292,7 @@ WHISPER: <AI-generated title>
   ▶ Draft Post              (purple)
   ▶ Article · <compare>     (when A/B compare ran)
   ▶ Persona · <name>        (one per selected persona)
-  ▶ Source Receipts         (transcript/evidence receipts)
+  ▶ Source Receipts         (transcript/evidence/composition review receipts)
   ▶ Run metrics             (cost, cache, settings, duration)
   ▶ Original Audio          (red; only if audio was uploaded)
   ─── Metadata ───

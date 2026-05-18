@@ -16,6 +16,7 @@ from typing import Optional
 import streamlit as st
 
 from whisperforge_core import adapters as adapters_mod
+from whisperforge_core import composition_review as review_mod
 from whisperforge_core import cost as cost_mod
 from whisperforge_core import export as export_mod
 from whisperforge_core import history as history_mod
@@ -40,7 +41,7 @@ def render() -> None:
     # Notion page layout so screenshots line up.
     _has_compare = bool(s.get("article_compare"))
     _personas = s.get("persona_articles") or []
-    tab_labels = ["📝 Article"]
+    tab_labels = ["📝 Article", "🧭 Review"]
     if _has_compare:
         tab_labels.append("⚖ Compare")
     # One tab per persona variant — truncated name to keep tabs single-line.
@@ -54,6 +55,9 @@ def render() -> None:
     idx = 0
     with tabs[idx]:
         _section("Article", s.article, key="article")
+    idx += 1
+    with tabs[idx]:
+        _review_panel()
     idx += 1
     if _has_compare:
         with tabs[idx]:
@@ -107,6 +111,94 @@ def _section(label: str, content: str, *, key: str) -> None:
         # st.feedback returns 0 (thumbs down) or 1 (thumbs up) when picked.
         # We persist it in session_state so re-renders keep the selection.
         st.feedback("thumbs", key=f"fb_{key}")
+
+
+def _review_panel() -> None:
+    s = st.session_state
+    summary = _review_summary_from_state(s)
+    left, right = st.columns([2, 1])
+    with left:
+        with st.container(border=True):
+            st.markdown("### Draft")
+            if s.article:
+                st.markdown(s.article)
+            else:
+                st.info("No article draft generated yet.")
+        if s.article_critique:
+            with st.expander("Revision notes", expanded=True):
+                st.markdown(s.article_critique)
+        if s.get("article_compare"):
+            with st.expander(f"Compare · {s.get('compare_label', 'alternate')}", expanded=False):
+                st.markdown(s.article_compare)
+        for pa in s.get("persona_articles") or []:
+            with st.expander(f"Persona · {pa.get('name', 'Persona')}", expanded=False):
+                st.markdown(pa.get("text") or "")
+
+    with right:
+        st.markdown("### Evidence")
+        c1, c2 = st.columns(2)
+        c1.metric("Sources", summary["source_count"])
+        c2.metric("Flags", summary["claim_flag_count"])
+        retrieval = summary.get("retrieval") or {}
+        st.caption(
+            f"Retrieval hits: {retrieval.get('hits', 0)} · "
+            f"Voice anchors: {len(retrieval.get('voice_anchors') or [])}"
+        )
+        if summary["sources"]:
+            st.markdown("**Receipts**")
+            for source in summary["sources"]:
+                st.markdown(f"- {source}")
+        if summary["quotes"]:
+            st.markdown("**Quotes / excerpts**")
+            for item in summary["quotes"]:
+                st.markdown(f"- **{item['label']}** — {item['quote']}")
+        if summary["claim_flags"]:
+            st.markdown("**Claim flags**")
+            for flag in summary["claim_flags"]:
+                st.warning(f"{flag.get('claim', '')}\n\n{flag.get('issue', '')}")
+        elif s.get("fact_check_ran"):
+            st.success("No claim flags.")
+
+
+def _review_summary_from_state(s) -> dict:
+    transcript = s.get("cleaned_transcript") or s.get("transcription") or ""
+    receipts = []
+    recipe_meta = s.get("recipe_effective_settings")
+    if recipe_meta:
+        receipts.append({
+            "source": "Recipe",
+            "name": recipe_meta.get("recipe_name"),
+            "excerpt": ", ".join(recipe_meta.get("output_sections") or []),
+        })
+    capture_meta = captures_mod.run_metadata(s.get("capture_id"))
+    if capture_meta:
+        receipts.append({
+            "source": "Capture",
+            "title": capture_meta.get("title"),
+            "excerpt": capture_meta.get("text_excerpt"),
+        })
+    if transcript:
+        receipts.append({
+            "source": "Transcript",
+            "sha256": hashlib.sha256(transcript.encode("utf-8")).hexdigest(),
+            "excerpt": transcript[:240],
+        })
+    retrieval_inspector = s.get("retrieval_inspector")
+    if retrieval_inspector:
+        stages = retrieval_inspector.get("stages") or {}
+        receipts.append({
+            "source": "Knowledge retrieval",
+            "excerpt": f"{sum(len(hits) for hits in stages.values())} retrieved KB hits",
+        })
+    return review_mod.build_summary(
+        source_receipts=receipts,
+        retrieval_inspector=retrieval_inspector,
+        fact_check_flags=s.get("fact_check_flags") or [],
+        article_critique=s.get("article_critique"),
+        article_compare=s.get("article_compare"),
+        persona_articles=s.get("persona_articles") or [],
+        chapters=s.get("chapters") or [],
+    )
 
 
 def _chapters_panel() -> None:
@@ -300,6 +392,16 @@ def _build_bundle() -> notion.ContentBundle:
             "hits": sum(len(hits) for hits in stages.values()),
             "voice_anchors": ", ".join(anchors) if anchors else "",
         })
+    review_summary = review_mod.build_summary(
+        source_receipts=source_receipts,
+        retrieval_inspector=retrieval_inspector,
+        fact_check_flags=s.fact_check_flags or [],
+        article_critique=s.article_critique,
+        article_compare=s.get("article_compare"),
+        persona_articles=s.get("persona_articles") or [],
+        chapters=s.chapters or [],
+    )
+    source_receipts.append(review_mod.receipt_for_summary(review_summary))
 
     # Run metrics — folded into the bundle so the Notion page + markdown
     # export carry their own receipt instead of forcing a cross-ref against
@@ -337,6 +439,7 @@ def _build_bundle() -> notion.ContentBundle:
             "effective_settings": recipe_meta,
         } if recipe_meta else None,
         "retrieval_inspector": retrieval_inspector,
+        "composition_review": review_summary,
     }
 
     return notion.ContentBundle(

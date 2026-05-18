@@ -66,6 +66,32 @@ def main() -> int:
             print(f"ui-smoke: missing rendered text: {fragment}", file=sys.stderr)
             return 1
 
+    app.session_state["article"] = "# Draft\n\nA grounded composition draft."
+    app.session_state["wisdom"] = "Source-grounded insight."
+    app.session_state["transcription"] = "A source transcript with a useful quote."
+    app.session_state["article_critique"] = "- tighten the ending"
+    app.session_state["fact_check_ran"] = True
+    app.session_state["fact_check_flags"] = [
+        {"claim": "The sky is red", "issue": "The source says blue."}
+    ]
+    app.session_state["article_compare"] = "Alternate provider draft."
+    app.session_state["compare_label"] = "alternate"
+    app.session_state["persona_articles"] = [
+        {"name": "Operator", "text": "Persona variant."}
+    ]
+    app.run()
+
+    if app.exception:
+        for exc in app.exception:
+            print(f"ui-smoke: Streamlit exception after output seed: {exc}", file=sys.stderr)
+        return 1
+
+    output_tabs = set(_labels(app.tabs))
+    for label in {"📝 Article", "🧭 Review"}:
+        if label not in output_tabs:
+            print(f"ui-smoke: missing output tab: {label}", file=sys.stderr)
+            return 1
+
     print("ui-smoke: rendered shell OK")
     return 0
 
