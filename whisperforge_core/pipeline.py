@@ -14,6 +14,7 @@ from .logging import get_logger
 logger = get_logger(__name__)
 
 ProgressCallback = Callable[[float, str], None]  # (fraction_0_to_1, label) -> None
+CheckpointCallback = Callable[[str, dict], None]
 
 
 @dataclass
@@ -92,6 +93,7 @@ def run(
     compare_provider: Optional[str] = None,
     compare_model: Optional[str] = None,
     personas: Optional[list[str]] = None,
+    checkpoint: Optional[CheckpointCallback] = None,
 ) -> PipelineResult:
     """Execute the content pipeline.
 
@@ -115,6 +117,10 @@ def run(
         if progress:
             progress(frac, label)
 
+    def _checkpoint(stage: str, payload: dict) -> None:
+        if checkpoint:
+            checkpoint(stage, payload)
+
     # Stage 0: optional transcript cleanup. ~5% budget. Failure falls back to
     # the raw transcript rather than aborting the whole run.
     if cleanup:
@@ -133,6 +139,10 @@ def run(
         if cleaned:
             transcript = cleaned
             result.cleaned_transcript = cleaned
+        _checkpoint("cleanup", {
+            "raw_transcript": result.raw_transcript,
+            "cleaned_transcript": result.cleaned_transcript,
+        })
         _report(0.05, "Cleaning transcript...")
 
     # Stage 0.5: chapters — structural segmentation. Runs before the voice
@@ -145,6 +155,7 @@ def run(
         result.chapters = llm.generate_chapters(
             transcript, provider, model, segments=segments,
         )
+        _checkpoint("chapters", {"chapters": result.chapters})
         _report(0.1, "Chaptering...")
 
     # Stage 1: wisdom (needs transcript)
@@ -159,6 +170,7 @@ def run(
             user=user,
             rag_mode=rag_mode,
     )
+    _checkpoint("wisdom", {"wisdom": result.wisdom})
     _report(0.2, _STAGES[0][1])
 
     # Stage 2: outline (needs transcript + wisdom)
@@ -173,6 +185,7 @@ def run(
             user=user,
             rag_mode=rag_mode,
     )
+    _checkpoint("outline", {"outline": result.outline})
     _report(0.4, _STAGES[1][1])
 
     # Stage 3: social (needs wisdom + outline)
@@ -187,6 +200,7 @@ def run(
             user=user,
             rag_mode=rag_mode,
     )
+    _checkpoint("social", {"social_posts": result.social_posts})
     _report(0.6, _STAGES[2][1])
 
     # Stage 4: image prompts
@@ -201,6 +215,7 @@ def run(
             user=user,
             rag_mode=rag_mode,
     )
+    _checkpoint("image_prompts", {"image_prompts": result.image_prompts})
     _report(0.8, _STAGES[3][1])
 
     # Stage 5: article draft (always runs — first pass of the agentic flow).
@@ -229,6 +244,7 @@ def run(
     )
     result.article = draft
     result.article_draft = draft
+    _checkpoint("article_draft", {"article": result.article})
 
     # Stage 6-7: agentic critique + revise. Opt-in via agentic=True.
     # Gets cheap ($~0.005 on Haiku 4.5 + prompt caching) but markedly
@@ -274,6 +290,10 @@ def run(
             )
             if revised:
                 result.article = revised
+            _checkpoint("article_revision", {
+                "article": result.article,
+                "article_critique": result.article_critique,
+            })
 
     # Stage 7.2: optional persona variants — run article_writing once per
     # selected persona with a voice directive appended to the user content.
@@ -317,6 +337,10 @@ def run(
                     result.persona_articles.append({
                         "name": name, "text": variant,
                     })
+                    _checkpoint("persona", {
+                        "name": name,
+                        "persona_articles": result.persona_articles,
+                    })
             except Exception as e:
                 logger.warning("persona %r failed: %s", name, e)
 
@@ -346,6 +370,10 @@ def run(
             if compare:
                 result.article_compare = compare
                 result.compare_label = f"{compare_provider} {compare_model}"
+                _checkpoint("compare", {
+                    "article_compare": result.article_compare,
+                    "compare_label": result.compare_label,
+                })
         except Exception as e:
             logger.warning("comparison article failed: %s", e)
 
@@ -380,6 +408,7 @@ def run(
                     }
                     for r in image_results
                 ]
+                _checkpoint("images", {"generated_images": result.generated_images})
         except Exception as e:
             logger.warning("image generation failed: %s", e)
 
@@ -397,8 +426,22 @@ def run(
             knowledge_base=None,  # fact-check is grounded, not stylistic
         )
         result.fact_check_flags = _parse_fact_check(raw)
+        _checkpoint("fact_check", {"fact_check_flags": result.fact_check_flags})
 
     _report(1.0, "Done")
+    _checkpoint("complete", {
+        "wisdom": result.wisdom,
+        "outline": result.outline,
+        "social_posts": result.social_posts,
+        "image_prompts": result.image_prompts,
+        "article": result.article,
+        "chapters": result.chapters,
+        "fact_check_flags": result.fact_check_flags,
+        "generated_images": result.generated_images,
+        "article_compare": result.article_compare,
+        "compare_label": result.compare_label,
+        "persona_articles": result.persona_articles,
+    })
 
     return result
 

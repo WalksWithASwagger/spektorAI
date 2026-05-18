@@ -100,6 +100,9 @@ _PER_RUN_DEFAULTS: Dict[str, Any] = {
     "pipeline_running": False,
     # Last Notion URL for the toast + history link display
     "last_notion_url": None,
+    # Durable local run artifacts under .cache/runs/<run_id>/.
+    "run_id": None,
+    "run_artifact_dir": None,
     # Wall-clock timestamps for per-run duration. pipeline.py sets
     # pipeline_started_at before stage 0 and _build_bundle reads both to
     # compute duration_seconds for the Run metrics block.

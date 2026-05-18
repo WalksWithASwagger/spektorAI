@@ -400,6 +400,7 @@ def run_history() -> None:
             "Cost": r.cost_usd or 0.0,
             "Saved": r.cache_savings_usd or 0.0,
             "Notion": r.notion_url or "",
+            "Artifacts": Path(r.run_path).resolve().as_uri() if r.run_path else "",
             "Agentic": bool((r.flags or {}).get("agentic")),
             "Fact-check": bool((r.flags or {}).get("fact_check")),
         }
@@ -412,6 +413,9 @@ def run_history() -> None:
             "Saved": st.column_config.NumberColumn("Saved $", format="$%.4f"),
             "Notion": st.column_config.LinkColumn(
                 "Notion", display_text="Open",
+            ),
+            "Artifacts": st.column_config.LinkColumn(
+                "Artifacts", display_text="Open",
             ),
             "Agentic": st.column_config.CheckboxColumn("Agentic"),
             "Fact-check": st.column_config.CheckboxColumn("Fact-check"),

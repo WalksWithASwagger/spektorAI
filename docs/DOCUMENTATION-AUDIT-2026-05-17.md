@@ -21,8 +21,9 @@ and profile content, not project documentation.
 ## Sync Result
 
 - `git fetch --prune origin` completed.
-- Current checkout: `kk/swarm-roadmap-batch-1` at the current PR head after the
-  documentation audit and PR-review follow-up fixes.
+- Current checkout: `kk/bc-83-run-recovery-foundation`, stacked on
+  `kk/swarm-roadmap-batch-1` after the documentation audit and PR-review
+  follow-up fixes.
 - `git rev-list --left-right --count HEAD...@{u}` returned `0 0`.
 - Local tracking branches were even with their upstreams:
   `main`, `kk/swarm-roadmap-batch-1`,
@@ -31,7 +32,7 @@ and profile content, not project documentation.
 
 ## Updates Made
 
-- Updated `readme.md` to match the current prompt profile layout, 169-test
+- Updated `readme.md` to match the current prompt profile layout, 177-test
   collection count, Ollama provider lane, Notion/markdown output shape, RAG
   environment knobs, UI ownership, and services-mode parity boundary.
 - Updated `STATUS.md` with the current branch/commit, sync evidence, verified
@@ -53,12 +54,13 @@ and profile content, not project documentation.
 - Added the credential-free `make eval-fixture` editorial/source-receipt check.
 - Fixed user-defined persona selection so profile personas appear in the UI and
   resolve through the pipeline.
+- Added BC-83 durable run artifacts and retry-safe history upserts.
 
 ## Verification
 
 - `python3 -m json.tool ops/roadmap/features.json` passed.
 - `git diff --check` passed after documentation edits.
-- `make test` passed: 169 tests.
+- `make test` passed: 177 tests.
 - `make eval-fixture` passed.
 - `make smoke` passed: Streamlit health OK on port `8599`.
 - `venv/bin/python tests/ui_smoke.py` passed: rendered shell OK.

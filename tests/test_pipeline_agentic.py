@@ -212,6 +212,24 @@ class TestPersonaVariants:
         assert result.persona_articles == []
 
 
+class TestCheckpoints:
+    def test_checkpoint_receives_stage_outputs(self, mock_llm):
+        checkpoints = []
+
+        pipeline.run(
+            "transcript", "Anthropic", "claude-haiku-4-5",
+            cleanup=False, chapters=False,
+            checkpoint=lambda stage, payload: checkpoints.append((stage, payload)),
+        )
+
+        stages = [stage for stage, _ in checkpoints]
+        assert "wisdom" in stages
+        assert "article_draft" in stages
+        assert "complete" in stages
+        article = next(payload for stage, payload in checkpoints if stage == "article_draft")
+        assert article["article"] == "DRAFT VERSION"
+
+
 class TestFactCheckParser:
     def test_empty_output_returns_empty(self):
         assert pipeline._parse_fact_check(None) == []
