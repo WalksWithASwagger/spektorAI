@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   voice, grounding, usefulness, recipe compliance, and handoff readiness; the
   verdict is stored with run artifacts/history and rendered in markdown/Notion
   exports without blocking saves.
+- **Agent handoff drafts** — the Review tab can now generate a dry-run
+  GitHub/Linear-ready issue brief from a capture, transcript, or selected
+  output and persist it under `.cache/runs/<run_id>/handoffs/`.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.

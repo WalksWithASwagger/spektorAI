@@ -20,6 +20,7 @@ from whisperforge_core import composition_review as review_mod
 from whisperforge_core import cost as cost_mod
 from whisperforge_core import export as export_mod
 from whisperforge_core import history as history_mod
+from whisperforge_core import handoffs as handoffs_mod
 from whisperforge_core import llm, notion
 from whisperforge_core import run_artifacts
 from whisperforge_core import captures as captures_mod
@@ -162,6 +163,7 @@ def _review_panel() -> None:
                 st.warning(f"{flag.get('claim', '')}\n\n{flag.get('issue', '')}")
         elif s.get("fact_check_ran"):
             st.success("No claim flags.")
+    _handoff_panel()
 
 
 def _scorecard_panel(scorecard: dict) -> None:
@@ -286,6 +288,74 @@ def _scorecard_source_receipts_from_state(s, transcript: str) -> list[dict]:
             "hits": sum(len(hits) for hits in stages.values()),
         })
     return receipts
+
+
+def _handoff_panel() -> None:
+    s = st.session_state
+    sources = _handoff_sources(s)
+    if not sources:
+        return
+    with st.expander("Agent handoff draft", expanded=False):
+        st.caption("Dry-run preview only. GitHub and Linear creation stay behind a separate explicit action.")
+        labels = [item["label"] for item in sources]
+        selected = st.selectbox("Draft from", labels, key="handoff_source_select")
+        source = next(item for item in sources if item["label"] == selected)
+        default_title = f"Handoff: {source['title']}"
+        title = st.text_input("Issue title", value=default_title, key="handoff_title")
+        if st.button("Generate dry-run draft", use_container_width=True, key="generate_handoff_draft"):
+            scorecard = s.get("scorecard_summary") or _scorecard_summary_from_state(s)
+            draft = handoffs_mod.build_issue_draft(
+                title=title,
+                source_text=source["text"],
+                source_kind=source["kind"],
+                source_title=source["title"],
+                recipe=s.get("recipe_effective_settings") or {},
+                scorecard=scorecard,
+            )
+            path = None
+            if s.get("run_id"):
+                path = handoffs_mod.persist_draft(s.run_id, draft)
+            s.handoff_draft_preview = {
+                "title": draft.title,
+                "body": draft.body,
+                "path": str(path) if path else None,
+            }
+            st.toast("Handoff draft generated.", icon=":material/draft:")
+            st.rerun()
+
+        preview = s.get("handoff_draft_preview")
+        if preview:
+            if preview.get("path"):
+                st.caption(f"Saved to `{preview['path']}`")
+            else:
+                st.caption("Preview only; start a run to persist the draft under run artifacts.")
+            st.text_area("Preview", preview.get("body") or "", height=420, key="handoff_preview_body")
+
+
+def _handoff_sources(s) -> list[dict[str, str]]:
+    transcript = s.get("cleaned_transcript") or s.get("transcription") or ""
+    capture_meta = captures_mod.run_metadata(s.get("capture_id"))
+    sources = []
+    if s.get("article"):
+        sources.append({"label": "Article", "kind": "selected output", "title": "Article", "text": s.article})
+    if s.get("wisdom"):
+        sources.append({"label": "Wisdom", "kind": "selected output", "title": "Wisdom", "text": s.wisdom})
+    if s.get("outline"):
+        sources.append({"label": "Outline", "kind": "selected output", "title": "Outline", "text": s.outline})
+    if s.get("social_content"):
+        sources.append({"label": "Social", "kind": "selected output", "title": "Social", "text": s.social_content})
+    if transcript:
+        sources.append({"label": "Transcript", "kind": "transcript", "title": "Transcript", "text": transcript})
+    if capture_meta:
+        capture_text = captures_mod.read_capture_text(capture_meta["capture_id"])
+        if capture_text:
+            sources.append({
+                "label": "Capture",
+                "kind": "capture",
+                "title": capture_meta.get("title") or "Capture",
+                "text": capture_text,
+            })
+    return sources
 
 
 def _chapters_panel() -> None:

@@ -31,6 +31,16 @@ An issue can only keep a ready label when it includes all required sections:
 
 Acceptance criteria must include Markdown checkboxes. The linter rejects ready issues missing tests/evals or other required sections.
 
+## WhisperForge Handoff Drafts
+
+WhisperForge handoff exports use the same issue-body contract. The Review tab's
+Agent handoff draft preview can render a GitHub/Linear-ready Markdown draft from
+a capture, transcript, or selected output and persist it under
+`.cache/runs/<run_id>/handoffs/` before any external tracker record is created.
+
+Draft generation is intentionally dry-run only in v1. Creating GitHub or Linear
+issues remains a separate explicit user action after the draft has been reviewed.
+
 ## Runner Flow
 
 1. A human or chat command creates a complete GitHub issue and matching Linear issue.
