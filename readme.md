@@ -53,6 +53,9 @@ base.
 - **Advisory scorecards**: deterministic, credential-free checks summarize
   voice, grounding, usefulness, recipe compliance, and handoff readiness without
   blocking saves.
+- **Agent handoff drafts**: the Review tab can turn a capture, transcript, or
+  selected output into a GitHub/Linear-ready issue brief and persist the dry-run
+  draft under the current run artifacts.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -135,7 +138,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        214 tests + health/rendered UI smokes
+tests/                        217 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -286,7 +289,9 @@ excerpts, fact-check flags, revision notes, compare output, and persona
 variants, plus an advisory scorecard for voice, grounding, usefulness, recipe
 compliance, and handoff readiness. It is a review surface, not a collaborative
 editor; edits still happen by rerunning with adjusted prompts, recipes, or
-settings.
+settings. The same tab includes an **Agent handoff draft** preview that writes
+local issue drafts only; external tracker creation remains a separate explicit
+action.
 
 ### Notion page layout
 
