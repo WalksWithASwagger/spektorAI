@@ -1,9 +1,9 @@
 """Run history log.
 
-Append-only JSONL record of every successful Notion export: which audio,
-which provider/model, how long it ran, how much it cost, and a direct link
-back to the Notion page. Read from the sidebar's "Recent runs" panel so
-Kris can jump back into prior pieces without hunting through Notion.
+JSONL record of every successful Notion export: which audio, which
+provider/model, how long it ran, how much it cost, and direct links back to
+Notion plus local run artifacts. Read from the sidebar's "Recent runs" panel
+so Kris can jump back into prior pieces without hunting through Notion.
 
 Lives in ``CACHE_DIR/history.jsonl``.
 """
@@ -27,6 +27,9 @@ class RunRecord:
     """One pipeline run, end-to-end."""
     timestamp: str                     # ISO-8601 UTC
     title: str                         # Notion page title
+    run_id: Optional[str] = None
+    run_path: Optional[str] = None
+    markdown_path: Optional[str] = None
     notion_url: Optional[str] = None
     audio_filename: Optional[str] = None
     provider: str = ""
@@ -57,6 +60,40 @@ def append(record: RunRecord) -> None:
             f.write(record.to_json_line() + "\n")
     except OSError as e:
         logger.warning("failed to append history record: %s", e)
+
+
+def upsert(record: RunRecord) -> None:
+    """Append a record, replacing older entries for the same run_id first."""
+    if not record.run_id:
+        append(record)
+        return
+    try:
+        _ensure_dir()
+        lines = (
+            HISTORY_FILE.read_text(encoding="utf-8").splitlines()
+            if HISTORY_FILE.exists() else []
+        )
+        kept = []
+        for line in lines:
+            if not line.strip():
+                kept.append(line)
+                continue
+            try:
+                data = json.loads(line)
+            except json.JSONDecodeError:
+                kept.append(line)
+                continue
+            if not isinstance(data, dict):
+                kept.append(line)
+                continue
+            if data.get("run_id") != record.run_id:
+                kept.append(line)
+        kept.append(record.to_json_line())
+        tmp = HISTORY_FILE.with_name(f".{HISTORY_FILE.name}.tmp")
+        tmp.write_text("\n".join(kept) + "\n", encoding="utf-8")
+        tmp.replace(HISTORY_FILE)
+    except OSError as e:
+        logger.warning("failed to upsert history record: %s", e)
 
 
 def recent(limit: int = 10) -> List[RunRecord]:

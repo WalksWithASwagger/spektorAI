@@ -29,9 +29,11 @@ Verified on this pass:
 
 - `git fetch --prune origin` completed; the current branch and all local
   tracking branches were even with their upstreams.
-- `make test` passes: 169 tests. `pydub` still warns when `ffmpeg` is not on
+- `make test` passes: 177 tests. `pydub` still warns when `ffmpeg` is not on
   `PATH`, but the unit fixtures no longer require it.
 - `make eval-fixture` runs a credential-free editorial/source-receipt fixture.
+- Direct-mode runs write inspectable manifests and stage checkpoints under
+  `.cache/runs/<run_id>/`.
 - `make smoke` passes on localhost port `8599`.
 - `venv/bin/python tests/ui_smoke.py` renders the Streamlit shell.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
@@ -90,7 +92,7 @@ Work:
   endpoint.
 - Add focused tests for run-metrics assembly and auto-export behavior around
   `_build_bundle`.
-- Make the save/export path idempotent enough to retry without duplicating
+- Keep the save/export path idempotent enough to retry without duplicating
   local markdown filenames or corrupting history.
 - Review session-state defaults for mutable values and hidden widget-key drift.
 - Keep the visual treatment in `styles.py`, but document the key selectors that
@@ -141,13 +143,12 @@ Success criteria:
 
 Work:
 
-- Extend the existing `history.RunRecord` into a stable local run record, or add
-  a separate model if checkpoint semantics need clearer boundaries.
-- Write stage outputs to `.cache/runs/<run_id>/` as the pipeline progresses.
-- Replace scattered session-only state with session state plus recoverable run
-  files.
-- Add retry buttons for Notion save, markdown export, and image generation.
-- Make history records link to local run artifacts as well as Notion URLs.
+- Keep `history.RunRecord` linked to stable local run IDs and artifact paths.
+- Maintain stage output writes to `.cache/runs/<run_id>/` as the pipeline
+  progresses.
+- Add a file-based resume UI for reopening a partial run from its manifest.
+- Add retry affordances for image generation and failed downstream stages.
+- Keep history records linked to local run artifacts as well as Notion URLs.
 
 ### Phase 4: Upgrade Voice, Profiles, And Knowledge Base
 

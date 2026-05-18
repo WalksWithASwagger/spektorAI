@@ -116,7 +116,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        169 tests + health/rendered UI smokes
+tests/                        177 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -255,7 +255,7 @@ a ggml bin path).
 5. **Save to Notion** — builds a single page with color-coded toggles per
    section, an AI-generated title, summary callout, tags, run metrics, and
    metadata footer. A local markdown export can be written alongside the
-   Notion save.
+   Notion save, and each run writes inspectable artifacts under `.cache/runs/`.
 
 ### Notion page layout
 
@@ -272,6 +272,7 @@ WHISPER: <AI-generated title>
   ▶ Draft Post              (purple)
   ▶ Article · <compare>     (when A/B compare ran)
   ▶ Persona · <name>        (one per selected persona)
+  ▶ Source Receipts         (transcript/evidence receipts)
   ▶ Run metrics             (cost, cache, settings, duration)
   ▶ Original Audio          (red; only if audio was uploaded)
   ─── Metadata ───

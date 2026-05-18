@@ -88,7 +88,8 @@ class HttpProcessor:
                      rag_mode: str = "auto",
                      compare_provider: Optional[str] = None,
                      compare_model: Optional[str] = None,
-                     personas: Optional[list] = None):
+                     personas: Optional[list] = None,
+                     checkpoint: Optional[Callable] = None):
         payload = {
             "transcript": transcript,
             "provider": provider,

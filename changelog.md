@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   receipts alongside run metrics when a bundle includes them.
 - **Credential-free editorial eval** — `make eval-fixture` checks fixture
   source receipts and fact-check rendering without API keys.
+- **Durable run artifacts** — direct-mode runs now write manifests and stage
+  checkpoints under `.cache/runs/<run_id>/`.
 - **Documentation audit artifact** — `docs/DOCUMENTATION-AUDIT-2026-05-17.md`
   captures the current sync state, verification commands, stale-doc fixes, and
   remaining blockers.
@@ -32,11 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 169 passing tests, the current prompt profile
+- Root docs now describe 177 passing tests, the current prompt profile
   layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
   the current services-mode parity boundary.
 - User-defined personas now flow through both the Generation Settings selector
   and the pipeline resolver instead of being limited to built-ins at run time.
+- Run history now upserts by stable `run_id` and stores local artifact links
+  alongside Notion and markdown export paths.
 
 ### Fixed
 - `whisperforge_core/http_adapters.py` now forwards modern pipeline options and

@@ -20,6 +20,7 @@ from whisperforge_core import cost as cost_mod
 from whisperforge_core import export as export_mod
 from whisperforge_core import history as history_mod
 from whisperforge_core import llm, notion
+from whisperforge_core import run_artifacts
 
 from . import session
 
@@ -207,7 +208,9 @@ def _export_markdown() -> Optional["Path"]:
     s = st.session_state
     bundle = _build_bundle()
     try:
-        return export_mod.export(bundle, notion_url=s.last_notion_url)
+        path = export_mod.export(bundle, notion_url=s.last_notion_url)
+        _record_run_export("markdown", str(path))
+        return path
     except Exception as e:
         st.error(f"Markdown export failed: {e}")
         return None
@@ -334,20 +337,26 @@ def _save_to_notion() -> Optional[str]:
         try:
             md_path = export_mod.export(bundle, notion_url=url)
             s._last_md_path = str(md_path)
+            _record_run_export("markdown", str(md_path))
         except Exception as e:
             logger_warn = getattr(st, "toast", None)
             if logger_warn:
                 st.toast(f"Markdown export skipped: {e}", icon=":material/warning:")
+    _record_run_export("notion", url)
 
     # Append history so the Runs dialog shows this run next open.
     b = cost_mod.estimate_cost()
-    history_mod.append(history_mod.RunRecord(
+    history_mod.upsert(history_mod.RunRecord(
         timestamp=history_mod.now_iso(),
         title=bundle.title,
+        run_id=s.get("run_id"),
+        run_path=s.get("run_artifact_dir"),
+        markdown_path=s.get("_last_md_path"),
         notion_url=url,
         audio_filename=bundle.audio_filename,
         provider=s.ai_provider or "",
         model=s.ai_model or "",
+        duration_seconds=float((bundle.run_metrics or {}).get("duration_seconds") or 0.0),
         cost_usd=round(b.total_usd, 6),
         cache_savings_usd=round(b.cache_savings_usd, 6),
         flags={
@@ -359,3 +368,13 @@ def _save_to_notion() -> Optional[str]:
         },
     ))
     return url
+
+
+def _record_run_export(kind: str, value: str) -> None:
+    run_id = st.session_state.get("run_id")
+    if not run_id:
+        return
+    try:
+        run_artifacts.record_export(run_id, kind, value)
+    except Exception:
+        pass

@@ -15,8 +15,12 @@ import streamlit_antd_components as sac
 
 from whisperforge_core import adapters as adapters_mod
 from whisperforge_core import prompts as prompts_mod
+from whisperforge_core import run_artifacts
+from whisperforge_core.logging import get_logger
 
 from . import session
+
+logger = get_logger(__name__)
 
 # Ordered stages for the sac.steps indicator. Kept short so they fit on one
 # row in the default sidebar-plus-main layout.
@@ -71,6 +75,15 @@ def _execute_run() -> None:
     # wall-clock duration. End timestamp is written in `finally`.
     s.pipeline_started_at = time.time()
     s.pipeline_ended_at = None
+    if not s.get("run_id"):
+        s.run_id = run_artifacts.new_run_id()
+    try:
+        artifact_dir = run_artifacts.start_run(
+            s.run_id, _run_metadata(pending, mode, s),
+        )
+        s.run_artifact_dir = str(artifact_dir)
+    except Exception as e:
+        logger.warning("failed to start run artifacts: %s", e)
 
     with st.status("Running pipeline…", expanded=True) as status:
         try:
@@ -79,6 +92,12 @@ def _execute_run() -> None:
                 # Already text — no transcription step.
                 s.transcription = pending.payload
                 s.transcription_segments = []
+                _write_run_stage(s, "transcription", {
+                    "source": pending.source,
+                    "filename": pending.filename,
+                    "text": s.transcription,
+                    "segments": [],
+                })
                 status.write("📝 Using pasted text (no transcription needed).")
                 s.pipeline_stage_idx = 1
             else:
@@ -98,6 +117,13 @@ def _execute_run() -> None:
                 s.transcription = details.text
                 s.transcription_segments = details.segments or []
                 s.audio_file = pending.payload          # for Notion "Original Audio" bundle slot
+                _write_run_stage(s, "transcription", {
+                    "source": pending.source,
+                    "filename": pending.filename,
+                    "text": details.text,
+                    "segments": details.segments or [],
+                    "language": details.language,
+                })
                 status.write(f"✓ Transcript: {len(details.text):,} chars.")
                 s.pipeline_stage_idx = 1
 
@@ -107,6 +133,7 @@ def _execute_run() -> None:
                               state="complete", expanded=False)
                 s.pipeline_running = False
                 s.pipeline_stage_idx = len(_STAGES) - 1
+                _mark_run_status(s, "completed")
                 return
 
             # ---- Full pipeline ---------------------------------------
@@ -138,6 +165,9 @@ def _execute_run() -> None:
                     last_label["value"] = label
                     s.pipeline_stage_idx = _stage_to_idx.get(label, s.pipeline_stage_idx)
 
+            def checkpoint_cb(stage: str, payload: dict) -> None:
+                _write_run_stage(s, stage, payload)
+
             length_map = {"Brief": 500, "Standard": 1500, "Long-form": 3000}
             article_words = length_map.get(s.article_length, 1500)
             result = adapters.processor.run_pipeline(
@@ -160,6 +190,7 @@ def _execute_run() -> None:
                 compare_provider=s.get("compare_provider"),
                 compare_model=s.get("compare_model"),
                 personas=s.get("selected_personas") or None,
+                checkpoint=checkpoint_cb,
             )
 
             s.wisdom = result.wisdom or ""
@@ -177,6 +208,20 @@ def _execute_run() -> None:
             s.compare_label = result.compare_label
             s.persona_articles = result.persona_articles or []
             s.pipeline_stage_idx = len(_STAGES) - 1
+            _write_run_stage(s, "session_output", {
+                "wisdom": s.wisdom,
+                "outline": s.outline,
+                "social_content": s.social_content,
+                "image_prompts": s.image_prompts,
+                "article": s.article,
+                "chapters": s.chapters,
+                "fact_check_flags": s.fact_check_flags,
+                "generated_images": s.generated_images,
+                "article_compare": s.article_compare,
+                "compare_label": s.compare_label,
+                "persona_articles": s.persona_articles,
+            })
+            _mark_run_status(s, "completed")
 
             # Freeze the pipeline duration here — before the Notion
             # auto-save, so the Run metrics block doesn't double-count the
@@ -201,6 +246,11 @@ def _execute_run() -> None:
                              icon=":material/error:")
 
         except Exception as e:
+            _write_run_stage(s, "error", {
+                "message": str(e),
+                "stage_idx": s.get("pipeline_stage_idx", 0),
+            })
+            _mark_run_status(s, "failed", error=str(e))
             status.update(label=f"Pipeline error: {e}", state="error")
             st.toast(f"Pipeline failed: {e}", icon=":material/error:")
         finally:
@@ -209,3 +259,46 @@ def _execute_run() -> None:
             if not s.pipeline_ended_at:
                 s.pipeline_ended_at = time.time()
             s.pipeline_running = False
+
+
+def _run_metadata(pending, mode: str, s) -> dict:
+    return {
+        "mode": mode,
+        "source": pending.source,
+        "filename": pending.filename,
+        "selected_user": s.selected_user,
+        "provider": s.ai_provider,
+        "model": s.ai_model,
+        "settings": {
+            "cleanup": bool(s.cleanup_enabled),
+            "chapters": bool(s.chapters_enabled),
+            "agentic": bool(s.agentic_drafting),
+            "fact_check": bool(s.fact_check_enabled),
+            "images": bool(s.images_enabled),
+            "rag_mode": s.get("rag_mode", "auto"),
+            "compare_provider": s.get("compare_provider"),
+            "compare_model": s.get("compare_model"),
+            "personas": s.get("selected_personas") or [],
+        },
+    }
+
+
+def _write_run_stage(s, stage: str, payload: dict) -> None:
+    run_id = s.get("run_id")
+    if not run_id:
+        return
+    try:
+        path = run_artifacts.write_stage(run_id, stage, payload)
+        s.run_artifact_dir = str(path.parent.parent)
+    except Exception as e:
+        logger.warning("failed to write run artifact stage %s: %s", stage, e)
+
+
+def _mark_run_status(s, status: str, *, error: Optional[str] = None) -> None:
+    run_id = s.get("run_id")
+    if not run_id:
+        return
+    try:
+        run_artifacts.mark_status(run_id, status, error=error)
+    except Exception as e:
+        logger.warning("failed to mark run artifact status %s: %s", status, e)

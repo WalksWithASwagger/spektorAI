@@ -4,12 +4,12 @@ Last updated: 2026-05-17
 
 ## Current State
 
-- Last verified checkout: `kk/swarm-roadmap-batch-1` at the current PR head
-  after the documentation audit and PR-review follow-up fixes.
+- Last verified checkout: `kk/bc-83-run-recovery-foundation`, stacked on the
+  updated `kk/swarm-roadmap-batch-1` PR head.
 - Remote sync: `git fetch --prune origin` completed; all local tracking
   branches were even with their upstreams after fetch.
-- Latest roadmap anchor: PR #10 head. Use `git log -1 --oneline` for the exact
-  local commit because this status file is updated inside that PR stack.
+- Latest roadmap anchor: BC-83 run-recovery foundation stacked after PR #10.
+  Use `git log -1 --oneline` for the exact local commit.
 - GitHub repo: `WalksWithASwagger/spektorAI`
 - Linear project: [WhisperForge Roadmap](https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537)
 - Primary product surface: direct Streamlit mode (`streamlit run app.py`)
@@ -20,16 +20,19 @@ Last updated: 2026-05-17
 ## Verified
 
 - `git status --short --branch` -> clean checkout on
-  `kk/swarm-roadmap-batch-1...origin/kk/swarm-roadmap-batch-1`
+  `kk/bc-83-run-recovery-foundation` after local verification
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`
 - `git for-each-ref --format='%(refname:short) %(upstream:short) %(upstream:trackshort)' refs/heads`
   -> all local tracking branches showed `=`
-- `make test` -> `169 passed`
+- `make test` -> `177 passed`
 - `make eval-fixture` -> credential-free editorial/source-receipt fixture OK
 - `make smoke` -> Streamlit health OK on port `8599`
 - `venv/bin/python tests/ui_smoke.py` -> rendered shell OK
 - `python3 -m json.tool ops/roadmap/features.json` -> valid JSON
 - `git diff --check` -> clean after the documentation audit follow-up fixes
+- Focused recovery checks:
+  `venv/bin/python -m pytest tests/test_run_artifacts.py tests/test_history.py tests/test_pipeline_agentic.py -q`
+  -> passed
 
 ## Active Handles
 
@@ -40,6 +43,8 @@ Last updated: 2026-05-17
 - Linear issues: `BC-57`, `BC-58`, `BC-63`, `BC-73`, `BC-83`, `BC-88`, `BC-90`, `BC-91`
 - `whisperforge-env/` has been removed from the git index and remains ignored.
 - PR #10 contains the first roadmap swarm batch plus PR-review follow-up fixes.
+- BC-83 branch adds durable local run artifacts, checkpoint tests, and
+  retry-safe history upserts.
   Verify GitHub/Linear live state before changing external issue or PR status.
 
 ## Known Risks

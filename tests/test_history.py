@@ -51,6 +51,33 @@ class TestAppend:
         assert data["title"] == 'weird "title" with\nnewline'
 
 
+class TestUpsert:
+    def test_without_run_id_appends(self, tmp_history):
+        history.upsert(_record("one"))
+        history.upsert(_record("two"))
+
+        assert len(tmp_history.read_text().splitlines()) == 2
+
+    def test_same_run_id_replaces_prior_record(self, tmp_history):
+        first = _record("first", url="https://notion.so/old")
+        first.run_id = "run-1"
+        first.run_path = "/tmp/run-1"
+        updated = _record("updated", url="https://notion.so/new")
+        updated.run_id = "run-1"
+        updated.run_path = "/tmp/run-1"
+        updated.markdown_path = "/tmp/run-1/export.md"
+
+        history.upsert(first)
+        history.upsert(updated)
+
+        lines = tmp_history.read_text().splitlines()
+        assert len(lines) == 1
+        data = json.loads(lines[0])
+        assert data["title"] == "updated"
+        assert data["notion_url"] == "https://notion.so/new"
+        assert data["markdown_path"] == "/tmp/run-1/export.md"
+
+
 class TestRecent:
     def test_empty_when_no_file(self, tmp_history):
         assert history.recent() == []
