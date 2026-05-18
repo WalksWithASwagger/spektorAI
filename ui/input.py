@@ -16,6 +16,7 @@ from typing import Any, Literal, Optional
 import streamlit as st
 
 from whisperforge_core import captures as captures_mod
+from whisperforge_core import recipes as recipes_mod
 
 SourceType = Literal["upload", "record", "paste", "wispr_flow"]
 SubmitMode = Literal["transcribe_only", "full_pipeline"]
@@ -113,9 +114,19 @@ def render() -> None:
                     st.session_state.capture_id = record.capture_id
                     st.toast("Saved to capture inbox.", icon=":material/inbox:")
 
+        selected_recipe = _render_recipe_picker()
+
         # Action buttons — disabled until input ready
         pending = st.session_state.get("pending_input")
         ready = pending is not None
+        recipe_source_ok = (
+            not selected_recipe
+            or not ready
+            or not selected_recipe.inputs
+            or pending.source in selected_recipe.inputs
+        )
+        if ready and not recipe_source_ok:
+            st.warning(f"`{selected_recipe.name}` does not accept {pending.source} input.")
         c1, c2 = st.columns(2)
         with c1:
             txn_clicked = st.button(
@@ -128,11 +139,15 @@ def render() -> None:
             )
         with c2:
             lucky_clicked = st.button(
-                "I'm Feeling Lucky",
+                "Run recipe" if selected_recipe else "I'm Feeling Lucky",
                 type="primary",
-                disabled=not ready,
+                disabled=not ready or not recipe_source_ok,
                 use_container_width=True,
-                help="Run the whole pipeline and save to Notion.",
+                help=(
+                    f"Run {selected_recipe.name} with its saved defaults."
+                    if selected_recipe else
+                    "Run the whole pipeline and save to Notion."
+                ),
                 key="btn_feeling_lucky",
             )
 
@@ -142,10 +157,15 @@ def render() -> None:
     # Mode-setting side effect — actual pipeline work happens in
     # ui.pipeline.render() because that's where st.status lives.
     if txn_clicked and ready:
+        _clear_active_recipe()
         st.session_state._submit_mode = "transcribe_only"
         st.session_state.pipeline_running = True
         st.rerun()
     elif lucky_clicked and ready:
+        if selected_recipe:
+            _activate_recipe(selected_recipe)
+        else:
+            _clear_active_recipe()
         st.session_state._submit_mode = "full_pipeline"
         st.session_state.pipeline_running = True
         st.rerun()
@@ -154,3 +174,58 @@ def render() -> None:
 def _title_from_text(text: str) -> str:
     line = next((line.strip() for line in text.splitlines() if line.strip()), "")
     return (line[:80] if line else "Untitled text capture")
+
+
+def _render_recipe_picker():
+    user = st.session_state.get("selected_user")
+    available = recipes_mod.list_recipes(user)
+    options = ["manual"] + list(available.keys())
+    current = st.session_state.get("selected_recipe_id", "manual")
+    if current not in options:
+        current = "manual"
+    selected = st.selectbox(
+        "Command palette",
+        options=options,
+        index=options.index(current),
+        format_func=lambda rid: (
+            "Manual controls" if rid == "manual" else available[rid].name
+        ),
+        key="in_recipe",
+    )
+    st.session_state.selected_recipe_id = selected
+    recipe = available.get(selected)
+    if recipe:
+        st.caption(recipe.description or "Recipe defaults will apply when run.")
+    return recipe
+
+
+def _activate_recipe(recipe) -> None:
+    current = {
+        key: st.session_state.get(key)
+        for key in (
+            "ai_provider",
+            "ai_model",
+            "rag_mode",
+            "article_length",
+            "cleanup_enabled",
+            "chapters_enabled",
+            "agentic_drafting",
+            "fact_check_enabled",
+            "images_enabled",
+            "auto_save_notion",
+            "auto_export_markdown",
+        )
+    }
+    effective = recipes_mod.effective_settings(recipe, current)
+    for key, value in effective.get("applied_defaults", {}).items():
+        st.session_state[key] = value
+    st.session_state.active_recipe_id = recipe.id
+    st.session_state.active_recipe = recipe.to_dict()
+    st.session_state.recipe_effective_settings = effective
+    st.toast(f"Running {recipe.name}.", icon=":material/play_arrow:")
+
+
+def _clear_active_recipe() -> None:
+    st.session_state.active_recipe_id = None
+    st.session_state.active_recipe = None
+    st.session_state.recipe_effective_settings = None

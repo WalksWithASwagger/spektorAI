@@ -251,6 +251,18 @@ def _build_bundle() -> notion.ContentBundle:
         )
 
     source_receipts = []
+    recipe_meta = s.get("recipe_effective_settings")
+    active_recipe = s.get("active_recipe") or {}
+    if recipe_meta:
+        source_receipts.append({
+            "source": "Recipe",
+            "recipe_id": recipe_meta.get("recipe_id"),
+            "name": recipe_meta.get("recipe_name"),
+            "manifest_source": recipe_meta.get("source"),
+            "stages": ", ".join(recipe_meta.get("stages") or []),
+            "outputs": ", ".join(recipe_meta.get("output_sections") or []),
+            "handoff_targets": ", ".join(recipe_meta.get("handoff_targets") or []),
+        })
     capture_meta = captures_mod.run_metadata(s.get("capture_id"))
     if capture_meta:
         source_receipts.append({
@@ -319,6 +331,11 @@ def _build_bundle() -> notion.ContentBundle:
             "personas": bool(s.get("persona_articles")),
         },
         "capture": capture_meta,
+        "recipe": {
+            "id": s.get("active_recipe_id"),
+            "manifest": active_recipe,
+            "effective_settings": recipe_meta,
+        } if recipe_meta else None,
         "retrieval_inspector": retrieval_inspector,
     }
 

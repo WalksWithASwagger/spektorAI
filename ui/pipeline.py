@@ -16,6 +16,7 @@ import streamlit_antd_components as sac
 from whisperforge_core import adapters as adapters_mod
 from whisperforge_core import captures as captures_mod
 from whisperforge_core import prompts as prompts_mod
+from whisperforge_core import recipes as recipes_mod
 from whisperforge_core import run_artifacts
 from whisperforge_core.logging import get_logger
 
@@ -275,6 +276,11 @@ def _run_metadata(pending, mode: str, s) -> dict:
         "source": pending.source,
         "filename": pending.filename,
         "capture": captures_mod.run_metadata(s.get("capture_id")),
+        "recipe": recipes_mod.run_metadata(
+            s.get("active_recipe_id"),
+            s.get("active_recipe"),
+            s.get("recipe_effective_settings"),
+        ),
         "selected_user": s.selected_user,
         "provider": s.ai_provider,
         "model": s.ai_model,
