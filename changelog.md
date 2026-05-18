@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resets WhisperForge around Wispr Flow-era capture, knowledge-base
   intelligence, source-grounded composition, agentic handoffs, recovery, and a
   bounded SongForge creative lane.
+- **Capture inbox foundation** — Wispr Flow paste, notes, uploads, and
+  recordings now create durable capture records under `.cache/captures/` and
+  link those records into run artifacts and export receipts.
+- **Knowledge-base health audit** — profile KB files now have inventory data,
+  conservative stale/duplicate/private-looking warnings, and a visible health
+  summary in the KB dialog.
+- **Retrieval inspector metadata** — RAG retrieval can now report per-stage
+  hits, scores, context roles, and voice anchors, with run-artifact persistence
+  and a UI inspection path from the benchmark dialog.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.

@@ -14,6 +14,7 @@ import streamlit as st
 import streamlit_antd_components as sac
 
 from whisperforge_core import adapters as adapters_mod
+from whisperforge_core import captures as captures_mod
 from whisperforge_core import prompts as prompts_mod
 from whisperforge_core import run_artifacts
 from whisperforge_core.logging import get_logger
@@ -77,6 +78,9 @@ def _execute_run() -> None:
     s.pipeline_ended_at = None
     if not s.get("run_id"):
         s.run_id = run_artifacts.new_run_id()
+    capture_record = _ensure_capture(pending, s.run_id)
+    if capture_record:
+        s.capture_id = capture_record.capture_id
     try:
         artifact_dir = run_artifacts.start_run(
             s.run_id, _run_metadata(pending, mode, s),
@@ -88,7 +92,7 @@ def _execute_run() -> None:
     with st.status("Running pipeline…", expanded=True) as status:
         try:
             # ---- Stage 0: Transcribe ------------------------------------
-            if pending.source == "paste":
+            if pending.source in {"paste", "wispr_flow"}:
                 # Already text — no transcription step.
                 s.transcription = pending.payload
                 s.transcription_segments = []
@@ -134,9 +138,11 @@ def _execute_run() -> None:
                 s.pipeline_running = False
                 s.pipeline_stage_idx = len(_STAGES) - 1
                 _mark_run_status(s, "completed")
+                _mark_capture_status(s, "completed")
                 return
 
             # ---- Full pipeline ---------------------------------------
+            _inspect_retrieval(s, status)
             # Progress callback writes to the sac.steps index and streams
             # a status line per stage.
             _stage_to_idx = {
@@ -222,6 +228,7 @@ def _execute_run() -> None:
                 "persona_articles": s.persona_articles,
             })
             _mark_run_status(s, "completed")
+            _mark_capture_status(s, "completed")
 
             # Freeze the pipeline duration here — before the Notion
             # auto-save, so the Run metrics block doesn't double-count the
@@ -251,6 +258,7 @@ def _execute_run() -> None:
                 "stage_idx": s.get("pipeline_stage_idx", 0),
             })
             _mark_run_status(s, "failed", error=str(e))
+            _mark_capture_status(s, "failed")
             status.update(label=f"Pipeline error: {e}", state="error")
             st.toast(f"Pipeline failed: {e}", icon=":material/error:")
         finally:
@@ -266,6 +274,7 @@ def _run_metadata(pending, mode: str, s) -> dict:
         "mode": mode,
         "source": pending.source,
         "filename": pending.filename,
+        "capture": captures_mod.run_metadata(s.get("capture_id")),
         "selected_user": s.selected_user,
         "provider": s.ai_provider,
         "model": s.ai_model,
@@ -281,6 +290,61 @@ def _run_metadata(pending, mode: str, s) -> dict:
             "personas": s.get("selected_personas") or [],
         },
     }
+
+
+def _ensure_capture(pending, run_id: str):
+    capture_id = getattr(pending, "capture_id", None)
+    if capture_id:
+        try:
+            return captures_mod.attach_run(capture_id, run_id, status="running")
+        except Exception as e:
+            logger.warning("failed to attach run to capture %s: %s", capture_id, e)
+
+    text = pending.payload if pending.source in {"paste", "wispr_flow"} else None
+    try:
+        record = captures_mod.create_capture(
+            source=pending.source,
+            filename=pending.filename,
+            title=getattr(pending, "title", None),
+            text=text,
+            metadata={"created_by": "streamlit_input"},
+        )
+        pending.capture_id = record.capture_id
+        return captures_mod.attach_run(record.capture_id, run_id, status="running")
+    except Exception as e:
+        logger.warning("failed to create capture record: %s", e)
+        return None
+
+
+def _inspect_retrieval(s, status) -> None:
+    user = s.get("selected_user")
+    transcript = s.get("transcription") or ""
+    if not user or not transcript or s.get("rag_mode", "auto") == "never":
+        s.retrieval_inspector = None
+        return
+    try:
+        from whisperforge_core.rag import retriever
+
+        engaged = retriever.should_engage(user, mode=s.get("rag_mode", "auto"))
+        stages = {}
+        for stage in retriever.STAGE_AUGMENTATIONS:
+            stages[stage] = [
+                hit.to_dict()
+                for hit in retriever.inspect(user, query=transcript, stage=stage)
+            ]
+        payload = {
+            "user": user,
+            "rag_mode": s.get("rag_mode", "auto"),
+            "engaged": engaged,
+            "query_excerpt": transcript[:360],
+            "stages": stages,
+        }
+        s.retrieval_inspector = payload
+        _write_run_stage(s, "retrieval_inspector", payload)
+        hit_count = sum(len(items) for items in stages.values())
+        status.write(f"📚 Retrieval inspector captured {hit_count} KB hits.")
+    except Exception as e:
+        logger.warning("retrieval inspection failed: %s", e)
 
 
 def _write_run_stage(s, stage: str, payload: dict) -> None:
@@ -302,3 +366,13 @@ def _mark_run_status(s, status: str, *, error: Optional[str] = None) -> None:
         run_artifacts.mark_status(run_id, status, error=error)
     except Exception as e:
         logger.warning("failed to mark run artifact status %s: %s", status, e)
+
+
+def _mark_capture_status(s, status: str) -> None:
+    capture_id = s.get("capture_id")
+    if not capture_id:
+        return
+    try:
+        captures_mod.mark_status(capture_id, status)
+    except Exception as e:
+        logger.warning("failed to mark capture status %s: %s", status, e)

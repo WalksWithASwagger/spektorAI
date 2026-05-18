@@ -73,6 +73,7 @@ _SETTINGS_DEFAULTS: Dict[str, Any] = {
 _PER_RUN_DEFAULTS: Dict[str, Any] = {
     # Input
     "pending_input": None,                       # {"source": "upload"|"record"|"paste", "payload": ..., "filename": str}
+    "capture_id": None,
     "audio_file": None,                          # kept for Notion bundle compat
     # ASR outputs
     "transcription": "",
@@ -108,6 +109,7 @@ _PER_RUN_DEFAULTS: Dict[str, Any] = {
     # compute duration_seconds for the Run metrics block.
     "pipeline_started_at": None,
     "pipeline_ended_at": None,
+    "retrieval_inspector": None,
 }
 
 

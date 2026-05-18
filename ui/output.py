@@ -21,6 +21,7 @@ from whisperforge_core import export as export_mod
 from whisperforge_core import history as history_mod
 from whisperforge_core import llm, notion
 from whisperforge_core import run_artifacts
+from whisperforge_core import captures as captures_mod
 
 from . import session
 
@@ -250,6 +251,17 @@ def _build_bundle() -> notion.ContentBundle:
         )
 
     source_receipts = []
+    capture_meta = captures_mod.run_metadata(s.get("capture_id"))
+    if capture_meta:
+        source_receipts.append({
+            "source": "Capture",
+            "capture_id": capture_meta.get("capture_id"),
+            "capture_source": capture_meta.get("source"),
+            "title": capture_meta.get("title"),
+            "filename": capture_meta.get("filename"),
+            "sha256": capture_meta.get("text_sha256"),
+            "excerpt": capture_meta.get("text_excerpt"),
+        })
     if transcript:
         receipt = {
             "source": "Transcript",
@@ -259,6 +271,23 @@ def _build_bundle() -> notion.ContentBundle:
         if audio_filename:
             receipt["audio_filename"] = audio_filename
         source_receipts.append(receipt)
+    retrieval_inspector = s.get("retrieval_inspector")
+    if retrieval_inspector:
+        stages = retrieval_inspector.get("stages") or {}
+        anchors = sorted({
+            hit.get("doc_name")
+            for hits in stages.values()
+            for hit in hits
+            if hit.get("role") == "voice_anchor" and hit.get("doc_name")
+        })
+        source_receipts.append({
+            "source": "Knowledge retrieval",
+            "rag_mode": retrieval_inspector.get("rag_mode"),
+            "engaged": retrieval_inspector.get("engaged"),
+            "stages": len(stages),
+            "hits": sum(len(hits) for hits in stages.values()),
+            "voice_anchors": ", ".join(anchors) if anchors else "",
+        })
 
     # Run metrics — folded into the bundle so the Notion page + markdown
     # export carry their own receipt instead of forcing a cross-ref against
@@ -289,6 +318,8 @@ def _build_bundle() -> notion.ContentBundle:
             "compare": bool(s.get("article_compare")),
             "personas": bool(s.get("persona_articles")),
         },
+        "capture": capture_meta,
+        "retrieval_inspector": retrieval_inspector,
     }
 
     return notion.ContentBundle(

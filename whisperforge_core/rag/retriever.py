@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import os
 import re
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from ..logging import get_logger
@@ -48,6 +49,31 @@ STAGE_AUGMENTATIONS: Dict[str, str] = {
 # regardless of what scored top-K. Matches files whose stem contains any
 # of these substrings (case-insensitive).
 _VOICE_KEYWORDS = ("voice", "style", "tone", "writing", "persona")
+
+
+@dataclass
+class RetrievalHit:
+    chunk: Chunk
+    score: float
+    role: str
+    stage: Optional[str]
+    query: str
+    augmentation: str
+
+    def to_dict(self) -> dict:
+        return {
+            "role": self.role,
+            "stage": self.stage,
+            "score": round(self.score, 6),
+            "doc_name": self.chunk.doc_name,
+            "section_path": self.chunk.section_path,
+            "chunk_index": self.chunk.chunk_index,
+            "token_count": self.chunk.token_count,
+            "label": self.chunk.label,
+            "query": self.query,
+            "augmentation": self.augmentation,
+            "excerpt": self.chunk.text.strip()[:360],
+        }
 
 
 def _env_flag(name: str) -> Optional[bool]:
@@ -88,6 +114,12 @@ def _is_voice_doc(chunk: Chunk) -> bool:
     return any(k in name for k in _VOICE_KEYWORDS)
 
 
+def _full_query(query: str, stage: Optional[str]) -> tuple[str, str]:
+    aug = STAGE_AUGMENTATIONS.get(stage or "", "")
+    full_query = f"{query[:2000]}\n\n{aug}".strip() if aug else query[:2000]
+    return full_query, aug
+
+
 def retrieve(
     user: str,
     *,
@@ -97,11 +129,21 @@ def retrieve(
 ) -> List[Chunk]:
     """Top-K chunks for a query. Always prepends a voice anchor (top scoring
     chunk from a voice/style doc) when one exists in the KB."""
+    return [hit.chunk for hit in inspect(user, query=query, stage=stage, k=k)]
+
+
+def inspect(
+    user: str,
+    *,
+    query: str,
+    stage: Optional[str] = None,
+    k: int = DEFAULT_TOP_K,
+) -> List[RetrievalHit]:
+    """Return the same retrieval set as ``retrieve`` plus scores and roles."""
     if not query:
         return []
 
-    aug = STAGE_AUGMENTATIONS.get(stage or "", "")
-    full_query = f"{query[:2000]}\n\n{aug}".strip() if aug else query[:2000]
+    full_query, aug = _full_query(query, stage)
 
     store = KBStore(user)
     store.ensure_built()
@@ -111,35 +153,54 @@ def retrieve(
     # Pull a generous over-fetch so we have headroom to dedupe and slot
     # the voice anchor without losing topical hits.
     raw = store.search(full_query, k=k + 5)
+    score_by_key = {(c.doc_name, c.chunk_index): score for c, score in raw}
     chunks = [c for c, _score in raw]
 
     # Voice anchor: top-scoring chunk from a voice/style doc, even if it
     # ranked below k in the raw query.
-    anchor: Optional[Chunk] = next(
-        (c for c, _ in raw if _is_voice_doc(c)),
+    anchor_pair: Optional[tuple[Chunk, float]] = next(
+        ((c, score) for c, score in raw if _is_voice_doc(c)),
         None,
     )
-    if anchor is None:
+    if anchor_pair is None:
         # No voice doc hit our over-fetch — try a dedicated voice-themed query.
         voice_hits = store.search("voice tone style writing perspective", k=3)
-        anchor = next(
-            (c for c, _ in voice_hits if _is_voice_doc(c)),
+        anchor_pair = next(
+            ((c, score) for c, score in voice_hits if _is_voice_doc(c)),
             None,
         )
+        if anchor_pair is not None:
+            chunk, score = anchor_pair
+            score_by_key[(chunk.doc_name, chunk.chunk_index)] = score
 
     # Stitch: anchor first if present, then dedupe topical hits, cap at k+1.
     seen_keys: set[tuple[str, int]] = set()
-    out: List[Chunk] = []
-    if anchor is not None:
-        out.append(anchor)
+    out: List[RetrievalHit] = []
+    if anchor_pair is not None:
+        anchor, score = anchor_pair
+        out.append(RetrievalHit(
+            chunk=anchor,
+            score=score,
+            role="voice_anchor",
+            stage=stage,
+            query=query[:2000],
+            augmentation=aug,
+        ))
         seen_keys.add((anchor.doc_name, anchor.chunk_index))
     for chunk in chunks:
         key = (chunk.doc_name, chunk.chunk_index)
         if key in seen_keys:
             continue
         seen_keys.add(key)
-        out.append(chunk)
-        if len(out) >= k + (1 if anchor else 0):
+        out.append(RetrievalHit(
+            chunk=chunk,
+            score=score_by_key.get(key, 0.0),
+            role="context",
+            stage=stage,
+            query=query[:2000],
+            augmentation=aug,
+        ))
+        if len(out) >= k + (1 if anchor_pair else 0):
             break
     return out
 
