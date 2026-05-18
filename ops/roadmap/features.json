@@ -7,7 +7,7 @@
     "linearTeamKey": "BC",
     "roadmap": "ROADMAP.md",
     "workflowDoc": "docs/LINEAR-GITHUB-PIPELINE.md",
-    "lastSeededAt": "2026-05-08"
+    "lastSeededAt": "2026-05-18"
   },
   "labels": {
     "repo": "repo:spektorAI",
@@ -188,6 +188,280 @@
       "verification": [
         "New command for tests exits 0.",
         "New command for smoke exits 0.",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-voice-inbox",
+      "title": "Build Wispr Flow voice inbox and capture handoff",
+      "phase": "Phase 1",
+      "priority": "P0",
+      "kind": "feature",
+      "githubIssue": 13,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/13",
+      "linearIssue": "BC-221",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-221/build-wispr-flow-voice-inbox-and-capture-handoff",
+      "acceptance": [
+        "Add a capture inbox model with source type, created time, title, status, and linked run identifiers.",
+        "Add a fast paste/import path optimized for Wispr Flow output and other already-transcribed text.",
+        "Normalize captures before pipeline execution so audio, pasted transcript, and imported note flows share downstream metadata.",
+        "Persist capture metadata into local run artifacts and markdown/Notion export metadata where applicable.",
+        "Document the capture workflow in README or the roadmap docs."
+      ],
+      "verification": [
+        "make test",
+        "venv/bin/python tests/ui_smoke.py",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-kb-inventory",
+      "title": "Add knowledge-base inventory and health audit",
+      "phase": "Phase 2",
+      "priority": "P0",
+      "kind": "feature",
+      "githubIssue": 14,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/14",
+      "linearIssue": "BC-222",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-222/add-knowledge-base-inventory-and-health-audit",
+      "acceptance": [
+        "Add an inventory command or UI panel for profile knowledge-base files with filename, size, modified time, rough token count, and detected role.",
+        "Flag likely stale, duplicate, empty, oversized, or private/sensitive files using conservative heuristics.",
+        "Summarize profile-level health in a compact report that can be exported or copied.",
+        "Keep existing profile loading behavior unchanged for valid current profiles.",
+        "Document how agents should use the audit before changing prompts or KB docs."
+      ],
+      "verification": [
+        "make test",
+        "python3 -m json.tool ops/roadmap/features.json",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-retrieval-inspector",
+      "title": "Add source-grounded retrieval inspector",
+      "phase": "Phase 2",
+      "priority": "P0",
+      "kind": "feature",
+      "githubIssue": 15,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/15",
+      "linearIssue": "BC-223",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-223/add-source-grounded-retrieval-inspector",
+      "acceptance": [
+        "Expose retrieved KB chunks per stage with source path, heading/offset when available, score, and reason/query context.",
+        "Show always-included voice anchors separately from semantic retrieval hits.",
+        "Persist retrieval metadata into run artifacts so it can be inspected after the session.",
+        "Add a compact UI or exported report that compares legacy KB dump vs RAG for the current capture/profile.",
+        "Keep Auto/Always/Never RAG behavior compatible with current settings."
+      ],
+      "verification": [
+        "make test",
+        "make eval-fixture",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-recipe-system",
+      "title": "Add prompt recipe manifests and command palette",
+      "phase": "Phase 3",
+      "priority": "P1",
+      "kind": "feature",
+      "githubIssue": 16,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/16",
+      "linearIssue": "BC-224",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-224/add-prompt-recipe-manifests-and-command-palette",
+      "acceptance": [
+        "Define a minimal recipe manifest format for inputs, stages, provider/model defaults, KB mode, output sections, eval checks, and handoff targets.",
+        "Load profile-level and default recipes without breaking current manual controls.",
+        "Add a command palette or compact selector for running a recipe from a capture/current input.",
+        "Persist the recipe id and effective settings in run artifacts.",
+        "Include at least three built-in recipes covering article, brief/social, and issue/handoff workflows."
+      ],
+      "verification": [
+        "make test",
+        "venv/bin/python tests/ui_smoke.py",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-compose-studio",
+      "title": "Build source-grounded composition studio",
+      "phase": "Phase 4",
+      "priority": "P1",
+      "kind": "feature",
+      "githubIssue": 17,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/17",
+      "linearIssue": "BC-226",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-226/build-source-grounded-composition-studio",
+      "acceptance": [
+        "Add a composition/review surface that displays drafted content with adjacent evidence or source receipts.",
+        "Expose claim flags, quotes, critique, revision notes, and compare/persona variants without hiding the primary draft.",
+        "Allow export/save flows to preserve evidence summaries with the final artifact.",
+        "Keep the existing output card workflow usable for simple runs.",
+        "Document the review workflow and its limitations."
+      ],
+      "verification": [
+        "make test",
+        "make eval-fixture",
+        "venv/bin/python tests/ui_smoke.py"
+      ]
+    },
+    {
+      "id": "wf-transcription-matrix",
+      "title": "Add modern transcription provider and privacy matrix",
+      "phase": "Phase 5",
+      "priority": "P1",
+      "kind": "research",
+      "githubIssue": 18,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/18",
+      "linearIssue": "BC-225",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-225/add-modern-transcription-provider-and-privacy-matrix",
+      "acceptance": [
+        "Document current transcription backends and candidate providers in a matrix covering accuracy, streaming, timestamps, diarization, local/offline, vocabulary, cost, and privacy posture.",
+        "Add the matrix to docs and optionally expose a compact version in the UI.",
+        "Recommend default backend choices for local privacy, long-form accuracy, timestamps, and low-cost runs.",
+        "Identify the smallest next provider integration, if any, with explicit acceptance criteria.",
+        "Do not change runtime defaults without tests and documentation."
+      ],
+      "verification": [
+        "python3 -m json.tool ops/roadmap/features.json",
+        "git diff --check",
+        "make test"
+      ]
+    },
+    {
+      "id": "wf-eval-scorecards",
+      "title": "Add voice, grounding, and usefulness scorecards",
+      "phase": "Phase 6",
+      "priority": "P1",
+      "kind": "qa",
+      "githubIssue": 19,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/19",
+      "linearIssue": "BC-227",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-227/add-voice-grounding-and-usefulness-scorecards",
+      "acceptance": [
+        "Define scorecard dimensions for voice, grounding, usefulness, recipe compliance, and handoff readiness.",
+        "Add fixture-based evals that can run without external credentials or clearly isolate credentialed checks.",
+        "Persist scorecard summaries in run artifacts and render them in markdown/Notion where appropriate.",
+        "Show a compact verdict in run history or output review.",
+        "Keep scorecards advisory; they should not block saves unless a recipe explicitly asks for it."
+      ],
+      "verification": [
+        "make test",
+        "make eval-fixture",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-agent-handoffs",
+      "title": "Create agentic handoff exports for issues and follow-ups",
+      "phase": "Phase 7",
+      "priority": "P1",
+      "kind": "ops",
+      "githubIssue": 20,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/20",
+      "linearIssue": "BC-228",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-228/create-agentic-handoff-exports-for-issues-and-follow-ups",
+      "acceptance": [
+        "Add an issue/handoff export format with context, acceptance criteria, tests/evals, verification, agent instructions, and out-of-scope sections.",
+        "Support generating GitHub/Linear-ready issue drafts from a capture or selected output.",
+        "Persist handoff drafts in run artifacts before external creation.",
+        "Include a dry-run preview so the user can review before creating external tracker records.",
+        "Document how this interacts with the existing agentic delivery contract."
+      ],
+      "verification": [
+        "make test",
+        "python3 scripts/agentic/issue_lint.py --issue-file <generated-draft> --labels agent:ready",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-run-workspace",
+      "title": "Add run artifact reopen, resume, and retry UI",
+      "phase": "Phase 8",
+      "priority": "P1",
+      "kind": "feature",
+      "githubIssue": 21,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/21",
+      "linearIssue": "BC-229",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-229/add-run-artifact-reopen-resume-and-retry-ui",
+      "acceptance": [
+        "Add a run browser that reads local manifests and shows status, created time, input type, recipe/settings, exports, and errors.",
+        "Allow reopening a run into the output/review surface from its manifest.",
+        "Allow retrying safe downstream handoffs such as markdown export or Notion save without re-running transcription/content stages.",
+        "Represent partial runs clearly and avoid corrupting history records.",
+        "Add docs for recovery behavior and known limits."
+      ],
+      "verification": [
+        "make test",
+        "venv/bin/python tests/ui_smoke.py",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-profile-os",
+      "title": "Upgrade profiles into a voice/project operating system",
+      "phase": "Phase 2",
+      "priority": "P2",
+      "kind": "feature",
+      "githubIssue": 22,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/22",
+      "linearIssue": "BC-230",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-230/upgrade-profiles-into-a-voiceproject-operating-system",
+      "acceptance": [
+        "Extend profile metadata to cover project context, recipe defaults, KB packs, privacy notes, and preferred handoff targets.",
+        "Keep existing profiles working without migration.",
+        "Add a profile summary surface or command that explains the effective profile configuration.",
+        "Add validation for missing referenced files and unsupported defaults.",
+        "Document the profile operating-system pattern with an example."
+      ],
+      "verification": [
+        "make test",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-resurfacing-digest",
+      "title": "Add resurfacing digest for captures and generated outputs",
+      "phase": "Phase 7",
+      "priority": "P2",
+      "kind": "feature",
+      "githubIssue": 23,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/23",
+      "linearIssue": "BC-231",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-231/add-resurfacing-digest-for-captures-and-generated-outputs",
+      "acceptance": [
+        "Define a digest format for notable captures, unresolved follow-ups, strong outputs, stale drafts, and reusable source nuggets.",
+        "Generate a local digest from run artifacts and capture metadata without requiring external services.",
+        "Link digest entries back to source runs, captures, and exports.",
+        "Keep the digest report-only unless the user explicitly asks for routing or publishing.",
+        "Document how often to run the digest and what it is safe to automate."
+      ],
+      "verification": [
+        "make test",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-songforge",
+      "title": "Prototype SongForge lyric and prompt-pack mode",
+      "phase": "Phase 9",
+      "priority": "P2",
+      "kind": "creative",
+      "githubIssue": 24,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/24",
+      "linearIssue": "BC-232",
+      "linearUrl": "https://linear.app/bc-ai/issue/BC-232/prototype-songforge-lyric-and-prompt-pack-mode",
+      "acceptance": [
+        "Add a SongForge recipe or mode that extracts themes, motifs, phrases, and emotional arc from a capture plus selected KB context.",
+        "Generate at least three structured outputs: lyric draft, spoken-word variant, and service-agnostic music prompt pack.",
+        "Include source notes or receipts explaining which transcript/KB moments informed key themes.",
+        "Keep generated lyrics original and based on user-provided/source material, not imitation of living artists.",
+        "Add documentation and fixture coverage for the creative workflow."
+      ],
+      "verification": [
+        "make test",
+        "make eval-fixture",
         "git diff --check"
       ]
     }
