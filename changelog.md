@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Run workspace recovery** — the Runs dialog now reads local run manifests,
   shows partial/error/export state, and can reopen completed outputs so safe
   downstream exports can be retried without rerunning generation.
+- **Profile operating-system metadata** — `profile.yaml` can now describe
+  project context, defaults, KB packs, privacy notes, and preferred handoff
+  targets, with validation surfaced in the KB dialog.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.

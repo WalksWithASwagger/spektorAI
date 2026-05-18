@@ -259,6 +259,14 @@ def knowledge_base_manager() -> None:
         f"Files under `prompts/{user}/knowledge_base/` are prepended to every "
         "LLM system prompt so the model writes in your voice."
     )
+    with st.expander("Profile OS summary", expanded=False):
+        st.code(prompts_mod.profile_summary(user), language="text")
+        profile_os = prompts_mod.load_profile_os(user)
+        if profile_os["validation"]:
+            for issue in profile_os["validation"][:8]:
+                st.warning(issue["message"])
+        else:
+            st.success("Profile manifest references and defaults look valid.")
 
     summary = audit.to_dict()["summary"]
     st.markdown(

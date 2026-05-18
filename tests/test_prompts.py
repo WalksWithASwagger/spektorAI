@@ -125,6 +125,69 @@ class TestProfiles:
         profile = prompts.load_profile("alice")
 
         assert profile["display_name"] == "Alice Example"
+        assert profile["profile_os"]["display_name"] == "Alice Example"
+
+    def test_profile_os_loads_additive_project_defaults_and_targets(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        kb = user / "knowledge_base"
+        kb.mkdir(parents=True)
+        (kb / "voice.md").write_text("voice notes")
+        (user / "profile.yaml").write_text(
+            "display_name: Alice Example\n"
+            "project:\n"
+            "  name: Launch Notes\n"
+            "defaults:\n"
+            "  provider: Anthropic\n"
+            "  kb_mode: auto\n"
+            "kb_packs:\n"
+            "  launch:\n"
+            "    files: [knowledge_base/voice.md]\n"
+            "privacy:\n"
+            "  notes: Internal only\n"
+            "handoff_targets: [github, markdown]\n"
+        )
+
+        profile = prompts.load_profile_os("alice")
+
+        assert profile["project"]["name"] == "Launch Notes"
+        assert profile["defaults"]["provider"] == "Anthropic"
+        assert profile["kb_packs"][0]["files"] == ["knowledge_base/voice.md"]
+        assert profile["handoff_targets"] == ["github", "markdown"]
+        assert profile["validation"] == []
+
+    def test_profile_validation_flags_missing_files_and_bad_defaults(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        user.mkdir()
+        (user / "profile.yaml").write_text(
+            "defaults:\n"
+            "  imaginary: true\n"
+            "kb_packs:\n"
+            "  missing:\n"
+            "    files: [knowledge_base/missing.md]\n"
+        )
+
+        issues = prompts.validate_profile_manifest("alice")
+
+        assert {issue["kind"] for issue in issues} == {
+            "unsupported_default",
+            "missing_file",
+        }
+
+    def test_profile_summary_explains_effective_configuration(self, tmp_prompts_dir):
+        user = tmp_prompts_dir / "alice"
+        user.mkdir()
+        (user / "profile.yaml").write_text(
+            "display_name: Alice\n"
+            "project:\n"
+            "  name: Field Notes\n"
+            "handoff_targets: [linear]\n"
+        )
+
+        summary = prompts.profile_summary("alice")
+
+        assert "Profile: Alice" in summary
+        assert "Project: Field Notes" in summary
+        assert "Handoff targets: linear" in summary
 
 class TestPersonas:
     def test_lists_builtin_personas_without_user(self, tmp_prompts_dir):

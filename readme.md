@@ -141,7 +141,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        219 tests + health/rendered UI smokes
+tests/                        222 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -371,6 +371,32 @@ under `prompts/<user>/recipes/*.yaml` or the `recipes:` section of
 `defaults` (`provider`, `model`, `kb_mode`, `article_length`, `cleanup`,
 `chapters`, `agentic`, `fact_check`, `images`, `auto_export_markdown`),
 `output_sections`, `eval_checks`, and `handoff_targets`.
+
+`profile.yaml` can also act as a small profile operating-system manifest. These
+fields are additive; profiles without them still load normally. Use the KB
+dialog's **Profile OS summary** to inspect effective project context, defaults,
+KB packs, privacy notes, handoff targets, and validation warnings.
+
+```yaml
+display_name: KK
+project:
+  name: WhisperForge
+  context: Source-grounded content and agent handoffs
+defaults:
+  provider: Anthropic
+  model: claude-haiku-4-5
+  kb_mode: auto
+kb_packs:
+  voice:
+    files:
+      - knowledge_base/voice.md
+privacy:
+  notes: Internal drafts until explicitly exported
+handoff_targets:
+  - github
+  - linear
+  - markdown
+```
 
 ---
 

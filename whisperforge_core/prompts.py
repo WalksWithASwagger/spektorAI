@@ -27,6 +27,11 @@ from .logging import get_logger
 logger = get_logger(__name__)
 
 MANIFEST_NAME = "profile.yaml"
+SUPPORTED_PROFILE_DEFAULTS = {
+    "provider", "model", "kb_mode", "rag_mode", "article_length", "cleanup",
+    "chapters", "agentic", "fact_check", "images", "auto_save_notion",
+    "auto_export_markdown",
+}
 
 
 def list_users() -> List[str]:
@@ -114,16 +119,77 @@ def load_profile_manifest(user: str) -> Dict[str, Any]:
 def load_profile(user: str) -> Dict[str, Any]:
     """Return the prompt-layer view of a profile, including manifest overlays."""
     manifest = load_profile_manifest(user)
+    profile_os = load_profile_os(user, manifest=manifest)
     return {
         "user": user,
         "display_name": str(
             manifest.get("display_name") or manifest.get("name") or user
         ),
         "manifest": manifest,
+        "profile_os": profile_os,
         "prompts": load_user_prompts(user),
         "knowledge_base": load_knowledge_base(user),
         "personas": list_personas(user),
     }
+
+
+def load_profile_os(user: str, *, manifest: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    """Return additive profile operating-system metadata.
+
+    Missing fields resolve to empty values so existing profiles keep working.
+    """
+    manifest = manifest if manifest is not None else load_profile_manifest(user)
+    return {
+        "user": user,
+        "display_name": str(manifest.get("display_name") or manifest.get("name") or user),
+        "project": _mapping(manifest.get("project")),
+        "defaults": _mapping(manifest.get("defaults")),
+        "kb_packs": _kb_packs(manifest.get("kb_packs")),
+        "style_rules": _string_list(manifest.get("style_rules")),
+        "privacy": _mapping(manifest.get("privacy")),
+        "handoff_targets": _string_list(manifest.get("handoff_targets")),
+        "recipes": manifest.get("recipes") if isinstance(manifest.get("recipes"), dict) else {},
+        "validation": validate_profile_manifest(user, manifest=manifest),
+    }
+
+
+def profile_summary(user: str) -> str:
+    profile = load_profile_os(user)
+    validation = profile["validation"]
+    lines = [
+        f"Profile: {profile['display_name']}",
+        f"Project: {profile['project'].get('name') or 'not set'}",
+        f"Defaults: {_csv(profile['defaults'].keys())}",
+        f"KB packs: {_csv(pack['name'] for pack in profile['kb_packs'])}",
+        f"Handoff targets: {_csv(profile['handoff_targets'])}",
+        f"Privacy: {_csv(profile['privacy'].values())}",
+        f"Validation: {len(validation)} issue(s)",
+    ]
+    return "\n".join(lines)
+
+
+def validate_profile_manifest(
+    user: str,
+    *,
+    manifest: Dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
+    manifest = manifest if manifest is not None else load_profile_manifest(user)
+    user_dir = PROMPTS_DIR / user
+    issues: list[dict[str, str]] = []
+    for key in _mapping(manifest.get("defaults")):
+        if key not in SUPPORTED_PROFILE_DEFAULTS:
+            issues.append(_issue("unsupported_default", f"defaults.{key}", f"Unsupported profile default `{key}`."))
+    recipes = manifest.get("recipes")
+    if isinstance(recipes, dict):
+        for recipe_id, recipe in recipes.items():
+            defaults = _mapping(recipe.get("defaults") if isinstance(recipe, dict) else None)
+            for key in defaults:
+                if key not in SUPPORTED_PROFILE_DEFAULTS:
+                    issues.append(_issue("unsupported_default", f"recipes.{recipe_id}.defaults.{key}", f"Unsupported recipe default `{key}`."))
+    for label, rel_path in _referenced_files(manifest):
+        if not (user_dir / rel_path).exists():
+            issues.append(_issue("missing_file", label, f"Referenced file `{rel_path}` is missing."))
+    return issues
 
 
 def list_personas(user: str | None = None) -> Dict[str, str]:
@@ -196,6 +262,70 @@ def _manifest_text(user_dir: Path, value: Any) -> str | None:
     except OSError as e:
         logger.warning("Failed to read manifest file %s: %s", path, e)
         return None
+
+
+def _referenced_files(manifest: Dict[str, Any]) -> list[tuple[str, str]]:
+    refs: list[tuple[str, str]] = []
+    for group in ("prompts", "personas"):
+        raw = manifest.get(group)
+        if isinstance(raw, dict):
+            for key, value in raw.items():
+                if isinstance(value, dict):
+                    rel = value.get("file") or value.get("path")
+                    if isinstance(rel, str):
+                        refs.append((f"{group}.{key}", rel))
+        elif isinstance(raw, list):
+            for item in raw:
+                if isinstance(item, dict):
+                    rel = item.get("file") or item.get("path")
+                    name = item.get("name") or rel or group
+                    if isinstance(rel, str):
+                        refs.append((f"{group}.{name}", rel))
+    for pack in _kb_packs(manifest.get("kb_packs")):
+        for rel in pack["files"]:
+            refs.append((f"kb_packs.{pack['name']}", rel))
+    return refs
+
+
+def _kb_packs(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        items = value.items()
+    elif isinstance(value, list):
+        items = ((item.get("name"), item) for item in value if isinstance(item, dict))
+    else:
+        return []
+    packs = []
+    for name, raw in items:
+        if not isinstance(raw, dict):
+            continue
+        files = _string_list(raw.get("files") or raw.get("paths") or raw.get("file") or raw.get("path"))
+        packs.append({
+            "name": str(name or raw.get("name") or "kb_pack"),
+            "description": str(raw.get("description") or ""),
+            "files": files,
+        })
+    return packs
+
+
+def _mapping(value: Any) -> Dict[str, Any]:
+    return dict(value) if isinstance(value, dict) else {}
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if item is not None]
+
+
+def _issue(kind: str, path: str, message: str) -> dict[str, str]:
+    return {"kind": kind, "path": path, "message": message}
+
+
+def _csv(values) -> str:
+    items = [str(value) for value in values if str(value)]
+    return ", ".join(items) if items else "none"
 
 
 def load_all_users() -> Tuple[List[str], Dict[str, Dict[str, str]]]:
