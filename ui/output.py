@@ -257,6 +257,7 @@ def _scorecard_summary_from_state(
         fact_check_ran=bool(s.get("fact_check_ran")),
         recipe=s.get("active_recipe") or {},
         recipe_effective_settings=s.get("recipe_effective_settings") or {},
+        songforge=s.get("songforge") or {},
         exports=exports or [],
     )
 
@@ -344,6 +345,8 @@ def _handoff_sources(s) -> list[dict[str, str]]:
         sources.append({"label": "Outline", "kind": "selected output", "title": "Outline", "text": s.outline})
     if s.get("social_content"):
         sources.append({"label": "Social", "kind": "selected output", "title": "Social", "text": s.social_content})
+    if s.get("songforge"):
+        sources.append({"label": "SongForge", "kind": "selected output", "title": "SongForge", "text": s.article})
     if transcript:
         sources.append({"label": "Transcript", "kind": "transcript", "title": "Transcript", "text": transcript})
     if capture_meta:
@@ -549,6 +552,13 @@ def _build_bundle() -> notion.ContentBundle:
             "hits": sum(len(hits) for hits in stages.values()),
             "voice_anchors": ", ".join(anchors) if anchors else "",
         })
+    for note in (s.get("songforge") or {}).get("source_notes") or []:
+        source_receipts.append({
+            "source": "SongForge",
+            "note_source": note.get("source"),
+            "excerpt": note.get("excerpt"),
+            "informs": note.get("informs"),
+        })
     review_summary = review_mod.build_summary(
         source_receipts=source_receipts,
         retrieval_inspector=retrieval_inspector,
@@ -593,6 +603,7 @@ def _build_bundle() -> notion.ContentBundle:
             "rag": s.get("rag_mode", "auto") != "never",
             "compare": bool(s.get("article_compare")),
             "personas": bool(s.get("persona_articles")),
+            "songforge": bool(s.get("songforge")),
         },
         "capture": capture_meta,
         "recipe": {

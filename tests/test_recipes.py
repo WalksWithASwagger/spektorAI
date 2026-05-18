@@ -15,9 +15,10 @@ def tmp_prompts_dir(tmp_path, monkeypatch):
 def test_builtin_recipes_cover_required_workflows():
     loaded = recipes.list_recipes()
 
-    assert {"article_with_receipts", "brief_social_pack", "issue_handoff"} <= set(loaded)
+    assert {"article_with_receipts", "brief_social_pack", "issue_handoff", "songforge_prompt_pack"} <= set(loaded)
     assert loaded["article_with_receipts"].defaults["kb_mode"] == "auto"
     assert "github" in loaded["issue_handoff"].handoff_targets
+    assert "songforge_prompt_pack" in loaded["songforge_prompt_pack"].output_sections
 
 
 def test_profile_recipe_file_overrides_builtin(tmp_prompts_dir):

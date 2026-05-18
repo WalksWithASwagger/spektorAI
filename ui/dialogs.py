@@ -604,7 +604,7 @@ def _reopen_run(run_id: str) -> bool:
     for key in (
         "wisdom", "outline", "social_content", "image_prompts", "article",
         "chapters", "fact_check_flags", "generated_images", "article_compare",
-        "compare_label", "persona_articles", "scorecard_summary",
+        "compare_label", "persona_articles", "songforge", "scorecard_summary",
     ):
         if key in output:
             s[key] = output[key]

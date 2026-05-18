@@ -68,6 +68,7 @@ class Processor(Protocol):
         compare_provider: Optional[str] = None,
         compare_model: Optional[str] = None,
         personas: Optional[list] = None,
+        recipe: Optional[dict] = None,
         checkpoint: Optional[Callable] = None,
     ) -> pipeline_mod.PipelineResult: ...
 
@@ -108,7 +109,7 @@ class LocalProcessor:
                      article_length_words=1500,
                      user=None, rag_mode="auto",
                      compare_provider=None, compare_model=None,
-                     personas=None, checkpoint=None):
+                     personas=None, recipe=None, checkpoint=None):
         return pipeline_mod.run(
             transcript, provider, model, prompts=prompts,
             knowledge_base=knowledge_base, progress=progress,
@@ -121,6 +122,7 @@ class LocalProcessor:
             user=user, rag_mode=rag_mode,
             compare_provider=compare_provider, compare_model=compare_model,
             personas=personas,
+            recipe=recipe,
             checkpoint=checkpoint,
         )
 

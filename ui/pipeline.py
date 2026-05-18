@@ -159,6 +159,7 @@ def _execute_run() -> None:
                 "Revising...": 7,
                 "Generating images...": 6,
                 "Fact-checking...": 7,
+                "Forging song pack...": 7,
                 "Done": 8,
             }
 
@@ -198,6 +199,7 @@ def _execute_run() -> None:
                 compare_provider=s.get("compare_provider"),
                 compare_model=s.get("compare_model"),
                 personas=s.get("selected_personas") or None,
+                recipe=s.get("recipe_effective_settings"),
                 checkpoint=checkpoint_cb,
             )
 
@@ -215,6 +217,7 @@ def _execute_run() -> None:
             s.article_compare = result.article_compare
             s.compare_label = result.compare_label
             s.persona_articles = result.persona_articles or []
+            s.songforge = result.songforge or {}
             s.scorecard_summary = _build_scorecard_summary(s)
             s.pipeline_stage_idx = len(_STAGES) - 1
             _write_run_stage(s, "scorecard", s.scorecard_summary)
@@ -230,6 +233,7 @@ def _execute_run() -> None:
                 "article_compare": s.article_compare,
                 "compare_label": s.compare_label,
                 "persona_articles": s.persona_articles,
+                "songforge": s.songforge,
                 "scorecard_summary": s.scorecard_summary,
             })
             _mark_run_status(s, "completed")
@@ -373,6 +377,7 @@ def _build_scorecard_summary(s) -> dict:
         fact_check_ran=bool(s.get("fact_check_ran")),
         recipe=s.get("active_recipe") or {},
         recipe_effective_settings=s.get("recipe_effective_settings") or {},
+        songforge=s.get("songforge") or {},
     )
 
 

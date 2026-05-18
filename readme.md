@@ -62,6 +62,9 @@ base.
 - **Resurfacing digest**: `make digest` generates a local report-only digest of
   notable captures, unresolved follow-ups, strong outputs, stale drafts, and
   reusable source nuggets.
+- **SongForge creative lane**: the SongForge recipe turns a capture plus
+  selected KB context into original lyrics, a spoken-word variant, a
+  service-agnostic music prompt pack, and source notes.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -144,7 +147,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        225 tests + health/rendered UI smokes
+tests/                        229 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```

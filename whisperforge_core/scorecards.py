@@ -6,7 +6,13 @@ import re
 from collections.abc import Iterable, Mapping
 
 _STOPWORDS = {"about", "after", "again", "also", "because", "been", "being", "from", "have", "into", "just", "more", "most", "that", "their", "there", "these", "this", "through", "with", "when", "where", "which", "while", "will", "your"}
-_OUTPUT_ALIASES = {"social": "social_content", "source_receipts": "source_receipts"}
+_OUTPUT_ALIASES = {
+    "social": "social_content",
+    "source_receipts": "source_receipts",
+    "songforge_lyric_draft": "songforge",
+    "songforge_spoken_word": "songforge",
+    "songforge_prompt_pack": "songforge",
+}
 
 def build_summary(**data):
     article = str(data.get("article") or "")
@@ -20,6 +26,7 @@ def build_summary(**data):
         "outline": bool(str(data.get("outline") or "").strip()), "social_content": bool(str(data.get("social_content") or "").strip()),
         "image_prompts": bool(str(data.get("image_prompts") or "").strip()), "article": bool(article.strip()),
         "source_receipts": bool(receipts), "chapters": bool(list(data.get("chapters") or [])),
+        "songforge": bool(data.get("songforge")),
     }
     retrieval = _retrieval_counts(data.get("retrieval_inspector"))
     dimensions = [
@@ -70,7 +77,7 @@ def _grounding(article, transcript, receipts, retrieval, flags, fact_check_ran):
     return _dimension("grounding", "Grounding", score, notes)
 
 def _usefulness(article, output_state):
-    outputs = [name for name in ("article", "wisdom", "outline", "social_content", "image_prompts") if output_state.get(name)]
+    outputs = [name for name in ("article", "wisdom", "outline", "social_content", "image_prompts", "songforge") if output_state.get(name)]
     words = _word_count(article)
     score = 20 + (len(outputs) * 14) + (10 if words >= 500 else 5 if words else 0) + (5 if output_state.get("chapters") else 0)
     notes = [f"Generated outputs: {', '.join(outputs) or 'none'}."]

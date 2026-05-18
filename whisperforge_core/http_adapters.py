@@ -89,6 +89,7 @@ class HttpProcessor:
                      compare_provider: Optional[str] = None,
                      compare_model: Optional[str] = None,
                      personas: Optional[list] = None,
+                     recipe: Optional[dict] = None,
                      checkpoint: Optional[Callable] = None):
         payload = {
             "transcript": transcript,
@@ -112,6 +113,7 @@ class HttpProcessor:
             "compare_provider": compare_provider,
             "compare_model": compare_model,
             "personas": personas,
+            "recipe": recipe,
         }
         r = requests.post(
             f"{PROCESSING_URL}/pipeline",
@@ -136,6 +138,7 @@ class HttpProcessor:
             article_compare=data.get("article_compare"),
             compare_label=data.get("compare_label"),
             persona_articles=data.get("persona_articles") or [],
+            songforge=data.get("songforge") or {},
         )
 
 
