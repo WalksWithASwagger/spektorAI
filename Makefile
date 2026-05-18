@@ -3,11 +3,12 @@ PORT ?= 8501
 SMOKE_PORT ?= 8599
 COMPOSE ?= docker compose
 
-.PHONY: help test smoke app services-run services-smoke services-down
+.PHONY: help test eval-fixture smoke app services-run services-smoke services-down
 
 help:
 	@printf "WhisperForge operations commands\n\n"
 	@printf "  make test            Run unit tests\n"
+	@printf "  make eval-fixture    Run credential-free editorial fixture eval\n"
 	@printf "  make smoke           Boot Streamlit and check /_stcore/health\n"
 	@printf "  make app             Start the local Streamlit monolith on PORT=%s\n" "$(PORT)"
 	@printf "  make services-run    Start docker-compose services mode\n"
@@ -16,6 +17,9 @@ help:
 
 test:
 	$(PYTHON) -m pytest tests/ -q
+
+eval-fixture:
+	$(PYTHON) scripts/editorial_eval_fixture.py
 
 smoke:
 	SMOKE_PORT=$(SMOKE_PORT) tests/smoke.sh

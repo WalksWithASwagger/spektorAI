@@ -280,10 +280,11 @@ def run(
     # Sits after the base article so we don't waste tokens if the user hasn't
     # selected any personas.
     if personas and result.article:
-        from .config import PERSONAS as _BUILTIN_PERSONAS
+        from . import prompts as prompts_mod
+        persona_directives = prompts_mod.list_personas(user)
         total = len(personas)
         for i, name in enumerate(personas, 1):
-            directive = _BUILTIN_PERSONAS.get(name)
+            directive = persona_directives.get(name)
             if not directive:
                 logger.info("skipping unknown persona %r", name)
                 continue

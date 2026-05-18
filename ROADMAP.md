@@ -29,8 +29,9 @@ Verified on this pass:
 
 - `git fetch --prune origin` completed; the current branch and all local
   tracking branches were even with their upstreams.
-- `make test` passes: 166 tests. `pydub` still warns when `ffmpeg` is not on
+- `make test` passes: 169 tests. `pydub` still warns when `ffmpeg` is not on
   `PATH`, but the unit fixtures no longer require it.
+- `make eval-fixture` runs a credential-free editorial/source-receipt fixture.
 - `make smoke` passes on localhost port `8599`.
 - `venv/bin/python tests/ui_smoke.py` renders the Streamlit shell.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
@@ -189,11 +190,12 @@ Success criteria:
 
 Work:
 
-- Add a local `evals/` fixture set with representative transcripts and expected
-  qualitative checks.
+- Expand the current credential-free editorial fixture into a broader `evals/`
+  set with representative transcripts and expected qualitative checks.
 - Add structured critique categories and expose them in the UI.
-- Generate source receipts from the pipeline and render them in both Notion and
-  markdown; markdown rendering already has fixture coverage.
+- Generate richer claim-level source receipts from the pipeline. Transcript
+  receipts already render in both Notion and markdown, and markdown/Notion
+  rendering has fixture coverage.
 - Add side-by-side compare scoring for selected providers/personas.
 - Tune article length behavior with tests around max token budgets and observed
   word counts from fixture outputs.
@@ -237,7 +239,7 @@ P1:
 P2:
 
 - Expand profile manifests into provider/model/style/RAG defaults.
-- Generate source receipts and add a small editorial eval fixture set.
+- Expand source receipts and the editorial eval fixture set.
 - Add CI once local commands are stable.
 
 ## Deferred On Purpose

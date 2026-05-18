@@ -164,6 +164,7 @@ def test_http_storage_forwards_modern_bundle_fields(monkeypatch):
         fact_check_flags=[{"claim": "x", "issue": "y"}],
         fact_check_ran=True,
         run_metrics={"total_usd": 0.01},
+        source_receipts=[{"source": "Transcript", "sha256": "abc"}],
     )
 
     url = http_adapters.HttpStorage().save(bundle)
@@ -189,4 +190,5 @@ def test_http_storage_forwards_modern_bundle_fields(monkeypatch):
         "fact_check_flags": [{"claim": "x", "issue": "y"}],
         "fact_check_ran": True,
         "run_metrics": {"total_usd": 0.01},
+        "source_receipts": [{"source": "Transcript", "sha256": "abc"}],
     }

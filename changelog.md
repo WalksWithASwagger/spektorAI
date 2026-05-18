@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   built-in persona list.
 - **Markdown source receipts rendering** — markdown export can render source
   receipt fixtures from bundle metadata or run metrics.
+- **Notion source receipts rendering** — saved Notion pages now carry source
+  receipts alongside run metrics when a bundle includes them.
+- **Credential-free editorial eval** — `make eval-fixture` checks fixture
+  source receipts and fact-check rendering without API keys.
 - **Documentation audit artifact** — `docs/DOCUMENTATION-AUDIT-2026-05-17.md`
   captures the current sync state, verification commands, stale-doc fixes, and
   remaining blockers.
@@ -28,9 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 166 passing tests, the current prompt profile
+- Root docs now describe 169 passing tests, the current prompt profile
   layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
   the current services-mode parity boundary.
+- User-defined personas now flow through both the Generation Settings selector
+  and the pipeline resolver instead of being limited to built-ins at run time.
 
 ### Fixed
 - `whisperforge_core/http_adapters.py` now forwards modern pipeline options and

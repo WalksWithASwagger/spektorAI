@@ -8,6 +8,7 @@ everything funnels through.
 
 from __future__ import annotations
 
+import hashlib
 import os
 from datetime import datetime
 from typing import Optional
@@ -245,6 +246,17 @@ def _build_bundle() -> notion.ContentBundle:
             f"{os.getenv('TRANSCRIPTION_BACKEND', 'openai')} transcribe"
         )
 
+    source_receipts = []
+    if transcript:
+        receipt = {
+            "source": "Transcript",
+            "sha256": hashlib.sha256(transcript.encode("utf-8")).hexdigest(),
+            "excerpt": transcript[:240],
+        }
+        if audio_filename:
+            receipt["audio_filename"] = audio_filename
+        source_receipts.append(receipt)
+
     # Run metrics — folded into the bundle so the Notion page + markdown
     # export carry their own receipt instead of forcing a cross-ref against
     # history.json. Safe on partial runs: estimate_cost() returns zeroes
@@ -296,6 +308,7 @@ def _build_bundle() -> notion.ContentBundle:
         fact_check_flags=s.fact_check_flags or [],
         fact_check_ran=bool(s.fact_check_ran),
         run_metrics=run_metrics,
+        source_receipts=source_receipts,
     )
 
 

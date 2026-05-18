@@ -116,7 +116,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        166 tests + health/rendered UI smokes
+tests/                        169 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -312,6 +312,7 @@ persona variants in Generation Settings.
 ```bash
 pip install -r requirements-dev.txt
 make test                 # unit tests
+make eval-fixture         # credential-free editorial/source-receipt fixture
 make smoke                # boots streamlit, hits /_stcore/health
 SMOKE_PORT=8601 make smoke
 venv/bin/python tests/ui_smoke.py  # renders the Streamlit shell without a browser driver

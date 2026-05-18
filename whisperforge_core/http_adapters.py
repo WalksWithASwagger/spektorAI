@@ -160,6 +160,7 @@ class HttpStorage:
             "fact_check_flags": bundle.fact_check_flags,
             "fact_check_ran": bundle.fact_check_ran,
             "run_metrics": bundle.run_metrics,
+            "source_receipts": bundle.source_receipts,
         }
         r = requests.post(
             f"{STORAGE_URL}/save",

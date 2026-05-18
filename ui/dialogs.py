@@ -133,11 +133,15 @@ def generation_settings() -> None:
         "in its own tab in the Output + toggle in Notion. Costs and runtime "
         "scale linearly with the number of personas."
     )
-    from whisperforge_core.config import BUILTIN_PERSONA_NAMES
+    persona_options = list(prompts_mod.list_personas(s.selected_user).keys())
+    selected_personas = [
+        name for name in (s.selected_personas or [])
+        if name in persona_options
+    ]
     s.selected_personas = st.multiselect(
         "Generate persona variants",
-        options=BUILTIN_PERSONA_NAMES,
-        default=s.selected_personas or [],
+        options=persona_options,
+        default=selected_personas,
         key="gs_personas",
         label_visibility="collapsed",
     )

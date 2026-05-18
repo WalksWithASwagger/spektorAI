@@ -193,6 +193,7 @@ def test_storage_save_accepts_modern_bundle_fields(monkeypatch):
             "fact_check_flags": [{"claim": "x", "issue": "y"}],
             "fact_check_ran": True,
             "run_metrics": {"total_usd": 0.01},
+            "source_receipts": [{"source": "Transcript", "sha256": "abc"}],
         },
         headers=HEADERS,
     )
@@ -209,6 +210,7 @@ def test_storage_save_accepts_modern_bundle_fields(monkeypatch):
     assert bundle.fact_check_flags == [{"claim": "x", "issue": "y"}]
     assert bundle.fact_check_ran is True
     assert bundle.run_metrics == {"total_usd": 0.01}
+    assert bundle.source_receipts == [{"source": "Transcript", "sha256": "abc"}]
 
 
 def test_storage_save_rejects_unknown_fields():

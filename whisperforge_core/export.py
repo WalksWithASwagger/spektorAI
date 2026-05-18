@@ -79,7 +79,7 @@ def _timestamp_prefix(seconds) -> str:
 
 def _source_receipts(bundle: ContentBundle) -> list:
     receipts = getattr(bundle, "source_receipts", None)
-    if receipts is None and isinstance(bundle.run_metrics, dict):
+    if not receipts and isinstance(bundle.run_metrics, dict):
         receipts = bundle.run_metrics.get("source_receipts")
     if not receipts:
         return []

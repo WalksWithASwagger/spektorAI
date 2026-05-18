@@ -21,8 +21,8 @@ and profile content, not project documentation.
 ## Sync Result
 
 - `git fetch --prune origin` completed.
-- Current checkout: `kk/swarm-roadmap-batch-1` at
-  `26c9ecb feat: ship first roadmap swarm batch`.
+- Current checkout: `kk/swarm-roadmap-batch-1` at the current PR head after the
+  documentation audit and PR-review follow-up fixes.
 - `git rev-list --left-right --count HEAD...@{u}` returned `0 0`.
 - Local tracking branches were even with their upstreams:
   `main`, `kk/swarm-roadmap-batch-1`,
@@ -31,7 +31,7 @@ and profile content, not project documentation.
 
 ## Updates Made
 
-- Updated `readme.md` to match the current prompt profile layout, 166-test
+- Updated `readme.md` to match the current prompt profile layout, 169-test
   collection count, Ollama provider lane, Notion/markdown output shape, RAG
   environment knobs, UI ownership, and services-mode parity boundary.
 - Updated `STATUS.md` with the current branch/commit, sync evidence, verified
@@ -50,12 +50,16 @@ and profile content, not project documentation.
   clients forward modern pipeline options and round-trip modern result/bundle
   fields.
 - Added `tests/test_http_adapters.py` to pin the HTTP adapter payloads.
+- Added the credential-free `make eval-fixture` editorial/source-receipt check.
+- Fixed user-defined persona selection so profile personas appear in the UI and
+  resolve through the pipeline.
 
 ## Verification
 
 - `python3 -m json.tool ops/roadmap/features.json` passed.
 - `git diff --check` passed after documentation edits.
-- `make test` passed: 166 tests.
+- `make test` passed: 169 tests.
+- `make eval-fixture` passed.
 - `make smoke` passed: Streamlit health OK on port `8599`.
 - `venv/bin/python tests/ui_smoke.py` passed: rendered shell OK.
 
@@ -65,6 +69,5 @@ and profile content, not project documentation.
   no longer needs it.
 - Services-mode transcription still returns text-only details, so timestamped
   chapter segments are not yet available over HTTP.
-- `gh` is not installed in this environment, so GitHub and Linear issue/PR
-  state was not refreshed from the CLI. Use the GitHub/Linear connectors or
-  install/authenticate `gh` before updating external tracker status.
+- `gh` was available and authenticated during the latest swarm resume, but
+  connector-backed GitHub/Linear reads remain the safer fallback if auth drifts.

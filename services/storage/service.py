@@ -42,6 +42,7 @@ class SaveRequest(BaseModel):
     fact_check_flags: List[dict] = Field(default_factory=list)
     fact_check_ran: bool = False
     run_metrics: Optional[dict] = None
+    source_receipts: List[dict] = Field(default_factory=list)
 
 
 @app.get("/health")
@@ -71,6 +72,7 @@ async def save(req: SaveRequest, _: str = Depends(verify_service_token)):
         fact_check_flags=req.fact_check_flags,
         fact_check_ran=req.fact_check_ran,
         run_metrics=req.run_metrics,
+        source_receipts=req.source_receipts,
     )
     try:
         url = notion.create_page(bundle, database_id=req.database_id)

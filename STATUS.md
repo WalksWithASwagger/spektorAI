@@ -4,11 +4,12 @@ Last updated: 2026-05-17
 
 ## Current State
 
-- Last verified checkout: `kk/swarm-roadmap-batch-1` at
-  `26c9ecb feat: ship first roadmap swarm batch`
+- Last verified checkout: `kk/swarm-roadmap-batch-1` at the current PR head
+  after the documentation audit and PR-review follow-up fixes.
 - Remote sync: `git fetch --prune origin` completed; all local tracking
   branches were even with their upstreams after fetch.
-- Latest committed roadmap anchor: `26c9ecb feat: ship first roadmap swarm batch`
+- Latest roadmap anchor: PR #10 head. Use `git log -1 --oneline` for the exact
+  local commit because this status file is updated inside that PR stack.
 - GitHub repo: `WalksWithASwagger/spektorAI`
 - Linear project: [WhisperForge Roadmap](https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537)
 - Primary product surface: direct Streamlit mode (`streamlit run app.py`)
@@ -23,7 +24,8 @@ Last updated: 2026-05-17
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`
 - `git for-each-ref --format='%(refname:short) %(upstream:short) %(upstream:trackshort)' refs/heads`
   -> all local tracking branches showed `=`
-- `make test` -> `166 passed`
+- `make test` -> `169 passed`
+- `make eval-fixture` -> credential-free editorial/source-receipt fixture OK
 - `make smoke` -> Streamlit health OK on port `8599`
 - `venv/bin/python tests/ui_smoke.py` -> rendered shell OK
 - `python3 -m json.tool ops/roadmap/features.json` -> valid JSON
@@ -37,13 +39,13 @@ Last updated: 2026-05-17
 - GitHub issues: `#1` through `#8`
 - Linear issues: `BC-57`, `BC-58`, `BC-63`, `BC-73`, `BC-83`, `BC-88`, `BC-90`, `BC-91`
 - `whisperforge-env/` has been removed from the git index and remains ignored.
-- Local commit `26c9ecb` contains the first roadmap swarm batch. Verify
-  GitHub/Linear live state before changing external issue or PR status.
+- PR #10 contains the first roadmap swarm batch plus PR-review follow-up fixes.
+  Verify GitHub/Linear live state before changing external issue or PR status.
 
 ## Known Risks
 
-- `gh` is not installed in this checkout environment; use the GitHub connector
-  or install/authenticate `gh` before relying on CLI issue/PR operations.
+- `gh` was available and authenticated during the latest swarm resume, but
+  connector-backed GitHub/Linear reads remain the safer fallback if auth drifts.
 - `tests/smoke.sh` needs a free localhost port; the default is `8599`.
 - Runtime MP3/M4A operations still need `ffmpeg` on `PATH`; the unit suite uses
   WAV fixtures so local tests can run without it.
