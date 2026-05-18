@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Agent handoff drafts** — the Review tab can now generate a dry-run
   GitHub/Linear-ready issue brief from a capture, transcript, or selected
   output and persist it under `.cache/runs/<run_id>/handoffs/`.
+- **Run workspace recovery** — the Runs dialog now reads local run manifests,
+  shows partial/error/export state, and can reopen completed outputs so safe
+  downstream exports can be retried without rerunning generation.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.

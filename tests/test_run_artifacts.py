@@ -70,3 +70,33 @@ def test_mark_status_records_failures(tmp_runs_dir):
     manifest = run_artifacts.load_manifest("run-1")
     assert manifest["status"] == "failed"
     assert manifest["error"] == "boom"
+
+
+def test_list_manifests_summarizes_partial_runs_and_exports(tmp_runs_dir):
+    run_artifacts.start_run("run-1", {
+        "source": "paste",
+        "recipe": {"recipe_name": "Issue handoff"},
+        "settings": {"agentic": True, "images": False},
+    })
+    run_artifacts.record_export("run-1", "markdown", "/tmp/run.md")
+
+    manifests = run_artifacts.list_manifests()
+    summary = run_artifacts.summarize_manifest(manifests[0])
+
+    assert summary["run_id"] == "run-1"
+    assert summary["input_type"] == "paste"
+    assert summary["current_stage"] == ""
+    assert summary["recipe"] == "Issue handoff"
+    assert summary["exports"] == "markdown"
+    assert summary["settings"] == "agentic"
+    assert summary["partial"] is True
+
+
+def test_load_stage_payload_returns_saved_payload(tmp_runs_dir):
+    run_artifacts.start_run("run-1", {"mode": "full_pipeline"})
+    run_artifacts.write_stage("run-1", "session_output", {"article": "draft"})
+
+    assert run_artifacts.load_stage_payload("run-1", "session_output") == {
+        "article": "draft",
+    }
+    assert run_artifacts.load_stage_payload("run-1", "missing") == {}
