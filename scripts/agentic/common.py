@@ -70,7 +70,7 @@ def git_output(args: list[str], cwd: Path) -> str:
 
 
 def changed_stats(cwd: Path) -> dict[str, Any]:
-    result = run(["git", "diff", "--numstat"], cwd)
+    result = run(["git", "diff", "HEAD", "--numstat"], cwd)
     files: list[dict[str, Any]] = []
     total_lines = 0
     seen: set[str] = set()

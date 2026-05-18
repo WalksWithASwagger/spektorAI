@@ -36,7 +36,7 @@
   },
   "verification": {
     "commands": [
-      "make test"
+      "python3 -m pytest tests/agentic -q"
     ]
   },
   "issue_quality": {

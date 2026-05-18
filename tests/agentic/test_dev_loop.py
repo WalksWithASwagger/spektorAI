@@ -66,6 +66,21 @@ def copy_contract_repo(tmp_path: Path) -> Path:
     return repo
 
 
+def test_changed_stats_counts_staged_tracked_changes(tmp_path):
+    repo = copy_contract_repo(tmp_path)
+    target = repo / "agentic" / "contract.json"
+    contract = json.loads(target.read_text(encoding="utf-8"))
+    contract["limits"]["max_changed_files"] = 21
+    target.write_text(json.dumps(contract, indent=2) + "\n", encoding="utf-8")
+    run_git(repo, "add", "agentic/contract.json")
+
+    stats = changed_stats(repo)
+
+    assert stats["changed_files"] == 1
+    assert stats["changed_lines"] > 0
+    assert stats["files"][0]["path"] == "agentic/contract.json"
+
+
 def test_runner_exits_cleanly_when_pause_file_exists(tmp_path):
     repo = copy_contract_repo(tmp_path)
     issue = complete_issue(tmp_path)
