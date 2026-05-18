@@ -59,6 +59,7 @@ class PipelineRequest(BaseModel):
     compare_provider: Optional[str] = None
     compare_model: Optional[str] = None
     personas: Optional[List[str]] = None
+    recipe: Optional[dict] = None
 
 
 @app.get("/health")
@@ -97,6 +98,7 @@ async def run_pipeline(req: PipelineRequest, _: str = Depends(verify_service_tok
             user=req.user, rag_mode=req.rag_mode,
             compare_provider=req.compare_provider, compare_model=req.compare_model,
             personas=req.personas,
+            recipe=req.recipe,
         )
         return asdict(result)
     except Exception as e:

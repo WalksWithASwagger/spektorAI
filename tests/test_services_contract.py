@@ -30,6 +30,7 @@ def test_processing_pipeline_accepts_modern_options_and_returns_full_result(monk
             article_compare="compare",
             compare_label="OpenAI gpt-4o",
             persona_articles=[{"name": "Direct", "text": "persona"}],
+            songforge={"lyric_draft": "lyric"},
         )
 
     monkeypatch.setattr(processing_service.pipeline, "run", fake_run)
@@ -57,6 +58,7 @@ def test_processing_pipeline_accepts_modern_options_and_returns_full_result(monk
         "compare_provider": "OpenAI",
         "compare_model": "gpt-4o",
         "personas": ["Direct"],
+        "recipe": None,
     }
     response = client.post("/pipeline", json=payload, headers=HEADERS)
 
@@ -81,6 +83,7 @@ def test_processing_pipeline_accepts_modern_options_and_returns_full_result(monk
         "compare_provider": "OpenAI",
         "compare_model": "gpt-4o",
         "personas": ["Direct"],
+        "recipe": None,
     }
     assert response.json() == {
         "wisdom": "wisdom",
@@ -98,6 +101,7 @@ def test_processing_pipeline_accepts_modern_options_and_returns_full_result(monk
         "article_compare": "compare",
         "compare_label": "OpenAI gpt-4o",
         "persona_articles": [{"name": "Direct", "text": "persona"}],
+        "songforge": {"lyric_draft": "lyric"},
     }
 
 

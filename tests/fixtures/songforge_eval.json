@@ -1,0 +1,13 @@
+{
+  "transcript": "Wispr Flow note: the workshop kept circling community trust, creative pressure, and the way useful signal gets buried unless we bring it back.",
+  "knowledge_base": {
+    "voice.md": "Keep the voice intimate, warm, direct, and source-grounded. Prefer original language over borrowed style references."
+  },
+  "expected_markdown": [
+    "## Lyric Draft",
+    "## Spoken-Word Variant",
+    "## Music Prompt Pack",
+    "do not imitate living artists",
+    "KB: voice.md"
+  ]
+}

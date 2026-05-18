@@ -115,3 +115,39 @@ recipes:
       - github
       - linear
       - markdown
+
+  songforge_prompt_pack:
+    name: SongForge lyric and prompt pack
+    description: Turn a capture and selected KB context into original lyrics, a spoken-word variant, and a service-agnostic music prompt pack.
+    inputs:
+      - wispr_flow
+      - paste
+      - upload
+      - record
+    stages:
+      - transcription
+      - transcript_cleanup
+      - wisdom_extraction
+      - outline_creation
+      - songforge
+      - save
+    defaults:
+      provider: Anthropic
+      model: claude-haiku-4-5
+      kb_mode: auto
+      article_length: Brief
+      cleanup: true
+      chapters: true
+      agentic: false
+      fact_check: false
+      images: false
+      auto_export_markdown: true
+    output_sections:
+      - songforge_lyric_draft
+      - songforge_spoken_word
+      - songforge_prompt_pack
+      - source_receipts
+    eval_checks:
+      - source_receipts
+    handoff_targets:
+      - markdown

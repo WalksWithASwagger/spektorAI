@@ -64,6 +64,23 @@ class TestAgenticOff:
         assert "article_fact_check" not in [c[0] for c in mock_llm]
         assert result.fact_check_flags == []
 
+    def test_songforge_recipe_builds_source_linked_pack(self, mock_llm):
+        result = pipeline.run(
+            "Maya said the workshop needs a song about trust and returning signal.",
+            "Anthropic", "claude-haiku-4-5",
+            cleanup=False, chapters=False,
+            knowledge_base={"voice.md": "Keep the voice intimate and source-grounded."},
+            recipe={
+                "recipe_id": "songforge_prompt_pack",
+                "output_sections": ["songforge_lyric_draft", "songforge_prompt_pack"],
+            },
+        )
+
+        assert result.songforge["lyric_draft"]
+        assert result.songforge["music_prompt_pack"]["avoid"][0] == "living-artist imitation"
+        assert "SongForge Creative Pack" in result.article
+        assert any(note["source"] == "KB: voice.md" for note in result.songforge["source_notes"])
+
 
 class TestAgenticOn:
     def test_agentic_runs_critique_and_revise(self, mock_llm):

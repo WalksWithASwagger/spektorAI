@@ -8,10 +8,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "editorial_eval.json"
+SONGFORGE_FIXTURE = ROOT / "tests" / "fixtures" / "songforge_eval.json"
 
 sys.path.insert(0, str(ROOT))
 
-from whisperforge_core import export, notion, scorecards
+from whisperforge_core import export, notion, scorecards, songforge
 
 
 def _load_fixture(path: Path = FIXTURE) -> dict:
@@ -57,6 +58,20 @@ def run(path: Path = FIXTURE) -> None:
         f"{len(fixture['fact_check_flags'])} fact-check flag(s), "
         "scorecard rendered"
     )
+    run_songforge_eval()
+
+
+def run_songforge_eval(path: Path = SONGFORGE_FIXTURE) -> None:
+    fixture = _load_fixture(path)
+    pack = songforge.build_pack(
+        fixture["transcript"],
+        fixture.get("knowledge_base") or {},
+    )
+    markdown = songforge.render_markdown(pack)
+    for expected in fixture["expected_markdown"]:
+        if expected not in markdown:
+            raise AssertionError(f"missing expected SongForge markdown: {expected!r}")
+    print("songforge-eval: lyric, spoken-word, prompt pack, and source notes rendered")
 
 
 if __name__ == "__main__":

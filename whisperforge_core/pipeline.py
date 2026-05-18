@@ -8,7 +8,7 @@ progress via an optional callback instead of hardcoded Streamlit progress bars.
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional
 
-from . import images, llm
+from . import images, llm, songforge
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -49,6 +49,8 @@ class PipelineResult:
     # user selected at least one persona in ⚙ More → Personas. Rendered
     # as their own Output tabs and Notion toggles.
     persona_articles: list = None  # type: ignore[assignment]
+    # SongForge creative pack. Shape is produced by songforge.build_pack().
+    songforge: dict = None  # type: ignore[assignment]
 
     def __post_init__(self):
         if self.chapters is None:
@@ -59,6 +61,8 @@ class PipelineResult:
             self.generated_images = []
         if self.persona_articles is None:
             self.persona_articles = []
+        if self.songforge is None:
+            self.songforge = {}
 
 
 _STAGES = [
@@ -93,6 +97,7 @@ def run(
     compare_provider: Optional[str] = None,
     compare_model: Optional[str] = None,
     personas: Optional[list[str]] = None,
+    recipe: Optional[dict] = None,
     checkpoint: Optional[CheckpointCallback] = None,
 ) -> PipelineResult:
     """Execute the content pipeline.
@@ -428,6 +433,16 @@ def run(
         result.fact_check_flags = _parse_fact_check(raw)
         _checkpoint("fact_check", {"fact_check_flags": result.fact_check_flags})
 
+    if _is_songforge_recipe(recipe):
+        _report(0.97, "Forging song pack...")
+        result.songforge = songforge.build_pack(
+            result.cleaned_transcript or transcript,
+            knowledge_base,
+            title="SongForge creative pack",
+        )
+        result.article = songforge.render_markdown(result.songforge)
+        _checkpoint("songforge", result.songforge)
+
     _report(1.0, "Done")
     _checkpoint("complete", {
         "wisdom": result.wisdom,
@@ -441,9 +456,20 @@ def run(
         "article_compare": result.article_compare,
         "compare_label": result.compare_label,
         "persona_articles": result.persona_articles,
+        "songforge": result.songforge,
     })
 
     return result
+
+
+def _is_songforge_recipe(recipe: Optional[dict]) -> bool:
+    if not isinstance(recipe, dict):
+        return False
+    recipe_id = str(recipe.get("recipe_id") or recipe.get("id") or "").lower()
+    outputs = {str(item).lower() for item in recipe.get("output_sections") or []}
+    return recipe_id == "songforge_prompt_pack" or any(
+        item.startswith("songforge") for item in outputs
+    )
 
 
 def _parse_fact_check(raw: Optional[str]) -> list:

@@ -67,6 +67,7 @@ def test_http_pipeline_round_trips_modern_options_and_result(monkeypatch):
         "article_compare": "compare",
         "compare_label": "OpenAI gpt-4o",
         "persona_articles": [{"name": "Direct", "text": "persona"}],
+        "songforge": {"lyric_draft": "lyric"},
     }
 
     def fake_post(*args, **kwargs):
@@ -121,6 +122,7 @@ def test_http_pipeline_round_trips_modern_options_and_result(monkeypatch):
         "compare_provider": "OpenAI",
         "compare_model": "gpt-4o",
         "personas": ["Direct"],
+        "recipe": None,
     }
     assert result.raw_transcript == "raw"
     assert result.cleaned_transcript == "clean"
@@ -134,6 +136,7 @@ def test_http_pipeline_round_trips_modern_options_and_result(monkeypatch):
     assert result.article_compare == "compare"
     assert result.compare_label == "OpenAI gpt-4o"
     assert result.persona_articles == [{"name": "Direct", "text": "persona"}]
+    assert result.songforge == {"lyric_draft": "lyric"}
 
 
 def test_http_storage_forwards_modern_bundle_fields(monkeypatch):

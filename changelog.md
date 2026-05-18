@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Resurfacing digest** — `make digest` now writes a local report-only digest
   from captures and run artifacts, grouping notable captures, unresolved
   follow-ups, strong outputs, stale drafts, and reusable source nuggets.
+- **SongForge creative lane** — the built-in SongForge recipe now produces
+  original lyric drafts, spoken-word variants, service-agnostic music prompt
+  packs, and source notes from capture plus KB context.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.

@@ -96,6 +96,8 @@ _PER_RUN_DEFAULTS: Dict[str, Any] = {
     "compare_label": None,
     # Persona variants — [{"name": str, "text": str}] populated by pipeline.
     "persona_articles": [],
+    # SongForge creative pack, populated by the SongForge recipe.
+    "songforge": {},
     # Progress state (drives sac.steps + st.status)
     "pipeline_stage_idx": 0,                     # 0..7 where 7 = done
     "pipeline_stage_label": "",
