@@ -235,9 +235,9 @@ CONTENT_TYPES = list(DEFAULT_PROMPTS.keys())
 
 # Built-in persona presets. Each entry is a system-prompt directive that
 # gets appended to the article prompt when that persona is selected.
-# Users can override by dropping a file at prompts/<user>/personas/<name>.md —
-# persona discovery in prompts.list_personas() (when we add it) picks those
-# up with the same precedence rules as regular prompts.
+# Users can override by dropping a file at prompts/<user>/personas/<name>.md;
+# prompts.list_personas() merges those directives with manifest-defined
+# personas using the same precedence rules as regular prompts.
 PERSONAS: dict[str, str] = {
     "Punchy podcast host": (
         "Rewrite in the voice of a podcast host talking directly to a peer. "

@@ -99,9 +99,9 @@ whisperforge_core/            pure-logic package (no Streamlit)
 ├── cache.py                  file-hash pickle cache (sha256 + model + prompt)
 ├── prompts.py                user/KB discovery, override precedence
 ├── audio.py                  chunking + Whisper transcription
-├── llm.py                    unified generate() for OpenAI/Anthropic
+├── llm.py                    unified generate() for OpenAI/Anthropic/Ollama
 ├── notion.py                 ContentBundle + 1900-char block chunker
-├── pipeline.py               5-stage orchestration with progress callback
+├── pipeline.py               orchestration with progress callback
 ├── adapters.py               Local{Transcriber,Processor,Storage}
 └── http_adapters.py          Http{Transcriber,Processor,Storage}
 
@@ -116,14 +116,18 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        pytest suite (38 tests) + smoke.sh
-prompts/<user>/               prompts, knowledge_base, custom_prompts
+tests/                        166 tests + health/rendered UI smokes
+prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
+                               personas, custom_prompts
 ```
 
 The monolith (`streamlit run app.py`) imports `whisperforge_core` directly. In
 services mode (`docker compose up`), the same `app.py` runs inside a `frontend`
 container and talks to the three FastAPI services over HTTP via
 `http_adapters`. Swap by setting `DEPLOY_MODE=direct` (default) or `services`.
+Direct mode is the primary product surface. Services mode shares the modern
+processing/storage payload contract; timestamped transcription segments are
+still a direct-mode feature until the transcription service serializes them.
 
 ---
 
@@ -167,11 +171,14 @@ auto-discover it via the integration's `search` API.
 ### Create your prompt profile (first run only)
 
 ```bash
-mkdir -p prompts/<YourName>/{prompts,knowledge_base,custom_prompts}
+mkdir -p prompts/<YourName>/{knowledge_base,personas,custom_prompts}
 ```
 
-Drop `.md` prompt templates into `prompts/<YourName>/prompts/` and voice/style
-docs into `prompts/<YourName>/knowledge_base/`.
+Drop prompt templates directly into `prompts/<YourName>/<type>.md`, optional
+persona directives into `prompts/<YourName>/personas/*.md`, and voice/style
+docs into `prompts/<YourName>/knowledge_base/`. Use
+`prompts/<YourName>/profile.yaml` when a profile needs manifest-defined prompt
+or persona overrides.
 
 ---
 
@@ -240,14 +247,15 @@ a ggml bin path).
 
 1. **Pick your user profile** in the sidebar. Any directory under `prompts/`
    becomes a profile.
-2. **Select provider + model** (OpenAI or Anthropic).
+2. **Select provider + model** (OpenAI, Anthropic, or Ollama).
 3. **Upload audio or paste text.** Large audio is chunked automatically.
 4. **Generate** — run individual stages (Extract Wisdom, Create Outline,
    Social, Image Prompts, Full Article) or use "I'm Feeling Lucky" to run the
    whole pipeline sequentially with a progress bar.
 5. **Save to Notion** — builds a single page with color-coded toggles per
-   section, an AI-generated title, summary callout, tags, and metadata
-   footer (audio filename, timestamp, models used, token estimate).
+   section, an AI-generated title, summary callout, tags, run metrics, and
+   metadata footer. A local markdown export can be written alongside the
+   Notion save.
 
 ### Notion page layout
 
@@ -255,12 +263,16 @@ a ggml bin path).
 WHISPER: <AI-generated title>
   💜 callout with one-sentence summary
   ─── divider ───
+  ▶ Chapters                (when enabled)
   ▶ Transcription           (default toggle)
   ▶ Wisdom                  (brown)
   ▶ Socials                 (orange)
   ▶ Image Prompts           (green)
   ▶ Outline                 (blue)
   ▶ Draft Post              (purple)
+  ▶ Article · <compare>     (when A/B compare ran)
+  ▶ Persona · <name>        (one per selected persona)
+  ▶ Run metrics             (cost, cache, settings, duration)
   ▶ Original Audio          (red; only if audio was uploaded)
   ─── Metadata ───
   Original Audio · Created · Models Used · Estimated Tokens
@@ -271,19 +283,25 @@ Properties: Name, Tags (multi-select, AI-generated)
 
 ## Customising prompts and knowledge base
 
-Three override layers per user, resolved in precedence order:
+Four override layers per user, resolved in precedence order:
 
-1. `prompts/<user>/custom_prompts/<type>.txt` — highest priority, saved by the
-   in-app "Save Prompt" button.
-2. `prompts/<user>/prompts/<type>.md` — on-disk template.
-3. `whisperforge_core.config.DEFAULT_PROMPTS[<type>]` — fallback.
+1. `prompts/<user>/profile.yaml` prompt/persona entries — highest priority.
+2. `prompts/<user>/custom_prompts/<type>.txt` — saved by the in-app
+   "Save Prompt" button.
+3. `prompts/<user>/<type>.md` — on-disk template.
+4. `whisperforge_core.config.DEFAULT_PROMPTS[<type>]` — fallback.
 
-Valid `<type>` values: `wisdom_extraction`, `summary`, `outline_creation`,
-`social_media`, `image_prompts`, `article_writing`, `seo_analysis`.
+Valid `<type>` values: `transcript_cleanup`, `chapters`,
+`chapters_timestamped`, `wisdom_extraction`, `summary`, `outline_creation`,
+`social_media`, `image_prompts`, `article_writing`, `article_critique`,
+`article_revise`, `article_fact_check`, and `seo_analysis`.
 
 **Knowledge base** files at `prompts/<user>/knowledge_base/*.{md,txt}` are
 prepended to the system prompt on every LLM call, so the model writes in your
 voice and with your context.
+
+**Persona** files at `prompts/<user>/personas/*.md` appear beside the built-in
+persona variants in Generation Settings.
 
 ---
 
@@ -307,11 +325,14 @@ remain plain `pytest`, `streamlit`, and `docker compose`.
 
 - **Fixing bugs in the pipeline?** Edit `whisperforge_core/` — all business
   logic lives there. The monolith and services both pick up the change.
-- **Tweaking UI or CSS?** `app.py` for layout, `styles.py` for CSS.
+- **Tweaking UI or CSS?** Edit `ui/` for Streamlit controls/layout and
+  `styles.py` for CSS; `app.py` is only the composition root.
 - **Changing Notion layout?** `whisperforge_core/notion.py`. Preserve the
   1900-char block chunker — `tests/test_notion.py` pins that invariant.
 - **Adding a provider?** Add a branch in `whisperforge_core/llm._call` and
   extend `LLM_MODELS` in `config.py`.
+- **Changing services mode?** Update both the FastAPI service model and
+  `whisperforge_core/http_adapters.py`, then add a contract test.
 
 ### Configuration reference
 
@@ -326,6 +347,10 @@ remain plain `pytest`, `streamlit`, and `docker compose`.
 | `WHISPERFORGE_LOG_LEVEL` | `DEBUG` / `INFO` / `WARNING` (default INFO) | no          |
 | `WHISPERFORGE_CACHE_DIR` | Cache location (default `.cache/`)          | no            |
 | `WHISPERFORGE_CACHE`     | `1` to enable the transcription/LLM cache    | no            |
+| `WF_RAG`                 | Force RAG on/off (`1`/`true` or `0`/`false`) | no            |
+| `WF_RAG_TOPK`            | Retrieved KB chunks per stage (default `5`) | no            |
+| `WF_RAG_THRESHOLD`       | Auto-RAG chunk threshold (default `25`)     | no            |
+| `WF_EMBED_MODEL`         | Sentence-transformer model for RAG          | no            |
 | `TRANSCRIPTION_BACKEND`  | `openai` (default) \| `mlx` \| `whisper_cpp` \| `whisperx` | no |
 | `WHISPERX_MODEL`         | faster-whisper model size (`tiny`\|`base`\|`small`\|`medium`\|`large-v3`; default `small`) | no |
 | `WHISPERX_DEVICE`        | `cpu` (default) or `cuda`                    | no            |
