@@ -56,6 +56,9 @@ base.
 - **Agent handoff drafts**: the Review tab can turn a capture, transcript, or
   selected output into a GitHub/Linear-ready issue brief and persist the dry-run
   draft under the current run artifacts.
+- **Run workspace**: the Runs dialog reads `.cache/runs` manifests, flags
+  partial/error runs, and can reopen completed outputs so Markdown, Notion, or
+  handoff exports can be retried without regenerating content.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -138,7 +141,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        217 tests + health/rendered UI smokes
+tests/                        219 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -291,7 +294,10 @@ compliance, and handoff readiness. It is a review surface, not a collaborative
 editor; edits still happen by rerunning with adjusted prompts, recipes, or
 settings. The same tab includes an **Agent handoff draft** preview that writes
 local issue drafts only; external tracker creation remains a separate explicit
-action.
+action. Use the sidebar's **Runs** dialog to reopen completed run artifacts
+into this output/review surface and retry downstream exports. Partial runs are
+listed with their last stage and errors, but arbitrary stage replay is still out
+of scope.
 
 ### Notion page layout
 
@@ -316,6 +322,17 @@ WHISPER: <AI-generated title>
   Original Audio · Created · Models Used · Estimated Tokens
 Properties: Name, Tags (multi-select, AI-generated)
 ```
+
+### Run recovery
+
+The sidebar **Runs** dialog reads local manifests from `.cache/runs/`, not only
+successful Notion history. It shows status, created/updated timestamps, input
+type, recipe/settings, exports, partial-state flags, and errors. Completed runs
+with a saved `session_output` stage can be reopened into the Output/Review
+surface; from there, retry safe downstream work such as Markdown export, Notion
+save, or agent handoff draft generation. Partial runs are visible for diagnosis,
+but arbitrary stage replay and destructive cleanup are intentionally out of
+scope.
 
 ---
 

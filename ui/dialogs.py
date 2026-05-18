@@ -23,6 +23,7 @@ from whisperforge_core import history as history_mod
 from whisperforge_core import images as images_mod
 from whisperforge_core import kb_audit as kb_audit_mod
 from whisperforge_core import prompts as prompts_mod
+from whisperforge_core import run_artifacts
 from whisperforge_core.config import DEFAULT_PROMPTS
 from .input import PendingInput
 
@@ -511,8 +512,39 @@ def kb_benchmark() -> None:
 @st.dialog("Recent runs", width="large")
 def run_history() -> None:
     records = history_mod.recent(limit=50)
-    if not records:
+    manifests = run_artifacts.list_manifests(limit=50)
+    if not records and not manifests:
         st.info("No runs yet. Process an audio file or paste some text.")
+        return
+
+    if manifests:
+        st.markdown("**Run artifacts**")
+        summaries = [run_artifacts.summarize_manifest(item) for item in manifests]
+        st.data_editor(
+            summaries,
+            column_config={
+                "partial": st.column_config.CheckboxColumn("Partial"),
+                "error": st.column_config.TextColumn("Error"),
+            },
+            disabled=True, hide_index=True, use_container_width=True,
+            key="run_artifact_editor",
+        )
+        choices = [item["run_id"] for item in summaries if item["run_id"]]
+        selected = st.selectbox("Run to reopen", choices, key="run_reopen_select") if choices else None
+        c1, c2 = st.columns(2)
+        with c1:
+            if selected and st.button("Reopen output", use_container_width=True, key="reopen_run"):
+                ok = _reopen_run(selected)
+                if ok:
+                    st.toast("Run reopened. Close this dialog to review or retry exports.", icon=":material/open_in_new:")
+                else:
+                    st.warning("That run has no saved output stage yet. Partial metadata is visible above.")
+        with c2:
+            if selected:
+                run_path = run_artifacts.run_dir(selected)
+                st.link_button("Open artifact folder", run_path.resolve().as_uri(), use_container_width=True)
+
+    if not records:
         return
 
     rows = [
@@ -551,6 +583,40 @@ def run_history() -> None:
     )
     if st.button("Close", use_container_width=True):
         st.rerun()
+
+
+def _reopen_run(run_id: str) -> bool:
+    output = run_artifacts.load_stage_payload(run_id, "session_output")
+    if not output:
+        return False
+    transcription = run_artifacts.load_stage_payload(run_id, "transcription")
+    retrieval = run_artifacts.load_stage_payload(run_id, "retrieval_inspector")
+    scorecard = run_artifacts.load_stage_payload(run_id, "scorecard")
+    s = st.session_state
+    for key in (
+        "wisdom", "outline", "social_content", "image_prompts", "article",
+        "chapters", "fact_check_flags", "generated_images", "article_compare",
+        "compare_label", "persona_articles", "scorecard_summary",
+    ):
+        if key in output:
+            s[key] = output[key]
+    s.transcription = transcription.get("text", s.get("transcription", ""))
+    s.transcription_segments = transcription.get("segments", [])
+    s.retrieval_inspector = retrieval or s.get("retrieval_inspector")
+    if scorecard:
+        s.scorecard_summary = scorecard
+    s.run_id = run_id
+    s.run_artifact_dir = str(run_artifacts.run_dir(run_id))
+    s.pipeline_running = False
+    s.pipeline_stage_idx = 8
+    s.last_notion_url = _latest_export_url(run_id, "notion")
+    return True
+
+
+def _latest_export_url(run_id: str, kind: str) -> str | None:
+    manifest = run_artifacts.load_manifest(run_id)
+    exports = [item for item in manifest.get("exports", []) if item.get("kind") == kind]
+    return (exports[-1] or {}).get("value") if exports else None
 
 
 # -----------------------------------------------------------------------
