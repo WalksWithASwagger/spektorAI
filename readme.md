@@ -59,6 +59,9 @@ base.
 - **Run workspace**: the Runs dialog reads `.cache/runs` manifests, flags
   partial/error runs, and can reopen completed outputs so Markdown, Notion, or
   handoff exports can be retried without regenerating content.
+- **Resurfacing digest**: `make digest` generates a local report-only digest of
+  notable captures, unresolved follow-ups, strong outputs, stale drafts, and
+  reusable source nuggets.
 
 **Image generation**
 - Google Nano Banana (Gemini 2.5 Flash Image) turns the `image_prompts` stage
@@ -141,7 +144,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        222 tests + health/rendered UI smokes
+tests/                        225 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -408,6 +411,7 @@ handoff_targets:
 pip install -r requirements-dev.txt
 make test                 # unit tests
 make eval-fixture         # credential-free editorial/source-receipt fixture
+make digest               # report-only resurfacing digest from local artifacts
 make smoke                # boots streamlit, hits /_stcore/health
 SMOKE_PORT=8601 make smoke
 venv/bin/python tests/ui_smoke.py  # renders the Streamlit shell without a browser driver
@@ -416,6 +420,12 @@ venv/bin/python tests/ui_smoke.py  # renders the Streamlit shell without a brows
 Run `make help` for the full operations command list. The Makefile is the
 preferred command surface for agents and CI snippets; the underlying commands
 remain plain `pytest`, `streamlit`, and `docker compose`.
+
+Run `make digest` weekly, or after a heavy capture/editing session, to surface
+useful signal without routing it anywhere. The digest is local and report-only:
+it links back to captures, run manifests, and exports, but it does not email,
+post, create issues, or schedule follow-ups unless a later explicit workflow
+adds that routing.
 
 ### Directory structure for day-to-day work
 

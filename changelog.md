@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Profile operating-system metadata** — `profile.yaml` can now describe
   project context, defaults, KB packs, privacy notes, and preferred handoff
   targets, with validation surfaced in the KB dialog.
+- **Resurfacing digest** — `make digest` now writes a local report-only digest
+  from captures and run artifacts, grouping notable captures, unresolved
+  follow-ups, strong outputs, stale drafts, and reusable source nuggets.
 - **Agent-facing Makefile surface** — `make help`, `make test`, `make smoke`,
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.
