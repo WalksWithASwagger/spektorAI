@@ -21,6 +21,7 @@ from whisperforge_core import cost as cost_mod
 from whisperforge_core import export as export_mod
 from whisperforge_core import history as history_mod
 from whisperforge_core import handoffs as handoffs_mod
+from whisperforge_core import handoff_router as handoff_router_mod
 from whisperforge_core import llm, notion
 from whisperforge_core import run_artifacts
 from whisperforge_core import captures as captures_mod
@@ -297,7 +298,10 @@ def _handoff_panel() -> None:
     if not sources:
         return
     with st.expander("Agent handoff draft", expanded=False):
-        st.caption("Dry-run preview only. GitHub and Linear creation stay behind a separate explicit action.")
+        st.caption(
+            "Preview a draft, then approve to create the actual GitHub or "
+            "Linear issue. Dry-run is the default when external config is missing."
+        )
         labels = [item["label"] for item in sources]
         selected = st.selectbox("Draft from", labels, key="handoff_source_select")
         source = next(item for item in sources if item["label"] == selected)
@@ -331,6 +335,108 @@ def _handoff_panel() -> None:
             else:
                 st.caption("Preview only; start a run to persist the draft under run artifacts.")
             st.text_area("Preview", preview.get("body") or "", height=420, key="handoff_preview_body")
+            _approval_panel(preview)
+
+
+def _approval_panel(preview: dict) -> None:
+    """Approve-and-create panel. Routes to GitHub or Linear after explicit click."""
+    s = st.session_state
+    st.markdown("---")
+    st.markdown("**Approve and create**")
+
+    available = handoff_router_mod.routing_available()
+    target_options = ["GitHub", "Linear"]
+    target = st.radio(
+        "Target",
+        target_options,
+        horizontal=True,
+        key="handoff_target_select",
+    )
+
+    if target == "GitHub":
+        default_repo = os.getenv("WHISPERFORGE_HANDOFF_GITHUB_REPO", "")
+        repo = st.text_input(
+            "Repo (owner/name)", value=default_repo, key="handoff_github_repo",
+        )
+        labels_raw = st.text_input(
+            "Labels (comma-separated)",
+            value="agent:ready,handoff",
+            key="handoff_github_labels",
+        )
+        status_line = (
+            "Ready to create live issues via `gh`."
+            if available["github"]
+            else "Dry-run only - install `gh` and set WHISPERFORGE_HANDOFF_GITHUB_REPO to enable live creation."
+        )
+        st.caption(status_line)
+    else:
+        default_team = os.getenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID", "")
+        repo = st.text_input(
+            "Linear team ID", value=default_team, key="handoff_linear_team",
+        )
+        labels_raw = st.text_input(
+            "Label IDs (comma-separated UUIDs, optional)",
+            value="",
+            key="handoff_linear_labels",
+        )
+        status_line = (
+            "Ready to create live issues via Linear API."
+            if available["linear"]
+            else "Dry-run only - set LINEAR_API_KEY and WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID to enable live creation."
+        )
+        st.caption(status_line)
+
+    # Idempotency: hash title+first 500 chars of body so a second click in the
+    # same session for the same draft surfaces the previous URL instead of
+    # re-creating the issue.
+    body_text = preview.get("body") or ""
+    title_text = preview.get("title") or ""
+    draft_key = hashlib.sha256(
+        f"{target}|{title_text}|{body_text[:500]}".encode("utf-8")
+    ).hexdigest()[:16]
+    s.setdefault("handoff_created", {})
+    already = s["handoff_created"].get(draft_key)
+    if already:
+        if already.get("url"):
+            st.success(f"Already created: [{already['url']}]({already['url']})")
+        elif already.get("dry_run"):
+            st.info("Dry-run already executed for this draft this session.")
+
+    if st.button("Approve and create", type="primary", use_container_width=True, key="approve_handoff"):
+        labels = [s.strip() for s in (labels_raw or "").split(",") if s.strip()]
+        with st.spinner(f"Submitting to {target}..."):
+            if target == "GitHub":
+                result = handoff_router_mod.create_github_issue(
+                    repo=repo,
+                    title=title_text,
+                    body=body_text,
+                    labels=labels,
+                )
+            else:
+                result = handoff_router_mod.create_linear_issue(
+                    team_id=repo,
+                    title=title_text,
+                    description=body_text,
+                    label_ids=labels,
+                )
+        s["handoff_created"][draft_key] = {
+            "url": result.url,
+            "target": result.target,
+            "dry_run": result.dry_run,
+            "error": result.error,
+        }
+        if result.success and result.url:
+            st.toast("Handoff issue created.", icon=":material/check_circle:")
+            st.rerun()
+        elif result.dry_run:
+            # Either kill switch / explicit dry-run (success=True) or missing
+            # config (success=False with error). Either way, no external write.
+            st.toast("Dry-run only - no external issue created.", icon=":material/draft:")
+            if result.error:
+                st.info(result.error)
+            st.rerun()
+        else:
+            st.error(result.error or "Handoff creation failed.")
 
 
 def _handoff_sources(s) -> list[dict[str, str]]:
