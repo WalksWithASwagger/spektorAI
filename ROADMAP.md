@@ -34,7 +34,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
   `2a7e658 feat: ship audio consolidation salvage wave`.
 - Open GitHub issues: none after `#36` brand/metadata closeout.
 - Open GitHub PRs: none.
-- Current unit baseline: `242 passed`.
+- Current unit baseline: `243 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:

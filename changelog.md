@@ -64,9 +64,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Run workspace recovery** — the Runs dialog now reads local run manifests,
   shows partial/error/export state, and can reopen completed outputs so safe
   downstream exports can be retried without rerunning generation.
-- **Run reopen integration coverage** — `tests/test_run_reopen_flow.py` now
-  validates the Runs dialog reopen path restores primary session output state
-  and rejects partial runs that have no `session_output` stage.
+- **Primary-loop integration coverage** — `tests/test_primary_loop_flow.py`
+  now exercises paste input -> pipeline execution -> run artifact persistence ->
+  Notion export receipt -> Runs dialog reopen restoration in one local flow.
+- **Run reopen integration coverage** — `tests/test_run_reopen_flow.py` pins
+  reopen behavior for completed and partial runs, including restore of core
+  output fields and last Notion export URL.
 - **Profile operating-system metadata** — `profile.yaml` can now describe
   project context, defaults, KB packs, privacy notes, and preferred handoff
   targets, with validation surfaced in the KB dialog.
@@ -106,12 +109,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 242 passing tests, the current prompt profile
+- Root docs now describe 243 passing tests, the current prompt profile
   layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
   the current services-mode parity boundary.
 - Root docs now describe the post-consolidation baseline: no open issues or
   PRs remain, only `origin/main` remains remotely, stale detached worktrees were
-  removed, and the unit baseline is `242 passed`.
+  removed, and the unit baseline is `243 passed`.
 - `ROADMAP.md` and `STATUS.md` now describe the post-swarm state instead of
   the pre-implementation planning baseline.
 - `ROADMAP.md` is now a concise index into the 2026 master plan and active

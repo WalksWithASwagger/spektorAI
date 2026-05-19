@@ -19,7 +19,7 @@ make smoke
 
 Expected now:
 
-- `make test` -> `242 passed`
+- `make test` -> `243 passed`
 - fixture and UI/smoke checks pass
 
 If Docker is running and you want services proof:
@@ -81,8 +81,8 @@ Use these to get actionable feedback:
 
 ## 5) Next Dev Slice (After Review)
 
-1. Expand end-to-end coverage from reopen-focused integration tests to the full
-   paste -> recipe -> review -> export -> reopen loop.
+1. Expand from current integration coverage to a rendered browser-level
+   end-to-end test for paste -> recipe -> review -> export -> reopen.
 2. Close services transcription segment parity over HTTP.
 3. Tighten agentic acceptance gates beyond structural checklist matching.
 4. Add one seeded demo dataset for zero-to-value reviewer walkthroughs.
