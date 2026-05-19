@@ -5,9 +5,11 @@ Last updated: 2026-05-18
 ## Current State
 
 - Current branch: `main`, synced with `origin/main`.
-- Current commit: `3371af2 feat: add SongForge creative pack mode`.
+- Consolidation baseline commit:
+  `99e5287 docs: refresh WhisperForge audit roadmap`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
-- Live GitHub queue: no open issues and no open PRs at audit time.
+- Live GitHub queue: audio consolidation issues `#36` through `#40` are open;
+  no open PRs at consolidation time.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -17,12 +19,15 @@ Last updated: 2026-05-18
   [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md).
 - Current audit and from-here roadmap:
   [`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md).
+- Audio repo consolidation audit:
+  [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
 
 ## Verified Baseline
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 100` -> no open issues.
+- `gh issue list --state open --limit 20` -> audio consolidation issues
+  `#36` through `#40`.
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
@@ -38,6 +43,7 @@ Last updated: 2026-05-18
 - Roadmap: [`ROADMAP.md`](ROADMAP.md)
 - Status: [`STATUS.md`](STATUS.md)
 - Current audit: [`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md)
+- Audio repo consolidation: [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md)
 - Master plan: [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md)
 - Delivery workflow: [`docs/LINEAR-GITHUB-PIPELINE.md`](docs/LINEAR-GITHUB-PIPELINE.md)
 - Backlog registry: [`ops/roadmap/features.json`](ops/roadmap/features.json)
@@ -61,3 +67,5 @@ Last updated: 2026-05-18
   recurring automation needs explicit human approval.
 - GitHub/Linear state can drift quickly; refresh live tracker state before
   creating or closing new roadmap work.
+- Legacy audio repos are being archived as pointers to this canonical repo;
+  do not pull their stale architecture into `spektorAI` without a scoped issue.

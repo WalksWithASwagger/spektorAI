@@ -467,6 +467,120 @@
         "make eval-fixture",
         "git diff --check"
       ]
+    },
+    {
+      "id": "wf-brand-metadata-cleanup",
+      "title": "Finish public brand, repo metadata, and license decision",
+      "phase": "Audio Repo Consolidation",
+      "priority": "P0",
+      "kind": "docs",
+      "githubIssue": 36,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/36",
+      "linearIssue": null,
+      "linearUrl": null,
+      "acceptance": [
+        "GitHub repo description, topics, and homepage make it clear that spektorAI is the canonical WhisperForge implementation.",
+        "README/status docs point humans and agents to the canonical surfaces.",
+        "Decide whether to add a license to spektorAI; do not silently inherit the old whisperforge MIT license without human confirmation.",
+        "Legacy whisperforge README points to the canonical repo before archival.",
+        "No runtime code changes are included in this issue."
+      ],
+      "verification": [
+        "git diff --check",
+        "python3 -m json.tool ops/roadmap/features.json",
+        "Manual check: GitHub repo metadata reads as canonical WhisperForge."
+      ]
+    },
+    {
+      "id": "wf-watch-folder-inbox",
+      "title": "Add watch-folder and import-folder capture intake",
+      "phase": "Audio Repo Consolidation",
+      "priority": "P1",
+      "kind": "feature",
+      "githubIssue": 37,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/37",
+      "linearIssue": null,
+      "linearUrl": null,
+      "acceptance": [
+        "Define a canonical import/watch-folder capture flow for audio files, transcripts, and text notes.",
+        "Capture records preserve source path, source type, created/imported timestamps, title/status, and linked run IDs.",
+        "Import behavior deduplicates obvious repeats and ignores generated chunk/temp files.",
+        "The UI or CLI clearly shows pending/imported captures before recipe execution.",
+        "Docs explain when to use Wispr Flow paste versus folder import."
+      ],
+      "verification": [
+        "make test",
+        "venv/bin/python tests/ui_smoke.py",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-knowledge-synthesis",
+      "title": "Add weekly recaps and topic evolution summaries",
+      "phase": "Audio Repo Consolidation",
+      "priority": "P1",
+      "kind": "feature",
+      "githubIssue": 38,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/38",
+      "linearIssue": null,
+      "linearUrl": null,
+      "acceptance": [
+        "Generate a weekly recap from capture/run metadata with source links back to captures, transcripts, and outputs.",
+        "Generate a topic evolution summary from related captures/runs in chronological order.",
+        "Include people, action items, open questions, and next-week signals when present.",
+        "Keep the feature report-only unless a separate routing issue enables external publishing.",
+        "Add fixture coverage that runs without external credentials."
+      ],
+      "verification": [
+        "make test",
+        "make eval-fixture",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-large-file-router-eval",
+      "title": "Evaluate FFmpeg large-file handling for the provider router",
+      "phase": "Audio Repo Consolidation",
+      "priority": "P1",
+      "kind": "research",
+      "githubIssue": 39,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/39",
+      "linearIssue": null,
+      "linearUrl": null,
+      "acceptance": [
+        "Document whether FFmpeg chunking should become part of the canonical transcription router.",
+        "Identify which backends need large-file support, timestamps, diarization, streaming, and privacy fixtures.",
+        "Define file-size thresholds, chunking strategy, fallback behavior, and temp-file cleanup expectations.",
+        "Add or specify fixture coverage before changing runtime defaults.",
+        "Do not copy the old whisperforge monolith or Supabase assumptions."
+      ],
+      "verification": [
+        "python3 -m json.tool ops/roadmap/features.json",
+        "git diff --check",
+        "Any prototype must also run make test."
+      ]
+    },
+    {
+      "id": "wf-markdown-vault-export",
+      "title": "Add Obsidian-friendly markdown vault export",
+      "phase": "Audio Repo Consolidation",
+      "priority": "P2",
+      "kind": "feature",
+      "githubIssue": 40,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/40",
+      "linearIssue": null,
+      "linearUrl": null,
+      "acceptance": [
+        "Define a markdown vault export format for captures, transcripts, recaps, and generated outputs.",
+        "Preserve source receipts, run IDs, recipe metadata, tags, and links back to related captures/runs.",
+        "Avoid duplicating existing markdown export behavior unless a vault mode is explicitly selected.",
+        "Document the directory/index/tag conventions.",
+        "Add tests for serialization and path generation."
+      ],
+      "verification": [
+        "make test",
+        "git diff --check"
+      ]
     }
   ]
 }

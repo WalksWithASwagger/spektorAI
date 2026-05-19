@@ -27,9 +27,11 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 
 - GitHub issues `#13` through `#24`: closed.
 - Pull requests `#25` through `#35`: merged.
-- Current baseline: `3371af2 feat: add SongForge creative pack mode`.
+- Consolidation baseline: `99e5287 docs: refresh WhisperForge audit roadmap`.
 - Open GitHub issues/PRs at audit time: none.
 - Current unit baseline: `229 passed`.
+- Audio repo consolidation audit:
+  [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
 
 ## Roadmap From Here
 
@@ -115,6 +117,21 @@ Create these only after the human decisions in the audit doc are answered:
 | `wf-handoff-routing` | P1 | Add human-approved GitHub/Linear/follow-up routing | Approval boundary confirmed |
 | `wf-digest-automation` | P2 | Add optional resurfacing digest schedule/report flow | Cadence and destination confirmed |
 | `wf-songforge-polish` | P2 | Improve SongForge creative quality and exports | Target use case confirmed |
+
+## Audio Repo Consolidation Wave
+
+The canonical repo is `WalksWithASwagger/spektorAI`; the product name remains
+WhisperForge. Legacy repos should be archived after README pointers and stale
+PR closeout. See
+[`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
+
+| ID | Priority | Title | Source |
+| --- | --- | --- | --- |
+| `wf-brand-metadata-cleanup` | P0 | Finish public brand, repo metadata, and license decision | `whisperforge` |
+| `wf-watch-folder-inbox` | P1 | Add watch-folder/import-folder capture intake | `audio-transcription-studio` |
+| `wf-knowledge-synthesis` | P1 | Add weekly recaps and topic evolution summaries | `audio-transcription-studio` |
+| `wf-large-file-router-eval` | P1 | Evaluate FFmpeg large-file handling for provider router | `whisperforge` |
+| `wf-markdown-vault-export` | P2 | Add Obsidian-friendly markdown vault export | `audio-transcription-studio` |
 
 ## Verification Defaults
 

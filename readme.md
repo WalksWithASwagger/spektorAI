@@ -1,10 +1,16 @@
 # WhisperForge
 
+Canonical repository: `WalksWithASwagger/spektorAI`.
+
 Turn spoken thoughts into polished, publishable content. Upload audio, and
 WhisperForge transcribes it, extracts wisdom, drafts an outline and article,
 generates social posts + image prompts, and ships the bundle to a structured
 Notion page — all tuned to your own voice via a per-user prompt and knowledge
 base.
+
+Legacy audio repositories are being archived as historical pointers after the
+May 2026 consolidation audit. Treat this repo as the source of truth for
+WhisperForge implementation, roadmap, and issue work.
 
 ---
 

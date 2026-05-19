@@ -25,11 +25,12 @@ the missing end-to-end proof around the UI path real humans will use.
 ## Current Verified Facts
 
 - Branch: `main`.
-- Head: `3371af2 feat: add SongForge creative pack mode`.
+- Consolidation baseline:
+  `99e5287 docs: refresh WhisperForge audit roadmap`.
 - Sync: `git rev-list --left-right --count HEAD...@{u}` returned `0 0`.
 - GitHub open issues: none.
 - GitHub open PRs: none.
-- Tracked files: 413.
+- Tracked files before the audio-repo consolidation artifact: 414.
 - Python files under `whisperforge_core`, `ui`, `services`, `scripts`, and
   `tests`: 80.
 - Tracked venv/cache files: 0.
@@ -79,6 +80,15 @@ Streamlit controls and session state.
 The product can run locally and has services mode, but the next milestone
 depends on whether this is meant to be a personal local workbench, hosted
 private app, services deployment, or packageable desktop/local workflow.
+
+### Cross-Repo Identity Drift
+
+Three older audio-related repositories existed alongside this canonical repo:
+`audio-transcription-studio`, `audio-wisdom-harvester`, and `whisperforge`.
+The consolidation decision is documented in
+[`AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md):
+keep `spektorAI` as canonical, preserve the product name `WhisperForge`,
+salvage roadmap ideas only, and archive the legacy repos after README pointers.
 
 ### Services Parity Boundary
 
