@@ -5,18 +5,50 @@ from types import SimpleNamespace
 
 from streamlit.testing.v1 import AppTest
 
+from ui import dialogs as dialogs_mod
 from ui import output as output_mod
 from ui import pipeline as pipeline_mod
 from ui import sidebar as sidebar_mod
 from whisperforge_core import adapters as adapters_mod
+from whisperforge_core import cost as cost_mod
 from whisperforge_core import pipeline as core_pipeline
 from whisperforge_core import run_artifacts
 
 
+class SessionStateProxy:
+    def __init__(self, state):
+        self._state = state
+
+    def __getitem__(self, key):
+        return self._state[key]
+
+    def __setitem__(self, key, value):
+        self._state[key] = value
+
+    def __getattr__(self, key):
+        return self._state[key]
+
+    def __setattr__(self, key, value):
+        if key == "_state":
+            object.__setattr__(self, key, value)
+            return
+        self._state[key] = value
+
+    def get(self, key, default=None):
+        try:
+            return self._state[key]
+        except Exception:
+            return default
+
+
 def test_ui_primary_loop_smoke_paste_run_and_artifacts(monkeypatch, tmp_path):
+    cost_mod.reset()
     monkeypatch.setattr(run_artifacts, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(sidebar_mod, "discover_ollama_models", lambda: {})
     monkeypatch.setattr(pipeline_mod, "_inspect_retrieval", lambda *_a, **_k: None)
+    monkeypatch.setattr(output_mod.llm, "generate_title", lambda _t: "UI Smoke Run")
+    monkeypatch.setattr(output_mod.llm, "generate_summary", lambda _t: "UI smoke summary.")
+    monkeypatch.setattr(output_mod.llm, "generate_tags", lambda _t, max_tags=5: ["ui-smoke"])
 
     def fake_run_pipeline(transcript, provider, model, **kwargs):
         progress = kwargs.get("progress")
@@ -86,3 +118,32 @@ def test_ui_primary_loop_smoke_paste_run_and_artifacts(monkeypatch, tmp_path):
         item.get("kind") == "notion" and item.get("value") == "https://notion.so/ui-smoke"
         for item in manifest.get("exports", [])
     )
+
+    app.button(key="save_md").click().run()
+
+    markdown_path = app.session_state["_last_md_path"]
+    assert markdown_path
+    assert Path(markdown_path).exists()
+
+    manifest = run_artifacts.load_manifest(run_id)
+    assert any(
+        item.get("kind") == "markdown" and item.get("value") == markdown_path
+        for item in manifest.get("exports", [])
+    )
+
+    app.session_state["article"] = ""
+    app.session_state["wisdom"] = ""
+    app.run()
+
+    app.button(key="btn_runs").click().run()
+    assert app.selectbox(key="run_reopen_select").value == run_id
+
+    # AppTest can expose dialog controls but may not dispatch dialog-button
+    # callbacks reliably, so execute the same reopen helper directly.
+    monkeypatch.setattr(
+        dialogs_mod, "st", SimpleNamespace(session_state=SessionStateProxy(app.session_state))
+    )
+    assert dialogs_mod._reopen_run(run_id) is True
+    assert app.session_state["article"] == "Long-form article draft."
+    assert app.session_state["wisdom"] == "A grounded insight."
+    assert app.session_state["last_notion_url"] == "https://notion.so/ui-smoke"

@@ -68,8 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now exercises paste input -> pipeline execution -> run artifact persistence ->
   Notion export receipt -> Runs dialog reopen restoration in one local flow.
 - **Rendered primary-loop UI smoke** — `tests/test_ui_primary_loop_smoke.py`
-  drives the app shell through paste input and Run button interaction, then
-  asserts output tabs and run-artifact export receipts from the rendered UI.
+  drives paste input and Run interaction, clicks markdown export, confirms
+  run-history selection for reopen, and validates run-artifact export receipts
+  from the rendered UI path.
 - **Run reopen integration coverage** — `tests/test_run_reopen_flow.py` pins
   reopen behavior for completed and partial runs, including restore of core
   output fields and last Notion export URL.
