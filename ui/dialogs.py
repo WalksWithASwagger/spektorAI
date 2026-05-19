@@ -544,7 +544,7 @@ def run_history() -> None:
             if selected and st.button("Reopen output", use_container_width=True, key="reopen_run"):
                 ok = _reopen_run(selected)
                 if ok:
-                    st.toast("Run reopened. Close this dialog to review or retry exports.", icon=":material/open_in_new:")
+                    st.rerun()
                 else:
                     st.warning("That run has no saved output stage yet. Partial metadata is visible above.")
         with c2:

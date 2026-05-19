@@ -18,6 +18,7 @@ import os
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -28,7 +29,16 @@ import requests
 
 ROOT = Path(__file__).resolve().parent.parent
 MOCKS_DIR = ROOT / "tests" / "e2e_mocks"
-PORT = int(os.getenv("BROWSER_E2E_FRESH_PORT", "8603"))
+def _pick_port() -> int:
+    explicit = os.getenv("BROWSER_E2E_FRESH_PORT")
+    if explicit:
+        return int(explicit)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+PORT = _pick_port()
 BASE_URL = f"http://127.0.0.1:{PORT}"
 HEALTH_URL = f"{BASE_URL}/_stcore/health"
 
@@ -121,6 +131,8 @@ def _run_browser_flow(cache_dir: Path) -> str:
         page.get_by_placeholder(
             "Drop in a Wispr Flow dictation, transcript, or some notes..."
         ).fill(TRANSCRIPT)
+        page.keyboard.press("Tab")
+        page.wait_for_timeout(500)
 
         # 2. Pick a recipe from the command palette. Streamlit selectbox is
         #    opaque to role-based selectors, so target by its label.
@@ -132,7 +144,7 @@ def _run_browser_flow(cache_dir: Path) -> str:
 
         # 3. Trigger the pipeline. The button label flips to "Run recipe"
         #    once a recipe is selected.
-        run_button = page.get_by_role("button", name=re.compile("Run recipe"))
+        run_button = page.get_by_role("button", name=re.compile("Run recipe")).first
         expect(run_button).to_be_enabled(timeout=30_000)
         run_button.click()
 

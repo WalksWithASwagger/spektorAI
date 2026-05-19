@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import signal
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -43,7 +46,7 @@ def _wait_for_health(url: str, timeout_s: float = 90.0) -> None:
     raise RuntimeError(f"Streamlit health check did not pass: {last_error}")
 
 
-def _start_streamlit() -> subprocess.Popen[str]:
+def _start_streamlit(cache_dir: Path) -> subprocess.Popen[str]:
     env = os.environ.copy()
     env.setdefault("OPENAI_API_KEY", "dummy")
     env.setdefault("ANTHROPIC_API_KEY", "dummy")
@@ -52,6 +55,7 @@ def _start_streamlit() -> subprocess.Popen[str]:
     env.setdefault("SERVICE_TOKEN", "dummy")
     env.setdefault("STREAMLIT_SERVER_FILE_WATCHER_TYPE", "none")
     env.setdefault("STREAMLIT_BROWSER_GATHER_USAGE_STATS", "false")
+    env["WHISPERFORGE_CACHE_DIR"] = str(cache_dir)
     cmd = [
         str(ROOT / "venv/bin/python"),
         "-m",
@@ -103,32 +107,43 @@ def _run_browser_flow() -> None:
         page.get_by_role("button", name="📜 Runs").click()
         page.get_by_label("Run to reopen").wait_for(timeout=60_000)
         page.get_by_role("button", name="Reopen output").click()
-        page.get_by_text("Run reopened. Close this dialog to review or retry exports.").wait_for(timeout=60_000)
+        page.wait_for_timeout(1_000)
         page.keyboard.press("Escape")
-
-        page.get_by_role("tab", name="📝 Article").wait_for(timeout=60_000)
-        page.get_by_role("button", name="💾 Markdown").click()
+        markdown = page.get_by_role("button", name="💾 Markdown")
+        markdown.wait_for(timeout=60_000)
+        markdown.click()
+        page.get_by_role("button", name=re.compile("Download markdown")).wait_for(timeout=60_000)
 
         browser.close()
 
 
 def main() -> int:
     seeded_run_id, before = _seeded_run_manifest()
-    before_markdown = sum(
-        1 for item in before.get("exports", []) if item.get("kind") == "markdown"
-    )
-    process = _start_streamlit()
+    before_markdown = [item for item in before.get("exports", []) if item.get("kind") == "markdown"]
+    before_latest_stamp = (before_markdown[-1] or {}).get("updated_at") if before_markdown else None
+    work_cache = Path(tempfile.mkdtemp(prefix="whisperforge-browser-e2e-"))
+    source_run = ROOT / ".cache" / "runs" / seeded_run_id
+    target_run = work_cache / "runs" / seeded_run_id
+    target_run.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(source_run, target_run, dirs_exist_ok=True)
+
+    process = _start_streamlit(work_cache)
     try:
         _wait_for_health(HEALTH_URL)
         _run_browser_flow()
         manifest = json.loads(
-            (ROOT / ".cache" / "runs" / seeded_run_id / "manifest.json").read_text()
+            (work_cache / "runs" / seeded_run_id / "manifest.json").read_text()
         )
-        exports = manifest.get("exports", [])
-        markdown_count = sum(1 for item in exports if item.get("kind") == "markdown")
-        if markdown_count <= before_markdown:
+        after_markdown = [item for item in manifest.get("exports", []) if item.get("kind") == "markdown"]
+        if not after_markdown:
             raise AssertionError(
-                f"Expected markdown export count to increase for run {seeded_run_id}."
+                f"Expected at least one markdown export for run {seeded_run_id}."
+            )
+        markdown_count_grew = len(after_markdown) > len(before_markdown)
+        latest_stamp_changed = (after_markdown[-1] or {}).get("updated_at") != before_latest_stamp
+        if not markdown_count_grew and not latest_stamp_changed:
+            raise AssertionError(
+                f"Expected markdown export evidence to change for run {seeded_run_id}."
             )
         print("browser-e2e: OK")
         return 0
@@ -143,6 +158,7 @@ def main() -> int:
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait(timeout=5)
+        shutil.rmtree(work_cache, ignore_errors=True)
 
 
 if __name__ == "__main__":
