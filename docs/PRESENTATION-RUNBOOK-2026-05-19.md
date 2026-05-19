@@ -37,10 +37,11 @@ make services-smoke
 
 If Docker is not running, call that out explicitly and continue with direct mode.
 
-Optional browser-level smoke (Playwright + Chromium required):
+Optional browser-level smokes (Playwright + Chromium required):
 
 ```bash
-make browser-e2e
+make browser-e2e        # run-history reopen + markdown export
+make browser-e2e-fresh  # fresh paste -> recipe -> review -> export loop
 ```
 
 ## 2) Product Demo Flow (8-12 minutes)
@@ -96,8 +97,8 @@ Use these to get actionable feedback:
 
 ## 5) Next Dev Slice (After Review)
 
-1. Add a browser-driven end-to-end test (Playwright/localhost) for
-   paste -> recipe -> review -> markdown export -> run-history reopen.
-2. Tighten agentic acceptance gates beyond structural checklist matching.
-3. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover
+1. Tighten agentic acceptance gates beyond structural checklist matching.
+2. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover
    additional recipes and a partial/failed run for the Runs dialog.
+3. Replace the fresh-run E2E adapter stub with a recorded-response fixture
+   so the smoke exercises the real LLM call path against canned bytes.

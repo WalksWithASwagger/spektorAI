@@ -67,9 +67,13 @@ Last updated: 2026-05-19
 
 ## Known Risks
 
-- The app now has a Playwright-driven localhost smoke (`make browser-e2e`) for
-  run-history reopen plus markdown export. It still needs a full fresh-run
-  browser test for paste -> recipe -> review -> export in one session.
+- The app now has two Playwright-driven localhost smokes against a real
+  Streamlit subprocess: `make browser-e2e` covers run-history reopen plus
+  markdown export, and `make browser-e2e-fresh` covers the fresh-run
+  paste -> recipe -> review -> export loop. LLM and Notion calls in the
+  fresh-run smoke are stubbed via `tests/e2e_mocks/sitecustomize.py`
+  (activated only when `WHISPERFORGE_E2E_MOCK=1`), so the loop runs
+  hermetically without provider credentials.
 - Services-mode now forwards transcription `segments` and `language` over HTTP
   when the backend emits rich details; non-rich backends still return empty
   segment lists by design.
