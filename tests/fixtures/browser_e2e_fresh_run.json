@@ -1,0 +1,26 @@
+{
+  "transcription": {
+    "text": "Fresh-run browser E2E transcript from Wispr Flow.",
+    "segments": [],
+    "language": "en"
+  },
+  "pipeline_result": {
+    "wisdom": "E2E fixture wisdom: ship the loop that people can trust.",
+    "outline": "1. Frame the problem\\n2. Show receipts\\n3. Land the action",
+    "social_posts": "- LinkedIn: Ship deterministic loops before scaling.\\n- X: Receipts make agent output useful.",
+    "image_prompts": "Wide documentary-style workshop with collaborators reviewing notes.",
+    "article": "# Fresh-run E2E smoke article\\n\\nThe fresh-run browser smoke executes the full paste -> recipe -> review -> export loop using recorded fixture outputs.",
+    "chapters": [
+      {
+        "title": "Fresh-run smoke",
+        "summary": "Recorded fixture run for browser E2E coverage.",
+        "start_seconds": 0
+      }
+    ],
+    "fact_check_flags": [],
+    "generated_images": [],
+    "persona_articles": [],
+    "songforge": {}
+  },
+  "notion_url": "https://notion.so/e2e-fixture"
+}

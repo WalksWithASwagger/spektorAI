@@ -241,7 +241,12 @@ For browser-level localhost verification (Playwright required):
 
 ```bash
 make browser-e2e
+make browser-e2e-fresh
 ```
+
+`make browser-e2e-fresh` uses recorded fixture payloads from
+`tests/fixtures/browser_e2e_fresh_run.json` so it runs without live provider
+credentials.
 
 If Playwright is missing, install it first:
 
@@ -484,6 +489,7 @@ adds that routing.
 | `WHISPERFORGE_HANDOFF_DRY_RUN` | Force handoff routing dry-run (`1`/`true`) | no      |
 | `WHISPERFORGE_HANDOFF_GITHUB_REPO` | Default GitHub repo for approved handoff issue creation (`owner/name`) | no |
 | `WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID` | Default Linear team ID for approved handoff issue creation | no |
+| `WHISPERFORGE_E2E_FIXTURE_PATH` | Fixture payload path for browser E2E runs (used by `make browser-e2e-fresh`) | no |
 | `WF_RAG`                 | Force RAG on/off (`1`/`true` or `0`/`false`) | no            |
 | `WF_RAG_TOPK`            | Retrieved KB chunks per stage (default `5`) | no            |
 | `WF_RAG_THRESHOLD`       | Auto-RAG chunk threshold (default `25`)     | no            |

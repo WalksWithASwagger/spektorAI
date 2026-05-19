@@ -5,10 +5,9 @@ Covers what ``browser_e2e_smoke.py`` does not: the full first-time path of
 paste -> recipe pick -> run pipeline -> review tab -> markdown export, in a
 real Chromium driven by Playwright, against a real Streamlit subprocess.
 
-LLM and Notion calls are stubbed at adapter-load time via
-``tests/e2e_mocks/sitecustomize.py``. The mock activates only when
-``WHISPERFORGE_E2E_MOCK=1`` so the same hook can never silently disable real
-calls in production.
+The smoke uses recorded fixture payloads by setting
+``WHISPERFORGE_E2E_FIXTURE_PATH`` so no live provider credentials or network
+writes are required.
 """
 
 from __future__ import annotations
@@ -28,7 +27,7 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
-MOCKS_DIR = ROOT / "tests" / "e2e_mocks"
+FIXTURE_PATH = ROOT / "tests" / "fixtures" / "browser_e2e_fresh_run.json"
 def _pick_port() -> int:
     explicit = os.getenv("BROWSER_E2E_FRESH_PORT")
     if explicit:
@@ -65,12 +64,7 @@ def _wait_for_health(url: str, timeout_s: float = 90.0) -> None:
 
 def _start_streamlit(cache_dir: Path) -> subprocess.Popen[str]:
     env = os.environ.copy()
-    env["WHISPERFORGE_E2E_MOCK"] = "1"
-    # Prepend the mocks dir so sitecustomize.py is picked up at startup.
-    existing_pp = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = (
-        f"{MOCKS_DIR}{os.pathsep}{existing_pp}" if existing_pp else str(MOCKS_DIR)
-    )
+    env["WHISPERFORGE_E2E_FIXTURE_PATH"] = str(FIXTURE_PATH)
     env.setdefault("OPENAI_API_KEY", "dummy")
     env.setdefault("ANTHROPIC_API_KEY", "dummy")
     env.setdefault("NOTION_API_KEY", "dummy")
@@ -205,6 +199,12 @@ def _wait_for_markdown_export(cache_dir: Path, timeout_s: float) -> str:
 
 
 def main() -> int:
+    if not FIXTURE_PATH.exists():
+        print(
+            f"browser-e2e-fresh: FAILED: missing fixture file {FIXTURE_PATH}",
+            file=sys.stderr,
+        )
+        return 1
     work_cache = Path(tempfile.mkdtemp(prefix="whisperforge-fresh-e2e-"))
     process = _start_streamlit(work_cache)
     try:

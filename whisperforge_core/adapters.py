@@ -12,7 +12,10 @@ for services mode, but they must stay in lockstep with the FastAPI schemas
 before services mode can claim full feature parity.
 """
 
+import json
+import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Dict, Optional, Protocol
 
 from . import audio as audio_mod
@@ -20,6 +23,8 @@ from . import llm as llm_mod
 from . import notion as notion_mod
 from . import pipeline as pipeline_mod
 from .config import DEPLOY_MODE
+
+_E2E_FIXTURE_PATH_ENV = "WHISPERFORGE_E2E_FIXTURE_PATH"
 
 
 class Transcriber(Protocol):
@@ -132,6 +137,75 @@ class LocalStorage:
         return notion_mod.create_page(bundle)
 
 
+class FixtureTranscriber:
+    def __init__(self, fixture: dict):
+        self.fixture = fixture
+
+    def transcribe(self, source, suffix: str = ".mp3", progress=None) -> str:
+        details = self.fixture.get("transcription") or {}
+        return str(details.get("text") or "")
+
+    def transcribe_detailed(
+        self, source, suffix: str = ".mp3"
+    ) -> audio_mod.TranscriptionDetails:
+        details = self.fixture.get("transcription") or {}
+        return audio_mod.TranscriptionDetails(
+            text=str(details.get("text") or ""),
+            segments=list(details.get("segments") or []),
+            language=details.get("language"),
+        )
+
+
+class FixtureProcessor:
+    def __init__(self, fixture: dict):
+        self.fixture = fixture
+
+    def generate(self, content_type, context, provider, model, prompt=None,
+                 knowledge_base=None, max_tokens=None, user=None,
+                 rag_mode="auto"):
+        overrides = self.fixture.get("generate_overrides") or {}
+        return overrides.get(content_type) or ""
+
+    def run_pipeline(self, transcript, provider, model, prompts=None,
+                     knowledge_base=None, progress=None,
+                     cleanup=True, chapters=True, segments=None,
+                     agentic=False, fact_check=False,
+                     generate_images=False, image_style=None,
+                     image_aspect_ratio="16:9",
+                     image_model="gemini-2.5-flash-image",
+                     image_output_dir=None,
+                     article_length_words=1500,
+                     user=None, rag_mode="auto",
+                     compare_provider=None, compare_model=None,
+                     personas=None, recipe=None, checkpoint=None):
+        if progress:
+            for frac, label in [
+                (0.1, "Extracting wisdom..."),
+                (0.4, "Creating outline..."),
+                (0.6, "Generating social media..."),
+                (0.8, "Creating image prompts..."),
+                (1.0, "Done"),
+            ]:
+                progress(frac, label)
+
+        result = pipeline_mod.PipelineResult(**(self.fixture.get("pipeline_result") or {}))
+        if checkpoint:
+            checkpoint("wisdom", {"wisdom": result.wisdom})
+            checkpoint("outline", {"outline": result.outline})
+            checkpoint("social", {"social_posts": result.social_posts})
+            checkpoint("image_prompts", {"image_prompts": result.image_prompts})
+            checkpoint("article_draft", {"article": result.article})
+        return result
+
+
+class FixtureStorage:
+    def __init__(self, fixture: dict):
+        self.fixture = fixture
+
+    def save(self, bundle: notion_mod.ContentBundle) -> Optional[str]:
+        return str(self.fixture.get("notion_url") or "https://notion.so/fixture")
+
+
 # --- Bundle -----------------------------------------------------------------
 
 @dataclass
@@ -143,6 +217,19 @@ class Adapters:
 
 def get_adapters() -> Adapters:
     """Return the active adapter bundle based on DEPLOY_MODE."""
+    fixture_path = os.getenv(_E2E_FIXTURE_PATH_ENV, "").strip()
+    if fixture_path:
+        path = Path(fixture_path)
+        if not path.exists():
+            raise FileNotFoundError(
+                f"{_E2E_FIXTURE_PATH_ENV} points to missing file: {path}"
+            )
+        fixture = json.loads(path.read_text(encoding="utf-8"))
+        return Adapters(
+            transcriber=FixtureTranscriber(fixture),
+            processor=FixtureProcessor(fixture),
+            storage=FixtureStorage(fixture),
+        )
     if DEPLOY_MODE == "services":
         from . import http_adapters
         return Adapters(

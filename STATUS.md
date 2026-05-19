@@ -70,10 +70,11 @@ Last updated: 2026-05-19
 - The app now has two Playwright-driven localhost smokes against a real
   Streamlit subprocess: `make browser-e2e` covers run-history reopen plus
   markdown export, and `make browser-e2e-fresh` covers the fresh-run
-  paste -> recipe -> review -> export loop. LLM and Notion calls in the
-  fresh-run smoke are stubbed via `tests/e2e_mocks/sitecustomize.py`
-  (activated only when `WHISPERFORGE_E2E_MOCK=1`), so the loop runs
-  hermetically without provider credentials.
+  paste -> recipe -> review -> export loop. The fresh-run smoke now uses
+  recorded fixture payloads from
+  `tests/fixtures/browser_e2e_fresh_run.json` via
+  `WHISPERFORGE_E2E_FIXTURE_PATH`, so the loop runs hermetically without
+  provider credentials.
 - Services-mode now forwards transcription `segments` and `language` over HTTP
   when the backend emits rich details; non-rich backends still return empty
   segment lists by design.

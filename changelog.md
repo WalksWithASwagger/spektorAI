@@ -75,6 +75,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Browser localhost smoke command** — `scripts/browser_e2e_smoke.py` plus
   `make browser-e2e` drives a real browser flow (runs dialog reopen + markdown
   export) against a local Streamlit instance and checks run-artifact exports.
+- **Fresh browser smoke fixtures** — `make browser-e2e-fresh` now uses
+  `WHISPERFORGE_E2E_FIXTURE_PATH` with
+  `tests/fixtures/browser_e2e_fresh_run.json` instead of runtime monkeypatching,
+  preserving a deterministic credential-free smoke while following normal
+  adapter wiring.
 - **Services transcription detail parity** — the transcription service now
   returns `text`, `segments`, and `language`; `HttpTranscriber.transcribe_detailed()`
   now forwards these fields instead of dropping segment metadata.

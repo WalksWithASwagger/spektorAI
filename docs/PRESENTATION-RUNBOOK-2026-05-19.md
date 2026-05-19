@@ -108,5 +108,5 @@ Use these to get actionable feedback:
 1. Tighten agentic acceptance gates beyond structural checklist matching.
 2. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover
    additional recipes and a partial/failed run for the Runs dialog.
-3. Replace the fresh-run E2E adapter stub with a recorded-response fixture
-   so the smoke exercises the real LLM call path against canned bytes.
+3. Expand the fresh-run recorded fixture set so the smoke covers at least one
+   alternate recipe plus one partial/failure-path report.
