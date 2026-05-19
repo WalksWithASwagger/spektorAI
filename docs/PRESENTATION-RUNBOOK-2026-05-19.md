@@ -8,7 +8,14 @@ feedback to request.
 
 ## 1) Credibility Check (2 minutes)
 
-Run these first so the room sees real verification:
+On a fresh clone, seed one capture and one completed run so the inbox and
+Runs dialog are not empty when the demo starts:
+
+```bash
+venv/bin/python scripts/seed_demo_dataset.py
+```
+
+Then run these so the room sees real verification:
 
 ```bash
 make test
@@ -85,4 +92,5 @@ Use these to get actionable feedback:
    manual markdown export click path in the same session.
 2. Close services transcription segment parity over HTTP.
 3. Tighten agentic acceptance gates beyond structural checklist matching.
-4. Add one seeded demo dataset for zero-to-value reviewer walkthroughs.
+4. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover
+   additional recipes and a partial/failed run for the Runs dialog.
