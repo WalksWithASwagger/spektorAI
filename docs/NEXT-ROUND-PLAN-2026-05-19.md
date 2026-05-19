@@ -14,7 +14,7 @@ WhisperForge is consolidated into `WalksWithASwagger/spektorAI`.
 - GitHub metadata points to this canonical WhisperForge repo.
 - No open-source license is currently granted; the archived `whisperforge` MIT
   license is not inherited without an explicit owner decision.
-- Current verification baseline is `244 passed`, plus eval fixture, UI smoke,
+- Current verification baseline is `246 passed`, plus eval fixture, UI smoke,
   Streamlit health smoke, JSON validation, and whitespace checks.
 
 ## Next Round Recommendation

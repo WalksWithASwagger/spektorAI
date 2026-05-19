@@ -7,7 +7,6 @@ Kept separate from adapters.py because these imports (requests) are only
 needed in the frontend container, not in the monolith path.
 """
 
-import tempfile
 from pathlib import Path
 from typing import Callable, Dict, Optional
 
@@ -25,29 +24,31 @@ _TIMEOUT = 600  # seconds — big files + LLM calls take a while
 
 
 class HttpTranscriber:
-    def transcribe(self, source, suffix: str = ".mp3", progress=None) -> str:
+    def _transcribe_payload(self, source, suffix: str = ".mp3") -> dict:
         # Accepts path (str/Path) or bytes; POSTs as multipart.
         if isinstance(source, (str, Path)):
             with open(source, "rb") as f:
                 files = {"file": (Path(source).name, f.read())}
         else:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                tmp.write(source)
-                files = {"file": (f"upload{suffix}", open(tmp.name, "rb").read())}
+            files = {"file": (f"upload{suffix}", source)}
         r = requests.post(
             f"{TRANSCRIPTION_URL}/transcribe",
             headers=_HEADERS, files=files, timeout=_TIMEOUT,
         )
         r.raise_for_status()
-        return r.json().get("text", "")
+        return r.json()
+
+    def transcribe(self, source, suffix: str = ".mp3", progress=None) -> str:
+        return self._transcribe_payload(source, suffix=suffix).get("text", "")
 
     def transcribe_detailed(self, source, suffix: str = ".mp3"):
-        # HTTP transcription service currently returns text only; segments
-        # aren't serialized across the wire yet. Wrap the text response into
-        # an empty-segments TranscriptionDetails so callers can fall back.
         from . import audio as audio_mod  # local import to avoid cycles
-        text = self.transcribe(source, suffix=suffix)
-        return audio_mod.TranscriptionDetails(text=text, segments=[], language=None)
+        payload = self._transcribe_payload(source, suffix=suffix)
+        return audio_mod.TranscriptionDetails(
+            text=payload.get("text", ""),
+            segments=payload.get("segments") or [],
+            language=payload.get("language"),
+        )
 
 
 class HttpProcessor:

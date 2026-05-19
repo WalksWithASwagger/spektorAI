@@ -1,6 +1,7 @@
 """Transcription microservice — thin FastAPI wrapper over whisperforge_core.audio.
 
-POST /transcribe   (multipart upload)  -> {"text": str, "filename": str}
+POST /transcribe   (multipart upload)  ->
+                     {"text": str, "segments": list, "language": str|null, "filename": str}
 GET  /health                           -> {"status": "healthy"}
 
 Auth: X-API-Key: SERVICE_TOKEN header (see shared.security).
@@ -44,8 +45,13 @@ async def transcribe(
         tmp_path = tmp.name
 
     try:
-        transcript = audio.transcribe_audio(tmp_path)
-        return {"text": transcript, "filename": file.filename}
+        details = audio.transcribe_audio_detailed(tmp_path)
+        return {
+            "text": details.text,
+            "segments": details.segments,
+            "language": details.language,
+            "filename": file.filename,
+        }
     except Exception as e:
         logger.exception("transcription failed")
         raise HTTPException(status_code=500, detail=str(e))

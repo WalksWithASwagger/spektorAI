@@ -12,6 +12,31 @@ class FakeResponse:
         return self.payload
 
 
+def test_http_transcribe_detailed_round_trips_segments_and_language(monkeypatch):
+    calls = []
+
+    def fake_post(*args, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs})
+        return FakeResponse({
+            "text": "Transcript body",
+            "segments": [{"start": 0.0, "end": 1.2, "text": "hello"}],
+            "language": "en",
+        })
+
+    monkeypatch.setattr(http_adapters.requests, "post", fake_post)
+
+    details = http_adapters.HttpTranscriber().transcribe_detailed(
+        b"fake-audio",
+        suffix=".wav",
+    )
+
+    assert details.text == "Transcript body"
+    assert details.segments == [{"start": 0.0, "end": 1.2, "text": "hello"}]
+    assert details.language == "en"
+    assert calls[0]["args"][0].endswith("/transcribe")
+    assert calls[0]["kwargs"]["files"]["file"][0] == "upload.wav"
+
+
 def test_http_generate_forwards_modern_options(monkeypatch):
     calls = []
 

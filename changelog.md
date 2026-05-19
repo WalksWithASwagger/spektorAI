@@ -71,6 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   drives paste input and Run interaction, clicks markdown export, confirms
   run-history selection for reopen, and validates run-artifact export receipts
   from the rendered UI path.
+- **Services transcription detail parity** — the transcription service now
+  returns `text`, `segments`, and `language`; `HttpTranscriber.transcribe_detailed()`
+  now forwards these fields instead of dropping segment metadata.
 - **Run reopen integration coverage** — `tests/test_run_reopen_flow.py` pins
   reopen behavior for completed and partial runs, including restore of core
   output fields and last Notion export URL.
@@ -87,8 +90,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `make app`, `make services-run`, `make services-smoke`, and
   `make services-down` now provide the standard local operations entrypoints.
 - **Service contract tests** — `tests/test_services_contract.py` pins modern
-  processing/storage service payload fields for cleanup, chapters, images,
-  article length, RAG, compare, personas, fact-check output, and run metrics.
+  transcription/processing/storage payload fields for cleanup, chapters,
+  segments, images, article length, RAG, compare, personas, fact-check output,
+  and run metrics.
 - **HTTP adapter contract tests** — `tests/test_http_adapters.py` pins the
   frontend HTTP clients against the same modern processing/storage payloads.
 - **Profile manifests and user personas** — `prompts/<user>/profile.yaml` can
@@ -113,12 +117,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 244 passing tests, the current prompt profile
+- Root docs now describe 246 passing tests, the current prompt profile
   layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
   the current services-mode parity boundary.
 - Root docs now describe the post-consolidation baseline: no open issues or
   PRs remain, only `origin/main` remains remotely, stale detached worktrees were
-  removed, and the unit baseline is `244 passed`.
+  removed, and the unit baseline is `246 passed`.
 - `ROADMAP.md` and `STATUS.md` now describe the post-swarm state instead of
   the pre-implementation planning baseline.
 - `ROADMAP.md` is now a concise index into the 2026 master plan and active

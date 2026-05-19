@@ -2,10 +2,41 @@ from fastapi.testclient import TestClient
 
 from services.processing import service as processing_service
 from services.storage import service as storage_service
+from services.transcription import service as transcription_service
+from whisperforge_core import audio
 from whisperforge_core import pipeline
 
 
 HEADERS = {"X-API-Key": "dummy"}
+
+
+def test_transcription_service_returns_detailed_payload(monkeypatch):
+    def fake_transcribe_audio_detailed(_path):
+        return audio.TranscriptionDetails(
+            text="Transcript body",
+            segments=[{"start": 0.0, "end": 1.2, "text": "hello"}],
+            language="en",
+        )
+
+    monkeypatch.setattr(
+        transcription_service.audio,
+        "transcribe_audio_detailed",
+        fake_transcribe_audio_detailed,
+    )
+    client = TestClient(transcription_service.app)
+    response = client.post(
+        "/transcribe",
+        files={"file": ("sample.wav", b"fake-audio", "audio/wav")},
+        headers=HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "text": "Transcript body",
+        "segments": [{"start": 0.0, "end": 1.2, "text": "hello"}],
+        "language": "en",
+        "filename": "sample.wav",
+    }
 
 
 def test_processing_pipeline_accepts_modern_options_and_returns_full_result(monkeypatch):

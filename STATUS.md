@@ -44,7 +44,7 @@ Last updated: 2026-05-19
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `244 passed`.
+- `make test` -> `246 passed`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
 - `venv/bin/python tests/ui_smoke.py` passes rendered Streamlit shell smoke.
 - `make smoke` passes Streamlit health smoke on the default smoke port.
@@ -70,9 +70,9 @@ Last updated: 2026-05-19
 - The app has solid unit, service-contract, eval-fixture, rendered-shell, and
   health checks, but it still needs an end-to-end browser test for the full
   Wispr Flow paste -> recipe -> review -> export loop.
-- Services-mode tests pin the payload contract, but `services/transcription`
-  still returns text-only details over HTTP, so timestamped segment parity is
-  not complete.
+- Services-mode now forwards transcription `segments` and `language` over HTTP
+  when the backend emits rich details; non-rich backends still return empty
+  segment lists by design.
 - The transcription/provider matrix is a decision artifact; runtime provider
   routing still needs implementation and real audio fixtures before defaults
   should change.
