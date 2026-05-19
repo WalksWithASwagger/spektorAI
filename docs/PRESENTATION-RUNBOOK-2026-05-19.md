@@ -37,6 +37,12 @@ make services-smoke
 
 If Docker is not running, call that out explicitly and continue with direct mode.
 
+Optional browser-level smoke (Playwright + Chromium required):
+
+```bash
+make browser-e2e
+```
+
 ## 2) Product Demo Flow (8-12 minutes)
 
 Start the app:

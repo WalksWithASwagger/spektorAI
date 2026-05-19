@@ -3,7 +3,7 @@ PORT ?= 8501
 SMOKE_PORT ?= 8599
 COMPOSE ?= docker compose
 
-.PHONY: help test eval-fixture digest smoke app services-run services-smoke services-down
+.PHONY: help test eval-fixture digest smoke browser-e2e app services-run services-smoke services-down
 
 help:
 	@printf "WhisperForge operations commands\n\n"
@@ -11,6 +11,7 @@ help:
 	@printf "  make eval-fixture    Run credential-free editorial fixture eval\n"
 	@printf "  make digest          Generate local resurfacing digest\n"
 	@printf "  make smoke           Boot Streamlit and check /_stcore/health\n"
+	@printf "  make browser-e2e     Run Playwright browser smoke against localhost\n"
 	@printf "  make app             Start the local Streamlit monolith on PORT=%s\n" "$(PORT)"
 	@printf "  make services-run    Start docker-compose services mode\n"
 	@printf "  make services-smoke  Start services mode, wait for health, then stop\n"
@@ -27,6 +28,9 @@ digest:
 
 smoke:
 	SMOKE_PORT=$(SMOKE_PORT) tests/smoke.sh
+
+browser-e2e:
+	$(PYTHON) scripts/browser_e2e_smoke.py
 
 app:
 	OPENAI_API_KEY=$${OPENAI_API_KEY:-dummy} \

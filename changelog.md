@@ -71,6 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   drives paste input and Run interaction, clicks markdown export, confirms
   run-history selection for reopen, and validates run-artifact export receipts
   from the rendered UI path.
+- **Browser localhost smoke command** — `scripts/browser_e2e_smoke.py` plus
+  `make browser-e2e` drives a real browser flow (runs dialog reopen + markdown
+  export) against a local Streamlit instance and checks run-artifact exports.
 - **Services transcription detail parity** — the transcription service now
   returns `text`, `segments`, and `language`; `HttpTranscriber.transcribe_detailed()`
   now forwards these fields instead of dropping segment metadata.

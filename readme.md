@@ -150,13 +150,13 @@ styles.py                     all CSS
 whisperforge.py               45-line CLI wrapper for transcription only
 
 services/
-├── transcription/service.py  POST /transcribe → audio.transcribe_audio
+├── transcription/service.py  POST /transcribe → audio.transcribe_audio_detailed
 ├── processing/service.py     POST /generate, /pipeline → llm / pipeline
 ├── storage/service.py        POST /save → notion.create_page
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        239 tests + health/rendered UI smokes
+tests/                        246 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -165,9 +165,10 @@ The monolith (`streamlit run app.py`) imports `whisperforge_core` directly. In
 services mode (`docker compose up`), the same `app.py` runs inside a `frontend`
 container and talks to the three FastAPI services over HTTP via
 `http_adapters`. Swap by setting `DEPLOY_MODE=direct` (default) or `services`.
-Direct mode is the primary product surface. Services mode shares the modern
-processing/storage payload contract; timestamped transcription segments are
-still a direct-mode feature until the transcription service serializes them.
+Direct mode is the primary product surface. Services mode now shares the modern
+transcription/processing/storage payload contract, including optional
+timestamped `segments` and `language` fields when the backend emits rich
+transcription details.
 
 ---
 
@@ -234,6 +235,19 @@ make app
 Override the port with `PORT=8502 make app`. The target defaults missing API
 keys to dummy values so agents can verify the Streamlit shell without touching
 real services.
+
+For browser-level localhost verification (Playwright required):
+
+```bash
+make browser-e2e
+```
+
+If Playwright is missing, install it first:
+
+```bash
+pip install playwright
+playwright install chromium
+```
 
 ### Microservices (docker-compose)
 

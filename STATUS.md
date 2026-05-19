@@ -67,9 +67,9 @@ Last updated: 2026-05-19
 
 ## Known Risks
 
-- The app has solid unit, service-contract, eval-fixture, rendered-shell, and
-  health checks, but it still needs an end-to-end browser test for the full
-  Wispr Flow paste -> recipe -> review -> export loop.
+- The app now has a Playwright-driven localhost smoke (`make browser-e2e`) for
+  run-history reopen plus markdown export. It still needs a full fresh-run
+  browser test for paste -> recipe -> review -> export in one session.
 - Services-mode now forwards transcription `segments` and `language` over HTTP
   when the backend emits rich details; non-rich backends still return empty
   segment lists by design.
