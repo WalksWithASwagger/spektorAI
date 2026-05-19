@@ -139,7 +139,7 @@ future work:
 
 | ID | Issue | Priority | Title | Source |
 | --- | --- | --- | --- | --- |
-| `wf-brand-metadata-cleanup` | #36 | P0 | Finish public brand, repo metadata, and license decision | `whisperforge` |
+| `wf-brand-metadata-cleanup` | #36 | P0 | Finish public brand, repo metadata, and license decision | `whisperforge`; shipped without adding a license file |
 | `wf-watch-folder-inbox` | #37 | P1 | Add watch-folder/import-folder capture intake | `audio-transcription-studio` |
 | `wf-knowledge-synthesis` | #38 | P1 | Add weekly recaps and topic evolution summaries | `audio-transcription-studio` |
 | `wf-large-file-router-eval` | #39 | P1 | Evaluate FFmpeg large-file handling for provider router | `whisperforge`; see `docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md` |

@@ -5,12 +5,15 @@ Last updated: 2026-05-19
 ## Current State
 
 - Current branch: `main`, synced with `origin/main`.
-- Current shipped baseline:
+- Latest shipped feature baseline:
   `2a7e658 feat: ship audio consolidation salvage wave`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
-- Live GitHub queue: audio consolidation issues `#37` through `#40` have
-  shipped; `#36` remains open for the license/metadata human decision. No open
-  PRs at swarm closeout time.
+- GitHub metadata: description, topics, and homepage point to this canonical
+  WhisperForge repo.
+- License posture: no open-source license is currently granted; do not inherit
+  the archived `whisperforge` MIT license without an explicit owner decision.
+- Live GitHub queue: audio consolidation issues `#36` through `#40` have
+  shipped. No open PRs at closeout time.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -29,7 +32,8 @@ Last updated: 2026-05-19
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> `#36`.
+- `gh issue list --state open --limit 20` -> no open issues after `#36`
+  closeout.
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
@@ -80,7 +84,6 @@ Last updated: 2026-05-19
 
 ## Next Round
 
-Start with the human-gated license decision in `#36`, then run a real Wispr
-Flow dogfood session before creating the next broad issue wave. The durable
-plan is in
+Run a real Wispr Flow dogfood session before creating the next broad issue
+wave. The durable plan is in
 [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).

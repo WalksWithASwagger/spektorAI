@@ -30,9 +30,9 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - GitHub issues `#13` through `#24`: closed.
 - Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
-- Current shipped baseline:
+- Latest shipped feature baseline:
   `2a7e658 feat: ship audio consolidation salvage wave`.
-- Open GitHub issues: `#36` for the license/metadata human decision.
+- Open GitHub issues: none after `#36` brand/metadata closeout.
 - Open GitHub PRs: none.
 - Current unit baseline: `239 passed`.
 - Audio repo consolidation audit:
@@ -112,7 +112,7 @@ useful in real sessions.
 
 ## Proposed Next Issue Wave
 
-Create these only after the human decisions in the audit doc are answered:
+Create these only after a dogfood report and the next release target decision:
 
 | ID | Priority | Title | Gate |
 | --- | --- | --- | --- |
@@ -134,7 +134,7 @@ PR closeout. See
 
 | ID | Priority | Title | Source |
 | --- | --- | --- | --- |
-| `wf-brand-metadata-cleanup` | P0 | Finish public brand, repo metadata, and license decision | `whisperforge`; still needs human license call |
+| `wf-brand-metadata-cleanup` | P0 | Finish public brand, repo metadata, and license decision | Shipped in `#36`; no license file added |
 | `wf-watch-folder-inbox` | P1 | Add watch-folder/import-folder capture intake | Shipped in `#37` |
 | `wf-knowledge-synthesis` | P1 | Add weekly recaps and topic evolution summaries | Shipped in `#38` |
 | `wf-large-file-router-eval` | P1 | Evaluate FFmpeg large-file handling for provider router | Shipped in `#39`; see [`docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md`](docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md) |

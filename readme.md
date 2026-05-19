@@ -2,6 +2,9 @@
 
 Canonical repository: `WalksWithASwagger/spektorAI`.
 
+License posture: no open-source license is currently granted. Do not treat the
+archived `WalksWithASwagger/whisperforge` MIT license as inherited by this repo.
+
 Turn spoken thoughts into polished, publishable content. Upload audio, and
 WhisperForge transcribes it, extracts wisdom, drafts an outline and article,
 generates social posts + image prompts, and ships the bundle to a structured
@@ -153,7 +156,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        229 tests + health/rendered UI smokes
+tests/                        239 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -497,4 +500,7 @@ Current handoff state lives in [`STATUS.md`](STATUS.md).
 
 ## License
 
-Unlicensed / private. Not for distribution.
+No open-source license is currently granted for this public repository. Until
+the owner adds an explicit license file, treat the code and documentation as
+source-available for project collaboration only, not as MIT or otherwise freely
+redistributable.
