@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Brand and license closeout** — repo metadata now points to this canonical
   WhisperForge implementation, and root docs explicitly state that no
   open-source license is granted until the owner adds one.
+- **Presentation runbook** — `docs/PRESENTATION-RUNBOOK-2026-05-19.md` provides
+  a deterministic collaborator demo flow, claim boundaries, reviewer prompts,
+  and the next post-review implementation slice.
 - **2026 master plan** — `docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`
   resets WhisperForge around Wispr Flow-era capture, knowledge-base
   intelligence, source-grounded composition, agentic handoffs, recovery, and a

@@ -266,7 +266,9 @@ def test_runner_marks_passing_change_ready_for_pr(tmp_path):
     )
 
     payload = json.loads((repo / "agentic-dev-loop-result.json").read_text(encoding="utf-8"))
+    pr_body = (repo / "agentic-pr-body.md").read_text(encoding="utf-8")
     assert result.returncode == 0
     assert payload["action"] == "open-pr"
     assert payload["status"] == "ready-for-pr"
+    assert "- [x] A file is updated." in pr_body
     assert changed_stats(repo)["changed_files"] >= 1

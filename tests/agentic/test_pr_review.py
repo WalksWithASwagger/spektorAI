@@ -21,7 +21,7 @@ Closes #42
 
 ## Acceptance Self-Check
 
-- [x] Criteria met.
+- [x] User-visible behavior is fixed.
 
 ## Verification
 
@@ -49,3 +49,15 @@ def test_pr_review_blocks_large_diff_for_human_attention():
 
     assert not result["ok"]
     assert result["within_limits"] is False
+
+
+def test_pr_review_requires_acceptance_coverage_match():
+    body = GOOD_PR_BODY.replace(
+        "- [x] User-visible behavior is fixed.",
+        "- [x] Criteria met.",
+    )
+
+    result = review_pr(ISSUE_BODY, body, additions=10, deletions=5, changed_files=2)
+
+    assert not result["ok"]
+    assert result["acceptance_coverage_ok"] is False

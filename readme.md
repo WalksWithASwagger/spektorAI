@@ -497,6 +497,8 @@ direction. The Linear/GitHub delivery workflow lives in
 [`docs/LINEAR-GITHUB-PIPELINE.md`](docs/LINEAR-GITHUB-PIPELINE.md), with the
 machine-readable backlog in [`ops/roadmap/features.json`](ops/roadmap/features.json).
 Current handoff state lives in [`STATUS.md`](STATUS.md).
+Presentation/review flow lives in
+[`docs/PRESENTATION-RUNBOOK-2026-05-19.md`](docs/PRESENTATION-RUNBOOK-2026-05-19.md).
 
 ## License
 

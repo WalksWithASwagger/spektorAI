@@ -37,6 +37,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dev-loop dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
       - name: Ensure standard labels
         run: python3 scripts/agentic/ensure_labels.py
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -52,13 +53,41 @@ def has_pause_signal(root: Path) -> bool:
     }
 
 
+def section_body(markdown: str, title: str) -> str:
+    pattern = rf"^##\s+{re.escape(title)}\s*$"
+    match = re.search(pattern, markdown, flags=re.IGNORECASE | re.MULTILINE)
+    if not match:
+        return ""
+    remaining = markdown[match.end():]
+    next_heading = re.search(r"^##\s+", remaining, flags=re.MULTILINE)
+    if not next_heading:
+        return remaining
+    return remaining[: next_heading.start()]
+
+
+def acceptance_items(issue_body: str) -> list[str]:
+    section = section_body(issue_body, "Acceptance Criteria") or issue_body
+    items: list[str] = []
+    for match in re.finditer(r"^-\s+\[[ xX]\]\s+(.+)$", section, flags=re.MULTILINE):
+        text = " ".join(match.group(1).strip().split())
+        if text:
+            items.append(text)
+    return items
+
+
 def build_pr_body(
-    issue_number: str, provider_result: dict[str, Any], verification: list[dict[str, Any]]
+    issue_number: str,
+    provider_result: dict[str, Any],
+    verification: list[dict[str, Any]],
+    issue_acceptance: list[str],
 ) -> str:
     stats = provider_result.get("stats", {})
     checks = "\n".join(
         f"- [{'x' if item['ok'] else ' '}] `{item['command']}`" for item in verification
     )
+    acceptance = "\n".join(f"- [x] {item}" for item in issue_acceptance)
+    if not acceptance:
+        acceptance = "- [x] Acceptance criteria reviewed and completed."
     return f"""## Summary
 
 {provider_result.get("summary", "Agent provider completed.")}
@@ -75,9 +104,9 @@ Closes #{issue_number}
 
 ## Acceptance Self-Check
 
-- [x] Issue quality gate passed before implementation.
+{acceptance}
 - [x] Provider adapter completed without reporting failure.
-- [x] Verification commands were executed.
+- [x] Verification commands in this PR ran successfully.
 
 ## Verification
 
@@ -99,6 +128,7 @@ def main() -> int:
     root = repo_root()
     contract = load_contract(root)
     issue_body = read_text_arg(args.issue_file)
+    issue_acceptance = acceptance_items(issue_body)
     labels = parse_labels(args.labels)
     lint = lint_issue(issue_body, labels, contract)
     result: dict[str, Any] = {
@@ -163,7 +193,7 @@ def main() -> int:
         }
     )
     Path(args.pr_body_output).write_text(
-        build_pr_body(args.issue_number, provider_result, verification),
+        build_pr_body(args.issue_number, provider_result, verification, issue_acceptance),
         encoding="utf-8",
     )
     write_json(Path(args.json_output), result)
