@@ -229,3 +229,51 @@ class TestExportToDisk:
         assert export._slugify("Krüg's Manifesto: A/B Test!") == "krügs-manifesto-ab-test"
         assert export._slugify("") == "untitled"
         assert export._slugify("...") == "untitled"
+
+
+class TestVaultExport:
+    def test_vault_export_writes_date_organized_markdown(self, tmp_path):
+        path = export.export_vault(_bundle(title="Vault Run"), vault_dir=tmp_path)
+        today = datetime.now()
+
+        assert path.parent == tmp_path / today.strftime("%Y") / today.strftime("%m")
+        assert path.name.startswith(today.strftime("%Y-%m-%d"))
+        assert "vault-run" in path.name
+
+    def test_vault_export_preserves_markdown_metadata_sections(self, tmp_path):
+        path = export.export_vault(
+            _bundle(
+                run_metrics={
+                    "total_usd": 0.01,
+                    "backend": "fixture",
+                    "source_receipts": [{"source": "Fixture", "path": "tests/data.txt"}],
+                },
+            ),
+            vault_dir=tmp_path,
+            notion_url="https://notion.so/vault",
+        )
+        content = path.read_text()
+
+        assert "notion_url:" in content
+        assert "## Run metrics" in content
+        assert "fixture" in content
+        assert "## Source receipts" in content
+        assert "**Fixture**" in content
+        assert "**Path:** tests/data.txt" in content
+
+    def test_vault_export_writes_index_with_obsidian_link(self, tmp_path):
+        path = export.export_vault(_bundle(title="Index Run"), vault_dir=tmp_path)
+        index = tmp_path / "index.md"
+        relative = path.relative_to(tmp_path).with_suffix("").as_posix()
+
+        content = index.read_text()
+        assert content.startswith("# WhisperForge exports\n")
+        assert f"[[{relative}|Index Run]]" in content
+
+    def test_vault_export_updates_existing_index_entry(self, tmp_path):
+        first = export.export_vault(_bundle(title="Same"), vault_dir=tmp_path)
+        second = export.export_vault(_bundle(title="Same"), vault_dir=tmp_path, overwrite=True)
+
+        assert first == second
+        content = (tmp_path / "index.md").read_text()
+        assert content.count("[[") == 1

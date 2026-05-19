@@ -50,6 +50,92 @@ def test_render_markdown_is_report_only_and_has_all_sections():
         assert f"## {section}" in markdown
 
 
+def test_weekly_recaps_group_capture_and_run_metadata():
+    capture_records = [
+        captures.CaptureRecord(
+            capture_id="cap-ai",
+            source="paste",
+            title="AI notes",
+            filename="ai.txt",
+            created_at="2026-05-12T10:00:00Z",
+            metadata={"topics": ["AI", "Community"]},
+        ),
+        captures.CaptureRecord(
+            capture_id="cap-design",
+            source="wispr_flow",
+            title="Design notes",
+            filename="design.txt",
+            status="completed",
+            created_at="2026-05-05T10:00:00Z",
+            metadata={"tags": "Design"},
+        ),
+    ]
+    manifests = [
+        {
+            "run_id": "run-ai",
+            "status": "completed",
+            "created_at": "2026-05-13T10:00:00Z",
+            "metadata": {"source": "paste", "recipe": {"name": "AI Brief"}},
+        },
+        {
+            "run_id": "run-draft",
+            "status": "running",
+            "created_at": "2026-05-06T10:00:00Z",
+            "metadata": {"keywords": ["Design"]},
+        },
+    ]
+
+    recaps = resurfacing.build_weekly_recaps(capture_records, manifests)
+
+    assert recaps[0]["title"] == "2026-W20"
+    assert recaps[0]["detail"] == (
+        "1 captures, 1 runs, 1 completed runs, 1 unresolved items. "
+        "Top topics: ai, ai brief, community."
+    )
+    assert recaps[1]["title"] == "2026-W19"
+    assert "1 captures, 1 runs, 0 completed runs, 1 unresolved items" in recaps[1]["detail"]
+
+
+def test_topic_evolution_summarizes_first_latest_and_totals():
+    capture_records = [
+        captures.CaptureRecord(
+            capture_id="cap-early",
+            source="paste",
+            title="Early AI",
+            filename="early.txt",
+            created_at="2026-05-04T10:00:00Z",
+            metadata={"topics": ["AI"]},
+        ),
+        captures.CaptureRecord(
+            capture_id="cap-late",
+            source="paste",
+            title="Late AI",
+            filename="late.txt",
+            created_at="2026-05-12T10:00:00Z",
+            metadata={"tags": ["AI", "Governance"]},
+        ),
+    ]
+    manifests = [
+        {
+            "run_id": "run-late",
+            "status": "completed",
+            "created_at": "2026-05-13T10:00:00Z",
+            "metadata": {"topics": ["Governance"], "recipe": {"name": "AI"}},
+        },
+    ]
+
+    evolution = resurfacing.build_topic_evolution(capture_records, manifests)
+
+    assert evolution[0] == {
+        "title": "ai",
+        "detail": "First seen 2026-W19; latest 2026-W20 with 2 signals; 3 total signals across 2 weeks.",
+    }
+    assert evolution[1] == {
+        "title": "governance",
+        "detail": "First seen 2026-W20; latest 2026-W20 with 2 signals; 2 total signals across 1 week.",
+    }
+
+
 def test_write_digest_creates_markdown_file(tmp_path, monkeypatch):
     monkeypatch.setattr(captures, "CAPTURES_DIR", tmp_path / "captures")
     monkeypatch.setattr(run_artifacts, "RUNS_DIR", tmp_path / "runs")

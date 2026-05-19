@@ -1,6 +1,6 @@
 # WhisperForge Status
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 ## Current State
 
@@ -8,8 +8,9 @@ Last updated: 2026-05-18
 - Consolidation baseline commit:
   `99e5287 docs: refresh WhisperForge audit roadmap`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
-- Live GitHub queue: audio consolidation issues `#36` through `#40` are open;
-  no open PRs at consolidation time.
+- Live GitHub queue: audio consolidation issues `#37` through `#40` have
+  shipped; `#36` remains open for the license/metadata human decision. No open
+  PRs at swarm closeout time.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -26,13 +27,14 @@ Last updated: 2026-05-18
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> audio consolidation issues
-  `#36` through `#40`.
+- `gh issue list --state open --limit 20` -> `#36`.
 - `gh pr list --state open --limit 50` -> no open PRs.
+- `git branch -r` -> only `origin/main` remains after pruning merged legacy
+  PR branches.
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `229 passed`.
+- `make test` -> `239 passed`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
 - `venv/bin/python tests/ui_smoke.py` passes rendered Streamlit shell smoke.
 - `make smoke` passes Streamlit health smoke on the default smoke port.
@@ -49,6 +51,7 @@ Last updated: 2026-05-18
 - Backlog registry: [`ops/roadmap/features.json`](ops/roadmap/features.json)
 - Agentic contract: [`docs/AGENTIC-DELIVERY.md`](docs/AGENTIC-DELIVERY.md)
 - Provider matrix: [`docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md`](docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md)
+- Large-file router evaluation: [`docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md`](docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md)
 
 ## Known Risks
 

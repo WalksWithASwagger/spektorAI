@@ -127,11 +127,11 @@ PR closeout. See
 
 | ID | Priority | Title | Source |
 | --- | --- | --- | --- |
-| `wf-brand-metadata-cleanup` | P0 | Finish public brand, repo metadata, and license decision | `whisperforge` |
-| `wf-watch-folder-inbox` | P1 | Add watch-folder/import-folder capture intake | `audio-transcription-studio` |
-| `wf-knowledge-synthesis` | P1 | Add weekly recaps and topic evolution summaries | `audio-transcription-studio` |
-| `wf-large-file-router-eval` | P1 | Evaluate FFmpeg large-file handling for provider router | `whisperforge` |
-| `wf-markdown-vault-export` | P2 | Add Obsidian-friendly markdown vault export | `audio-transcription-studio` |
+| `wf-brand-metadata-cleanup` | P0 | Finish public brand, repo metadata, and license decision | `whisperforge`; still needs human license call |
+| `wf-watch-folder-inbox` | P1 | Add watch-folder/import-folder capture intake | Shipped in `#37` |
+| `wf-knowledge-synthesis` | P1 | Add weekly recaps and topic evolution summaries | Shipped in `#38` |
+| `wf-large-file-router-eval` | P1 | Evaluate FFmpeg large-file handling for provider router | Shipped in `#39`; see [`docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md`](docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md) |
+| `wf-markdown-vault-export` | P2 | Add Obsidian-friendly markdown vault export | Shipped in `#40` |
 
 ## Verification Defaults
 

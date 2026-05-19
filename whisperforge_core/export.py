@@ -280,3 +280,56 @@ def export(
     target.write_text(content, encoding="utf-8")
     logger.info("exported markdown (%d chars) → %s", len(content), target)
     return target
+
+
+def _update_vault_index(
+    vault_dir: Path,
+    note_path: Path,
+    bundle: ContentBundle,
+    *,
+    index_name: str,
+) -> Path:
+    index_path = vault_dir / index_name
+    relative = note_path.relative_to(vault_dir).with_suffix("").as_posix()
+    date = note_path.name[:10]
+    link = f"[[{relative}|{bundle.title}]]"
+    entry = f"- {date} {link}"
+
+    if index_path.exists():
+        lines = index_path.read_text(encoding="utf-8").splitlines()
+    else:
+        lines = ["# WhisperForge exports", ""]
+
+    for idx, line in enumerate(lines):
+        if link in line:
+            lines[idx] = entry
+            break
+    else:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.append(entry)
+
+    index_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return index_path
+
+
+def export_vault(
+    bundle: ContentBundle,
+    *,
+    vault_dir: Path,
+    notion_url: Optional[str] = None,
+    overwrite: bool = False,
+    index_name: str = "index.md",
+) -> Path:
+    """Write a bundle into an Obsidian-style vault and update its index."""
+    root = Path(vault_dir)
+    now = datetime.now()
+    date_dir = root / now.strftime("%Y") / now.strftime("%m")
+    note_path = export(
+        bundle,
+        out_dir=date_dir,
+        notion_url=notion_url,
+        overwrite=overwrite,
+    )
+    _update_vault_index(root, note_path, bundle, index_name=index_name)
+    return note_path

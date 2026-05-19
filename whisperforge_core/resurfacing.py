@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +16,8 @@ DIGEST_SECTIONS = [
     "Strong outputs",
     "Stale drafts",
     "Reusable source nuggets",
+    "Weekly recaps",
+    "Topic evolution",
 ]
 DEFAULT_DIGEST_DIR = CACHE_DIR / "digests"
 
@@ -73,6 +75,15 @@ def build_digest(limit: int = 50, *, now: datetime | None = None) -> dict[str, A
                 title, f"run:{run_id}", str(output["wisdom"])[:240], link,
             ))
 
+    for recap in build_weekly_recaps(capture_records, manifests):
+        sections["Weekly recaps"].append(DigestEntry(
+            recap["title"], "weekly-recap", recap["detail"],
+        ))
+    for topic in build_topic_evolution(capture_records, manifests):
+        sections["Topic evolution"].append(DigestEntry(
+            topic["title"], "topic-evolution", topic["detail"],
+        ))
+
     return {
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "mode": "report-only",
@@ -81,6 +92,81 @@ def build_digest(limit: int = 50, *, now: datetime | None = None) -> dict[str, A
             for name, entries in sections.items()
         },
     }
+
+
+def build_weekly_recaps(
+    capture_records: list[captures.CaptureRecord],
+    manifests: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    weeks: dict[str, dict[str, Any]] = {}
+    for record in capture_records:
+        week = _week_label(record.created_at or record.updated_at)
+        bucket = weeks.setdefault(week, {"captures": [], "runs": []})
+        bucket["captures"].append(record)
+    for manifest in manifests:
+        week = _week_label(str(manifest.get("created_at") or manifest.get("updated_at") or ""))
+        bucket = weeks.setdefault(week, {"captures": [], "runs": []})
+        bucket["runs"].append(manifest)
+
+    recaps: list[dict[str, str]] = []
+    for week in sorted(weeks, reverse=True):
+        bucket = weeks[week]
+        capture_count = len(bucket["captures"])
+        run_count = len(bucket["runs"])
+        completed = sum(1 for item in bucket["runs"] if item.get("status") == "completed")
+        unresolved = sum(1 for item in bucket["captures"] if item.status not in {"completed", "archived"})
+        unresolved += sum(1 for item in bucket["runs"] if item.get("status") != "completed" or item.get("error"))
+        topics = _top_topics(bucket["captures"], bucket["runs"])
+        topic_detail = f" Top topics: {', '.join(topics)}." if topics else ""
+        recaps.append({
+            "title": week,
+            "detail": (
+                f"{capture_count} captures, {run_count} runs, {completed} completed runs, "
+                f"{unresolved} unresolved items.{topic_detail}"
+            ),
+        })
+    return recaps
+
+
+def build_topic_evolution(
+    capture_records: list[captures.CaptureRecord],
+    manifests: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    weekly_topics: dict[str, dict[str, int]] = {}
+    for record in capture_records:
+        week = _week_label(record.created_at or record.updated_at)
+        for topic in _capture_topics(record):
+            weekly_topics.setdefault(week, {})
+            weekly_topics[week][topic] = weekly_topics[week].get(topic, 0) + 1
+    for manifest in manifests:
+        week = _week_label(str(manifest.get("created_at") or manifest.get("updated_at") or ""))
+        for topic in _manifest_topics(manifest):
+            weekly_topics.setdefault(week, {})
+            weekly_topics[week][topic] = weekly_topics[week].get(topic, 0) + 1
+
+    topic_weeks: dict[str, list[tuple[str, int]]] = {}
+    for week, counts in weekly_topics.items():
+        for topic, count in counts.items():
+            topic_weeks.setdefault(topic, []).append((week, count))
+
+    ranked_summaries: list[tuple[int, str, dict[str, str]]] = []
+    for topic in sorted(topic_weeks):
+        history = sorted(topic_weeks[topic])
+        first_week = history[0][0]
+        latest_week, latest_count = history[-1]
+        total = sum(count for _week, count in history)
+        span = len(history)
+        week_word = "week" if span == 1 else "weeks"
+        summary = {
+            "title": topic,
+            "detail": (
+                f"First seen {first_week}; latest {latest_week} with {latest_count} signals; "
+                f"{total} total signals across {span} {week_word}."
+            ),
+        }
+        ranked_summaries.append((total, topic, summary))
+    ranked_summaries.sort(key=lambda item: (-item[0], item[1]))
+    return [summary for _total, _topic, summary in ranked_summaries]
 
 
 def render_markdown(digest: dict[str, Any]) -> str:
@@ -121,3 +207,92 @@ def _run_title(output: dict[str, Any], run_id: str) -> str:
         if first:
             return first[:80]
     return run_id or "Run artifact"
+
+
+def _top_topics(
+    capture_records: list[captures.CaptureRecord],
+    manifests: list[dict[str, Any]],
+) -> list[str]:
+    counts: dict[str, int] = {}
+    for record in capture_records:
+        for topic in _capture_topics(record):
+            counts[topic] = counts.get(topic, 0) + 1
+    for manifest in manifests:
+        for topic in _manifest_topics(manifest):
+            counts[topic] = counts.get(topic, 0) + 1
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    return [topic for topic, _count in ranked[:3]]
+
+
+def _capture_topics(record: captures.CaptureRecord) -> list[str]:
+    metadata = record.metadata or {}
+    topics = _metadata_topics(metadata)
+    if not topics and record.source:
+        topics.append(record.source)
+    return topics
+
+
+def _manifest_topics(manifest: dict[str, Any]) -> list[str]:
+    metadata = manifest.get("metadata") or {}
+    topics = _metadata_topics(metadata)
+    recipe = metadata.get("recipe")
+    if isinstance(recipe, dict):
+        recipe_name = recipe.get("name") or recipe.get("recipe_name") or recipe.get("id") or recipe.get("recipe_id")
+        if recipe_name:
+            topics.append(str(recipe_name))
+    elif recipe:
+        topics.append(str(recipe))
+    source = metadata.get("source")
+    if source:
+        topics.append(str(source))
+    return _dedupe_topics(topics)
+
+
+def _metadata_topics(metadata: dict[str, Any]) -> list[str]:
+    topics: list[str] = []
+    for key in ("topics", "topic", "tags", "tag", "keywords", "keyword"):
+        topics.extend(_as_topic_list(metadata.get(key)))
+    return _dedupe_topics(topics)
+
+
+def _as_topic_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [part.strip() for part in value.split(",") if part.strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(part).strip() for part in value if str(part).strip()]
+    return [str(value).strip()]
+
+
+def _dedupe_topics(topics: list[str]) -> list[str]:
+    seen: set[str] = set()
+    normalized: list[str] = []
+    for topic in topics:
+        label = " ".join(str(topic).strip().lower().split())
+        if not label or label in seen:
+            continue
+        seen.add(label)
+        normalized.append(label)
+    return normalized
+
+
+def _week_label(value: str) -> str:
+    parsed = _parse_datetime(value)
+    year, week, _weekday = parsed.isocalendar()
+    return f"{year}-W{week:02d}"
+
+
+def _parse_datetime(value: str) -> datetime:
+    if value:
+        candidate = value.strip()
+        if candidate.endswith("Z"):
+            candidate = f"{candidate[:-1]}+00:00"
+        try:
+            parsed = datetime.fromisoformat(candidate)
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except ValueError:
+            pass
+    return datetime.fromtimestamp(0, tz=timezone.utc)

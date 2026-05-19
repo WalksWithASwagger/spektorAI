@@ -61,6 +61,23 @@ Proposed acceptance criteria:
   the diarized model is worth the extra cost or complexity.
 - Document privacy/cost differences in `readme.md` before enabling it in UI.
 
+## Large-File Router Evaluation
+
+The archived `whisperforge` repo had useful FFmpeg large-file ideas, but the
+canonical app should rebuild them through the existing provider router rather
+than copying the old monolith. The current evaluation lives in
+[`LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md`](LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md).
+
+Summary:
+
+- Keep the current chunking default until fixture coverage exists.
+- Add provider capability metadata before changing runtime behavior.
+- Use FFmpeg/ffprobe narrowly for validation, video/audio extraction, and
+  normalization.
+- Preserve privacy and cleanup guarantees: no lingering temp chunks, no hidden
+  cloud path for local backends, and no parallel chunking without rate-limit or
+  local-memory fixtures.
+
 ## Sources
 
 - [OpenAI Speech to text](https://platform.openai.com/docs/guides/speech-to-text?lang=curl)

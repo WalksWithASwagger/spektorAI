@@ -19,6 +19,9 @@ from typing import Any, Optional
 from .config import CACHE_DIR
 
 CAPTURES_DIR = CACHE_DIR / "captures"
+TEXT_IMPORT_SUFFIXES = {".txt", ".md", ".markdown"}
+AUDIO_IMPORT_SUFFIXES = {".aac", ".aiff", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".wma"}
+TEMP_IMPORT_SUFFIXES = {".crdownload", ".part", ".temp", ".tmp"}
 
 
 def now_iso() -> str:
@@ -121,6 +124,57 @@ def create_capture(
     return record
 
 
+def import_capture_file(path: str | Path, *, source: str = "import_folder") -> CaptureRecord | None:
+    file_path = Path(path)
+    if not _is_import_candidate(file_path) or not file_path.is_file():
+        return None
+
+    source_path = _source_path(file_path)
+    existing = _find_duplicate(source_path=source_path)
+    if existing:
+        return existing
+
+    suffix = file_path.suffix.lower()
+    metadata = {
+        "source_path": source_path,
+        "imported_from": str(file_path),
+        "import_kind": "text" if suffix in TEXT_IMPORT_SUFFIXES else "audio",
+    }
+    if suffix in TEXT_IMPORT_SUFFIXES:
+        text = file_path.read_text(encoding="utf-8")
+        text_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        existing = _find_duplicate(source_path=source_path, text_sha256=text_sha256)
+        if existing:
+            return existing
+        return create_capture(
+            source=source,
+            filename=file_path.name,
+            title=_default_title(source, file_path.name, text),
+            text=text,
+            metadata=metadata,
+        )
+    if suffix in AUDIO_IMPORT_SUFFIXES:
+        return create_capture(
+            source=source,
+            filename=file_path.name,
+            metadata=metadata,
+        )
+    return None
+
+
+def import_capture_folder(path: str | Path, *, source: str = "import_folder") -> list[CaptureRecord]:
+    folder = Path(path)
+    if not folder.is_dir():
+        raise ValueError(f"import folder does not exist: {folder}")
+
+    records: list[CaptureRecord] = []
+    for file_path in sorted(p for p in folder.rglob("*") if p.is_file()):
+        record = import_capture_file(file_path, source=source)
+        if record:
+            records.append(record)
+    return records
+
+
 def load_capture(capture_id: str) -> CaptureRecord:
     data = json.loads(record_path(capture_id).read_text(encoding="utf-8"))
     return CaptureRecord.from_dict(data)
@@ -196,6 +250,33 @@ def _write_record(record: CaptureRecord) -> None:
     tmp = path.with_name(f".{path.name}.tmp")
     tmp.write_text(json.dumps(record.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     tmp.replace(path)
+
+
+def _source_path(path: Path) -> str:
+    return str(path.expanduser().resolve())
+
+
+def _is_import_candidate(path: Path) -> bool:
+    name = path.name
+    if name.startswith(".") or name.startswith("chunk_") or "_chunk_" in name:
+        return False
+    suffix = path.suffix.lower()
+    if suffix in TEMP_IMPORT_SUFFIXES or name.endswith("~"):
+        return False
+    return suffix in TEXT_IMPORT_SUFFIXES or suffix in AUDIO_IMPORT_SUFFIXES
+
+
+def _find_duplicate(
+    *,
+    source_path: Optional[str] = None,
+    text_sha256: Optional[str] = None,
+) -> CaptureRecord | None:
+    for record in list_captures(limit=10_000):
+        if source_path and record.metadata.get("source_path") == source_path:
+            return record
+        if text_sha256 and record.text_sha256 == text_sha256:
+            return record
+    return None
 
 
 def _default_title(source: str, filename: str, text: Optional[str]) -> str:

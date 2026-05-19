@@ -142,7 +142,7 @@ future work:
 | `wf-brand-metadata-cleanup` | #36 | P0 | Finish public brand, repo metadata, and license decision | `whisperforge` |
 | `wf-watch-folder-inbox` | #37 | P1 | Add watch-folder/import-folder capture intake | `audio-transcription-studio` |
 | `wf-knowledge-synthesis` | #38 | P1 | Add weekly recaps and topic evolution summaries | `audio-transcription-studio` |
-| `wf-large-file-router-eval` | #39 | P1 | Evaluate FFmpeg large-file handling for provider router | `whisperforge` |
+| `wf-large-file-router-eval` | #39 | P1 | Evaluate FFmpeg large-file handling for provider router | `whisperforge`; see `docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md` |
 | `wf-markdown-vault-export` | #40 | P2 | Add Obsidian-friendly markdown vault export | `audio-transcription-studio` |
 
 These issues should reference this audit and stay scoped to canonical
