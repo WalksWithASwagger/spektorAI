@@ -44,7 +44,7 @@ Last updated: 2026-05-19
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `246 passed`.
+- `make test` -> `259 passed`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
 - `venv/bin/python tests/ui_smoke.py` passes rendered Streamlit shell smoke.
 - `make smoke` passes Streamlit health smoke on the default smoke port.
@@ -84,6 +84,10 @@ Last updated: 2026-05-19
   source-linked creative pack, not as an audio/music-generation integration.
 - Resurfacing digest is report-only. Any notification, publishing, routing, or
   recurring automation needs explicit human approval.
+- Agent handoff drafts now support approval-gated GitHub/Linear creation via
+  `whisperforge_core.handoff_router`. Default remains dry-run when `gh` CLI or
+  `LINEAR_API_KEY` is unconfigured; `WHISPERFORGE_HANDOFF_DRY_RUN=1` is a
+  forced-dry-run kill switch for demos and tests.
 - GitHub/Linear state can drift quickly; refresh live tracker state before
   creating or closing new roadmap work.
 - Legacy audio repos are being archived as pointers to this canonical repo;
