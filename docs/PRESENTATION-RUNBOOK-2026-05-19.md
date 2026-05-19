@@ -101,7 +101,7 @@ Use these to get actionable feedback:
 2. Is the review tab trustworthy enough to publish from?
 3. Should next milestone optimize for local-first use or hosted services mode?
 4. For transcription priorities, rank: privacy, diarization, timestamps, cost, streaming.
-5. Should handoff routing remain draft-only or move to approve-and-create?
+5. Which routing destinations should be added next after GitHub/Linear?
 
 ## 5) Next Dev Slice (After Review)
 

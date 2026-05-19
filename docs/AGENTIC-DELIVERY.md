@@ -38,8 +38,10 @@ Agent handoff draft preview can render a GitHub/Linear-ready Markdown draft from
 a capture, transcript, or selected output and persist it under
 `.cache/runs/<run_id>/handoffs/` before any external tracker record is created.
 
-Draft generation is intentionally dry-run only in v1. Creating GitHub or Linear
-issues remains a separate explicit user action after the draft has been reviewed.
+Draft generation stays preview-first, but v1 now supports explicit
+approve-and-create routing to GitHub and Linear from the Review tab. Routing
+defaults to dry-run when external config is missing and honors
+`WHISPERFORGE_HANDOFF_DRY_RUN=1` as a hard kill switch.
 
 ## Runner Flow
 

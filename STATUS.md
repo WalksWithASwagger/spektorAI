@@ -6,7 +6,7 @@ Last updated: 2026-05-19
 
 - Current branch: `main`, synced with `origin/main`.
 - Latest shipped feature baseline:
-  `2a7e658 feat: ship audio consolidation salvage wave`.
+  `685b0a0 test: stabilize browser E2E smoke flows`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.

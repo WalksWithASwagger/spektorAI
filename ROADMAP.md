@@ -90,16 +90,15 @@ and a migration path for profile metadata.
 The product should help agents avoid using stale or sensitive context before
 generation starts.
 
-### 6. Add Human-Gated Routing
+### 6. Expand Human-Gated Routing
 
-Handoff drafts and resurfacing digests are intentionally dry-run/report-only.
-The next useful step is explicit approval UI or CLI routing for:
+Handoff drafts now support explicit approval to create GitHub/Linear issues with
+dry-run defaults and an env kill switch. The next useful step is expanding that
+approval boundary to:
 
-- create GitHub issue,
-- create/update Linear issue,
 - add follow-up queue item,
 - publish/send digest,
-- save selected output to Notion/markdown.
+- create/update Notion task pages.
 
 ### 7. Expand SongForge Carefully
 
@@ -121,7 +120,7 @@ Create these only after a dogfood report and the next release target decision:
 | `wf-release-target` | P0 | Decide and implement the next release target | Human chooses local/hosted/services |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Provider/privacy choice confirmed |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
-| `wf-handoff-routing` | P1 | Add human-approved GitHub/Linear/follow-up routing | Approval boundary confirmed |
+| `wf-handoff-routing-followups` | P1 | Extend approved routing to follow-up queue and digest destinations | GitHub/Linear approve-and-create shipped |
 | `wf-digest-automation` | P2 | Add optional resurfacing digest schedule/report flow | Cadence and destination confirmed |
 | `wf-songforge-polish` | P2 | Improve SongForge creative quality and exports | Target use case confirmed |
 

@@ -63,8 +63,9 @@ WhisperForge implementation, roadmap, and issue work.
   voice, grounding, usefulness, recipe compliance, and handoff readiness without
   blocking saves.
 - **Agent handoff drafts**: the Review tab can turn a capture, transcript, or
-  selected output into a GitHub/Linear-ready issue brief and persist the dry-run
-  draft under the current run artifacts.
+  selected output into a GitHub/Linear-ready issue brief, persist it under the
+  current run artifacts, and route it to GitHub/Linear after explicit approval.
+  If external config is missing, approval stays dry-run and surfaces the reason.
 - **Run workspace**: the Runs dialog reads `.cache/runs` manifests, flags
   partial/error runs, and can reopen completed outputs so Markdown, Notion, or
   handoff exports can be retried without regenerating content.
@@ -322,8 +323,9 @@ variants, plus an advisory scorecard for voice, grounding, usefulness, recipe
 compliance, and handoff readiness. It is a review surface, not a collaborative
 editor; edits still happen by rerunning with adjusted prompts, recipes, or
 settings. The same tab includes an **Agent handoff draft** preview that writes
-local issue drafts only; external tracker creation remains a separate explicit
-action. Use the sidebar's **Runs** dialog to reopen completed run artifacts
+local issue drafts and can create a GitHub/Linear issue after explicit approval.
+When routing config is missing, approval remains dry-run and shows the blocker.
+Use the sidebar's **Runs** dialog to reopen completed run artifacts
 into this output/review surface and retry downstream exports. Partial runs are
 listed with their last stage and errors, but arbitrary stage replay is still out
 of scope.
@@ -479,6 +481,9 @@ adds that routing.
 | `WHISPERFORGE_LOG_LEVEL` | `DEBUG` / `INFO` / `WARNING` (default INFO) | no          |
 | `WHISPERFORGE_CACHE_DIR` | Cache location (default `.cache/`)          | no            |
 | `WHISPERFORGE_CACHE`     | `1` to enable the transcription/LLM cache    | no            |
+| `WHISPERFORGE_HANDOFF_DRY_RUN` | Force handoff routing dry-run (`1`/`true`) | no      |
+| `WHISPERFORGE_HANDOFF_GITHUB_REPO` | Default GitHub repo for approved handoff issue creation (`owner/name`) | no |
+| `WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID` | Default Linear team ID for approved handoff issue creation | no |
 | `WF_RAG`                 | Force RAG on/off (`1`/`true` or `0`/`false`) | no            |
 | `WF_RAG_TOPK`            | Retrieved KB chunks per stage (default `5`) | no            |
 | `WF_RAG_THRESHOLD`       | Auto-RAG chunk threshold (default `25`)     | no            |

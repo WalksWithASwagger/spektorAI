@@ -63,7 +63,7 @@ clear:
 | `wf-release-target` | P0 | Decide and document the next release target | Human chooses target |
 | `wf-provider-router-capabilities` | P1 | Add provider-router capability metadata and fixtures | Large-file evaluation accepted |
 | `wf-kb-governance` | P1 | Add canonical KB pack and stale/private review workflow | Human confirms policy |
-| `wf-human-approved-routing` | P1 | Add preview-and-approve routing for GitHub/Linear/Notion/follow-ups | Approval boundary confirmed |
+| `wf-human-approved-routing-followups` | P1 | Extend approve-and-create routing to follow-up queue and digest destinations | GitHub/Linear approve-and-create shipped |
 
 ## Not Yet
 

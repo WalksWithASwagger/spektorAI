@@ -58,9 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   voice, grounding, usefulness, recipe compliance, and handoff readiness; the
   verdict is stored with run artifacts/history and rendered in markdown/Notion
   exports without blocking saves.
-- **Agent handoff drafts** — the Review tab can now generate a dry-run
-  GitHub/Linear-ready issue brief from a capture, transcript, or selected
-  output and persist it under `.cache/runs/<run_id>/handoffs/`.
+- **Agent handoff routing** — the Review tab now supports preview-first draft
+  generation plus explicit approve-and-create routing to GitHub/Linear via
+  `whisperforge_core.handoff_router`; routing defaults to dry-run when config
+  is missing and supports `WHISPERFORGE_HANDOFF_DRY_RUN=1` as a kill switch.
 - **Run workspace recovery** — the Runs dialog now reads local run manifests,
   shows partial/error/export state, and can reopen completed outputs so safe
   downstream exports can be retried without rerunning generation.
