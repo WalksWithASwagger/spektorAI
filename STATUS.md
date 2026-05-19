@@ -5,8 +5,8 @@ Last updated: 2026-05-19
 ## Current State
 
 - Current branch: `main`, synced with `origin/main`.
-- Consolidation baseline commit:
-  `99e5287 docs: refresh WhisperForge audit roadmap`.
+- Current shipped baseline:
+  `2a7e658 feat: ship audio consolidation salvage wave`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - Live GitHub queue: audio consolidation issues `#37` through `#40` have
   shipped; `#36` remains open for the license/metadata human decision. No open
@@ -22,6 +22,8 @@ Last updated: 2026-05-19
   [`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md).
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
+- Next round plan:
+  [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
 
 ## Verified Baseline
 
@@ -31,6 +33,8 @@ Last updated: 2026-05-19
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
+- `git worktree list --porcelain` -> only `/Users/kk/Code/spektorAI` remains
+  for this repo after removing stale detached Codex worktrees.
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
@@ -52,6 +56,7 @@ Last updated: 2026-05-19
 - Agentic contract: [`docs/AGENTIC-DELIVERY.md`](docs/AGENTIC-DELIVERY.md)
 - Provider matrix: [`docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md`](docs/TRANSCRIPTION-PROVIDER-MATRIX-2026-05-18.md)
 - Large-file router evaluation: [`docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md`](docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md)
+- Next round plan: [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md)
 
 ## Known Risks
 
@@ -72,3 +77,10 @@ Last updated: 2026-05-19
   creating or closing new roadmap work.
 - Legacy audio repos are being archived as pointers to this canonical repo;
   do not pull their stale architecture into `spektorAI` without a scoped issue.
+
+## Next Round
+
+Start with the human-gated license decision in `#36`, then run a real Wispr
+Flow dogfood session before creating the next broad issue wave. The durable
+plan is in
+[`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).

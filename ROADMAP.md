@@ -1,11 +1,13 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-18
+Last reviewed: 2026-05-19
 
 The May 2026 reset wave is now complete. The strategic anchor remains
 [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md);
 the current audit and from-here plan is
 [`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md).
+The immediate next-round plan is
+[`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
 
 ## Current Product Shape
 
@@ -26,12 +28,17 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 ## Delivery State
 
 - GitHub issues `#13` through `#24`: closed.
+- Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
-- Consolidation baseline: `99e5287 docs: refresh WhisperForge audit roadmap`.
-- Open GitHub issues/PRs at audit time: none.
-- Current unit baseline: `229 passed`.
+- Current shipped baseline:
+  `2a7e658 feat: ship audio consolidation salvage wave`.
+- Open GitHub issues: `#36` for the license/metadata human decision.
+- Open GitHub PRs: none.
+- Current unit baseline: `239 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
+  Next round plan:
+  [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
 
 ## Roadmap From Here
 

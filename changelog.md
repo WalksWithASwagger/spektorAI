@@ -5,9 +5,26 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-05-18
+## [Unreleased] - 2026-05-19
 
 ### Added
+- **Audio repo consolidation audit** —
+  `docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md` records the canonical
+  `spektorAI` decision, legacy repo salvage matrix, and archive plan.
+- **Import-folder capture helpers** — `whisperforge_core.captures` can now
+  import text/markdown notes and audio pointers from files or folders, dedupe
+  obvious repeats, and ignore generated chunk/temp files.
+- **Report-only weekly and topic synthesis** — resurfacing now includes
+  deterministic weekly recaps and topic-evolution summaries from capture/run
+  metadata without external credentials.
+- **Obsidian-friendly vault export** — markdown export now has a vault mode
+  that writes date-organized notes and updates a lightweight `index.md`.
+- **Large-file router evaluation** —
+  `docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md` evaluates FFmpeg-style
+  large-file handling as provider-router work instead of a legacy code import.
+- **Next round plan** — `docs/NEXT-ROUND-PLAN-2026-05-19.md` records the next
+  recommended sequence: close the license decision, dogfood a real Wispr Flow
+  capture, add end-to-end UI coverage, and choose a release target.
 - **2026 master plan** — `docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`
   resets WhisperForge around Wispr Flow-era capture, knowledge-base
   intelligence, source-grounded composition, agentic handoffs, recovery, and a
@@ -80,9 +97,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 229 passing tests, the current prompt profile
+- Root docs now describe 239 passing tests, the current prompt profile
   layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
   the current services-mode parity boundary.
+- Root docs now describe the post-consolidation baseline: only issue `#36`
+  remains open, no PRs remain open, only `origin/main` remains remotely, stale
+  detached worktrees were removed, and the unit baseline is `239 passed`.
 - `ROADMAP.md` and `STATUS.md` now describe the post-swarm state instead of
   the pre-implementation planning baseline.
 - `ROADMAP.md` is now a concise index into the 2026 master plan and active
