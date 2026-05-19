@@ -75,10 +75,12 @@ Safe claims:
 - Capture -> recipe -> review -> export loop is functional.
 - Run artifacts and reopen/retry flow are functional.
 - Resurfacing digest and SongForge are report-only, source-linked outputs.
+- Services-mode transcription forwards `text`, `segments`, and `language` over
+  HTTP when the backend emits rich details (WhisperX). Non-rich backends still
+  return empty segment lists by design.
 
 Do not over-claim yet:
 
-- Services-mode full parity for timestamped segment metadata.
 - Fully autonomous issue/PR acceptance checking quality.
 - External auto-routing from handoff/digest without human approval.
 
@@ -96,7 +98,6 @@ Use these to get actionable feedback:
 
 1. Add a browser-driven end-to-end test (Playwright/localhost) for
    paste -> recipe -> review -> markdown export -> run-history reopen.
-2. Close services transcription segment parity over HTTP.
-3. Tighten agentic acceptance gates beyond structural checklist matching.
-4. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover
+2. Tighten agentic acceptance gates beyond structural checklist matching.
+3. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover
    additional recipes and a partial/failed run for the Runs dialog.
