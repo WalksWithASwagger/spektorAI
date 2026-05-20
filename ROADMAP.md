@@ -31,7 +31,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
 - Latest shipped feature baseline:
-  `12e373a feat(handoff): add follow-up queue routing target`.
+  `3d89114 fix(scorecard): refresh export readiness after run exports`.
 - Open GitHub issues: none (`#41`, `#42`, `#43`, `#45`, `#46`, and `#47` are
   shipped).
 - Open GitHub PRs: none.

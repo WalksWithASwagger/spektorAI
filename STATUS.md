@@ -6,7 +6,7 @@ Last updated: 2026-05-20
 
 - Current branch: `main`, synced with `origin/main`.
 - Latest shipped feature baseline:
-  `12e373a feat(handoff): add follow-up queue routing target`.
+  `3d89114 fix(scorecard): refresh export readiness after run exports`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.
