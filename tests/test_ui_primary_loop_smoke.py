@@ -41,6 +41,13 @@ class SessionStateProxy:
             return default
 
 
+def _handoff_notes(scorecard: dict) -> list[str]:
+    for dimension in scorecard.get("dimensions", []):
+        if dimension.get("id") == "handoff_readiness":
+            return [str(note) for note in dimension.get("notes", [])]
+    return []
+
+
 def test_ui_primary_loop_smoke_paste_run_and_artifacts(monkeypatch, tmp_path):
     cost_mod.reset()
     monkeypatch.setattr(run_artifacts, "RUNS_DIR", tmp_path / "runs")
@@ -130,6 +137,17 @@ def test_ui_primary_loop_smoke_paste_run_and_artifacts(monkeypatch, tmp_path):
         item.get("kind") == "markdown" and item.get("value") == markdown_path
         for item in manifest.get("exports", [])
     )
+    notes = _handoff_notes(app.session_state["scorecard_summary"])
+    assert any("Recorded exports:" in note for note in notes)
+    assert all("No export has been recorded yet." not in note for note in notes)
+
+    scorecard_stage = run_artifacts.load_stage_payload(run_id, "scorecard")
+    scorecard_notes = _handoff_notes(scorecard_stage)
+    assert any("Recorded exports:" in note for note in scorecard_notes)
+
+    session_output = run_artifacts.load_stage_payload(run_id, "session_output")
+    output_notes = _handoff_notes(session_output.get("scorecard_summary") or {})
+    assert any("Recorded exports:" in note for note in output_notes)
 
     app.session_state["article"] = ""
     app.session_state["wisdom"] = ""

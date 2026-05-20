@@ -829,5 +829,19 @@ def _record_run_export(kind: str, value: str) -> None:
         return
     try:
         run_artifacts.record_export(run_id, kind, value)
+        _refresh_scorecard_after_export(run_id)
     except Exception:
         pass
+
+
+def _refresh_scorecard_after_export(run_id: str) -> None:
+    manifest = run_artifacts.load_manifest(run_id)
+    exports = manifest.get("exports") or []
+    summary = _scorecard_summary_from_state(st.session_state, exports=exports)
+    st.session_state.scorecard_summary = summary
+    run_artifacts.write_stage(run_id, "scorecard", summary)
+
+    session_output = run_artifacts.load_stage_payload(run_id, "session_output")
+    if session_output:
+        session_output["scorecard_summary"] = summary
+        run_artifacts.write_stage(run_id, "session_output", session_output)

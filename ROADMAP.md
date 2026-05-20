@@ -32,7 +32,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Pull requests `#25` through `#35`: merged.
 - Latest shipped feature baseline:
   `12e373a feat(handoff): add follow-up queue routing target`.
-- Open GitHub issues: `#47` (`#41`, `#42`, `#43`, `#45`, and `#46` are
+- Open GitHub issues: none (`#41`, `#42`, `#43`, `#45`, `#46`, and `#47` are
   shipped).
 - Open GitHub PRs: none.
 - Current unit baseline: `268 passed`.
@@ -119,7 +119,7 @@ useful in real sessions.
 | --- | --- | --- | --- |
 | `wf-digest-signal-filter` | P0 | Filter digest signal so real captures are not drowned by smoke/demo artifacts | Shipped in `#45` |
 | `wf-run-capture-status-sync` | P0 | Sync run-manifest capture metadata with final capture status | Shipped in `#46` |
-| `wf-export-readiness-refresh` | P0 | Refresh scorecard/handoff readiness signals after export events | Dogfood report completed in `#41` |
+| `wf-export-readiness-refresh` | P0 | Refresh scorecard/handoff readiness signals after export events | Shipped in `#47` |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Provider/privacy choice confirmed |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
 | `wf-handoff-routing-followups` | P1 | Extend approved routing to follow-up queue and digest destinations | Follow-up queue routing shipped; digest/Notion destinations remain |

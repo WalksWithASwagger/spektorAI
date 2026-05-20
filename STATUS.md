@@ -12,7 +12,7 @@ Last updated: 2026-05-20
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: friction follow-up `#47`; no open PRs.
+- Live GitHub queue: no open issues or PRs.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -36,7 +36,7 @@ Last updated: 2026-05-20
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> open issue `#47`.
+- `gh issue list --state open --limit 20` -> no open issues.
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
@@ -95,9 +95,9 @@ Last updated: 2026-05-20
   remains dry-run when target config is missing;
   `WHISPERFORGE_HANDOFF_DRY_RUN=1` is a forced-dry-run kill switch for demos
   and tests.
-- Dogfood follow-ups `#45` and `#46` are now shipped (digest filtering and
-  capture-status metadata sync). Remaining tracked gap is `#47`: stale
-  scorecard readiness notes after exports.
+- Dogfood follow-ups `#45`, `#46`, and `#47` are now shipped: digest filtering
+  for non-prod noise, capture-status metadata sync, and export-aware scorecard
+  readiness refresh.
 - GitHub/Linear state can drift quickly; refresh live tracker state before
   creating or closing new roadmap work.
 - Legacy audio repos are being archived as pointers to this canonical repo;
@@ -105,6 +105,6 @@ Last updated: 2026-05-20
 
 ## Next Round
 
-Swarm the remaining dogfood follow-up fix in `#47`, using
-[`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md)
-as the evidence anchor.
+Dogfood closeout is complete. Next roadmap slice is the local-first milestone
+continuation work (`wf-transcription-router`, `wf-kb-governance`,
+`wf-handoff-routing-followups` digest/Notion destinations).
