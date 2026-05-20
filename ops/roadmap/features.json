@@ -4,14 +4,17 @@
     "repo": "WalksWithASwagger/spektorAI",
     "linearProjectUrl": "https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537",
     "linearTeam": "Bc-ai",
-        "linearTeamKey": "BC",
-        "roadmap": "ROADMAP.md",
-        "workflowDoc": "docs/LINEAR-GITHUB-PIPELINE.md",
-        "lastSeededAt": "2026-05-18",
-        "lastAuditedAt": "2026-05-18",
-        "deliveryState": "seeded-wave-complete",
-        "currentAudit": "docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md"
-    },
+    "linearTeamKey": "BC",
+    "roadmap": "ROADMAP.md",
+    "workflowDoc": "docs/LINEAR-GITHUB-PIPELINE.md",
+    "lastSeededAt": "2026-05-18",
+    "lastAuditedAt": "2026-05-20",
+    "deliveryState": "active-next-round",
+    "currentAudit": "docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md",
+    "releaseTarget": "local-first personal workbench",
+    "releaseTargetDecidedAt": "2026-05-20",
+    "releaseTargetDecisionIssue": 42
+  },
   "labels": {
     "repo": "repo:spektorAI",
     "ready": "agent:ready",
@@ -39,7 +42,8 @@
       "verification": [
         "python3 -m json.tool ops/roadmap/features.json",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-repo-hygiene-status",
@@ -62,7 +66,8 @@
         "venv/bin/python -m pytest tests/ -q",
         "tests/smoke.sh",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-browser-verification",
@@ -84,7 +89,8 @@
         "venv/bin/python -m pytest tests/ -q",
         "tests/smoke.sh",
         "venv/bin/python tests/ui_smoke.py"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-services-parity",
@@ -106,7 +112,8 @@
         "venv/bin/python -m pytest tests/ -q",
         "A docker-compose/service smoke test or documented local equivalent",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-run-recovery",
@@ -127,7 +134,8 @@
       "verification": [
         "venv/bin/python -m pytest tests/ -q",
         "venv/bin/python -m pytest tests/test_run_artifacts.py tests/test_history.py tests/test_pipeline_agentic.py -q"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-profile-manifests",
@@ -148,7 +156,8 @@
       "verification": [
         "venv/bin/python -m pytest tests/ -q",
         "Manual UI check: persona selector includes a test user-defined persona"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-editorial-evals",
@@ -169,7 +178,8 @@
       "verification": [
         "venv/bin/python -m pytest tests/ -q",
         "make eval-fixture"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-ops-commands",
@@ -192,7 +202,8 @@
         "New command for tests exits 0.",
         "New command for smoke exits 0.",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-voice-inbox",
@@ -215,7 +226,8 @@
         "make test",
         "venv/bin/python tests/ui_smoke.py",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-kb-inventory",
@@ -238,7 +250,8 @@
         "make test",
         "python3 -m json.tool ops/roadmap/features.json",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-retrieval-inspector",
@@ -261,7 +274,8 @@
         "make test",
         "make eval-fixture",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-recipe-system",
@@ -284,7 +298,8 @@
         "make test",
         "venv/bin/python tests/ui_smoke.py",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-compose-studio",
@@ -307,7 +322,8 @@
         "make test",
         "make eval-fixture",
         "venv/bin/python tests/ui_smoke.py"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-transcription-matrix",
@@ -330,7 +346,8 @@
         "python3 -m json.tool ops/roadmap/features.json",
         "git diff --check",
         "make test"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-eval-scorecards",
@@ -353,7 +370,8 @@
         "make test",
         "make eval-fixture",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-agent-handoffs",
@@ -376,7 +394,8 @@
         "make test",
         "python3 scripts/agentic/issue_lint.py --issue-file <generated-draft> --labels agent:ready",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-run-workspace",
@@ -399,7 +418,8 @@
         "make test",
         "venv/bin/python tests/ui_smoke.py",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-profile-os",
@@ -421,7 +441,8 @@
       "verification": [
         "make test",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-resurfacing-digest",
@@ -443,7 +464,8 @@
       "verification": [
         "make test",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-songforge",
@@ -466,7 +488,8 @@
         "make test",
         "make eval-fixture",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-brand-metadata-cleanup",
@@ -489,7 +512,8 @@
         "git diff --check",
         "python3 -m json.tool ops/roadmap/features.json",
         "Manual check: GitHub repo metadata reads as canonical WhisperForge."
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-watch-folder-inbox",
@@ -512,7 +536,8 @@
         "make test",
         "venv/bin/python tests/ui_smoke.py",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-knowledge-synthesis",
@@ -535,7 +560,8 @@
         "make test",
         "make eval-fixture",
         "git diff --check"
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-large-file-router-eval",
@@ -558,7 +584,8 @@
         "python3 -m json.tool ops/roadmap/features.json",
         "git diff --check",
         "Any prototype must also run make test."
-      ]
+      ],
+      "status": "shipped"
     },
     {
       "id": "wf-markdown-vault-export",
@@ -579,6 +606,70 @@
       ],
       "verification": [
         "make test",
+        "git diff --check"
+      ],
+      "status": "shipped"
+    },
+    {
+      "id": "wf-dogfood-loop",
+      "title": "Run and document a real Wispr Flow-to-output dogfood session",
+      "phase": "Next Round",
+      "priority": "P0",
+      "kind": "ops",
+      "status": "open",
+      "githubIssue": 41,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/41",
+      "acceptance": [
+        "Run one real capture through capture/import, recipe run, review, markdown/Notion export, run reopen, and resurfacing digest.",
+        "Write a friction report in docs/dogfood with explicit blockers and missing controls.",
+        "Include concrete run artifact references and what was exported/published.",
+        "Create at least three follow-up issues from observed friction."
+      ],
+      "verification": [
+        "make test",
+        "make browser-e2e",
+        "make browser-e2e-fresh",
+        "make digest"
+      ]
+    },
+    {
+      "id": "wf-release-target",
+      "title": "Pick next release target and align milestone scope",
+      "phase": "Next Round",
+      "priority": "P0",
+      "kind": "docs",
+      "status": "shipped",
+      "githubIssue": 42,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/42",
+      "acceptance": [
+        "Decide one milestone target and document rationale plus owner/date.",
+        "Publish mandatory-now vs deferred dependency map for that target.",
+        "Re-rank upcoming issue wave against the chosen target.",
+        "Keep roadmap and status docs consistent with the decision."
+      ],
+      "verification": [
+        "python3 -m json.tool ops/roadmap/features.json",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-handoff-routing-followups",
+      "title": "Extend approve-and-create routing to follow-up queue and digest destinations",
+      "phase": "Next Round",
+      "priority": "P1",
+      "kind": "feature",
+      "status": "open",
+      "githubIssue": 43,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/43",
+      "acceptance": [
+        "Add one new routing destination behind explicit approval.",
+        "Preserve dry-run fallback behavior and kill-switch semantics.",
+        "Add tests for success, missing-config dry-run, and transport failure.",
+        "Update docs for any new routing configuration knobs."
+      ],
+      "verification": [
+        "make test",
+        "python3 -m json.tool ops/roadmap/features.json",
         "git diff --check"
       ]
     }

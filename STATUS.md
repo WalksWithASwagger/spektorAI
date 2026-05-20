@@ -1,24 +1,25 @@
 # WhisperForge Status
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 ## Current State
 
 - Current branch: `main`, synced with `origin/main`.
 - Latest shipped feature baseline:
-  `685b0a0 test: stabilize browser E2E smoke flows`.
+  `4ff3681 test(e2e): replace fresh smoke monkeypatch with recorded fixtures`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: audio consolidation issues `#36` through `#40` have
-  shipped. No open PRs at closeout time.
+- Live GitHub queue: open issues are `#41` and `#43` (`#42` is shipped as the
+  release-target decision); no open PRs.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
 - Services mode: still present through `docker compose`; direct mode remains
   the product lead unless service parity is the explicit scope.
+- Release target decision (owner): local-first personal workbench (`#42`).
 - Strategy anchor:
   [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md).
 - Current audit and from-here roadmap:
@@ -34,8 +35,7 @@ Last updated: 2026-05-19
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> no open issues after `#36`
-  closeout.
+- `gh issue list --state open --limit 20` -> open issues `#41`, `#43`.
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
@@ -44,7 +44,7 @@ Last updated: 2026-05-19
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `259 passed`.
+- `make test` -> `261 passed`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
 - `venv/bin/python tests/ui_smoke.py` passes rendered Streamlit shell smoke.
 - `make smoke` passes Streamlit health smoke on the default smoke port.
@@ -96,6 +96,7 @@ Last updated: 2026-05-19
 
 ## Next Round
 
-Run a real Wispr Flow dogfood session before creating the next broad issue
-wave. The durable plan is in
+Run the real Wispr Flow dogfood session (`#41`) against the local-first
+milestone target, then execute routing follow-up expansion (`#43`). The durable
+plan is in
 [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).

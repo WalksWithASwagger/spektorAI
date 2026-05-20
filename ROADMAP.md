@@ -1,6 +1,6 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-19
+Last reviewed: 2026-05-20
 
 The May 2026 reset wave is now complete. The strategic anchor remains
 [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md);
@@ -31,14 +31,16 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
 - Latest shipped feature baseline:
-  `2a7e658 feat: ship audio consolidation salvage wave`.
-- Open GitHub issues: none after `#36` brand/metadata closeout.
+  `4ff3681 test(e2e): replace fresh smoke monkeypatch with recorded fixtures`.
+- Open GitHub issues: `#41` and `#43` (`#42` release-target decision shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `246 passed`.
+- Current unit baseline: `261 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
   [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
+- Release target decision (owner): local-first personal workbench, recorded in
+  issue `#42` and `ops/roadmap/features.json`.
 
 ## Roadmap From Here
 
@@ -60,17 +62,17 @@ the primary loop works with real UI state transitions.
 Focus first on paste input, recipe run, review tab rendering, markdown export,
 run reopen, and digest generation.
 
-### 3. Choose The Release Target
+### 3. Execute The Local-First Milestone
 
-Decide whether the next milestone is:
+The current milestone target is local-first personal workbench. Immediate scope
+is fast local capture -> recipe -> review -> export loops with explicit
+human-gated routing controls.
 
-- local-first personal workbench,
-- private hosted Streamlit app,
-- services-mode deployment,
-- or packageable desktop/local workflow.
+Deferred until later milestone:
 
-This decision affects auth, secrets, storage, Notion behavior, and whether
-Docker/services parity matters now or later.
+- hosted auth/multi-user accounts,
+- services-mode parity beyond current stability baseline,
+- deployment hardening for public/private hosted surfaces.
 
 ### 4. Turn The Provider Matrix Into A Router
 
@@ -109,15 +111,13 @@ more song structures, prompt-pack variants, and export presets.
 Do not wire direct music-generation service calls until the text workflow is
 useful in real sessions.
 
-## Proposed Next Issue Wave
-
-Create these only after a dogfood report and the next release target decision:
+## Active Next Issue Wave
 
 | ID | Priority | Title | Gate |
 | --- | --- | --- | --- |
 | `wf-dogfood-loop` | P0 | Run and document a real Wispr Flow-to-output dogfood session | Human supplies real capture/export target |
+| `wf-release-target` | P0 | Decide and implement the next release target | Shipped/decided in `#42` |
 | `wf-e2e-browser` | P0 | Add end-to-end UI coverage for paste recipe and export loop | Test harness chosen |
-| `wf-release-target` | P0 | Decide and implement the next release target | Human chooses local/hosted/services |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Provider/privacy choice confirmed |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
 | `wf-handoff-routing-followups` | P1 | Extend approved routing to follow-up queue and digest destinations | GitHub/Linear approve-and-create shipped |

@@ -1,6 +1,6 @@
 # WhisperForge Next Round Plan
 
-Date: 2026-05-19
+Date: 2026-05-20
 
 ## Current State
 
@@ -14,8 +14,26 @@ WhisperForge is consolidated into `WalksWithASwagger/spektorAI`.
 - GitHub metadata points to this canonical WhisperForge repo.
 - No open-source license is currently granted; the archived `whisperforge` MIT
   license is not inherited without an explicit owner decision.
-- Current verification baseline is `246 passed`, plus eval fixture, UI smoke,
+- Current verification baseline is `261 passed`, plus eval fixture, UI smoke,
   Streamlit health smoke, JSON validation, and whitespace checks.
+
+## Release Target Decision (2026-05-20)
+
+- Owner decision: **local-first personal workbench** (issue `#42`).
+- Why now: fastest dogfood cycle, lowest operational drag, and clearest
+  evidence path before hosted/services commitments.
+
+Mandatory now:
+
+- direct-mode UX reliability for capture -> recipe -> review -> export,
+- deterministic local verification (`make test`, browser smokes, digest),
+- explicit human approval boundaries for any outbound routing.
+
+Deferred for later milestone:
+
+- hosted auth / multi-user accounts,
+- deeper services-mode parity work beyond current baseline,
+- deployment hardening for private/public hosted targets.
 
 ## Next Round Recommendation
 
@@ -60,7 +78,7 @@ clear:
 | --- | --- | --- | --- |
 | `wf-dogfood-loop` | P0 | Run and document a real Wispr Flow-to-output session | Human supplies capture/export target |
 | `wf-e2e-primary-loop` | P0 | Add end-to-end coverage for the chosen primary loop | Dogfood path identified |
-| `wf-release-target` | P0 | Decide and document the next release target | Human chooses target |
+| `wf-release-target` | P0 | Decide and document the next release target | Shipped/decided in `#42` |
 | `wf-provider-router-capabilities` | P1 | Add provider-router capability metadata and fixtures | Large-file evaluation accepted |
 | `wf-kb-governance` | P1 | Add canonical KB pack and stale/private review workflow | Human confirms policy |
 | `wf-human-approved-routing-followups` | P1 | Extend approve-and-create routing to follow-up queue and digest destinations | GitHub/Linear approve-and-create shipped |
