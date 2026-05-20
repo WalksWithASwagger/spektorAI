@@ -15,7 +15,7 @@ import shutil
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 from openai import OpenAI
 from pydub import AudioSegment
@@ -59,6 +59,130 @@ class TranscriptionDetails:
 CHUNK_THRESHOLD_BYTES = 20 * 1024 * 1024
 MIN_CHUNK_LENGTH_MS = 5_000
 MAX_CHUNKS = 20
+VIDEO_SOURCE_EXTENSIONS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
+
+
+@dataclass(frozen=True)
+class TranscriptionBackendCapabilities:
+    max_input_bytes: Optional[int]
+    accepts_video: bool
+    needs_ffmpeg: bool
+    supports_segments: bool
+    supports_diarization: bool
+    supports_streaming: bool
+    safe_parallel_chunks: bool
+    privacy_mode: str
+
+
+_BACKEND_CAPABILITIES: dict[str, TranscriptionBackendCapabilities] = {
+    "openai": TranscriptionBackendCapabilities(
+        max_input_bytes=25 * 1024 * 1024,
+        accepts_video=False,
+        needs_ffmpeg=False,
+        supports_segments=False,
+        supports_diarization=False,
+        supports_streaming=False,
+        safe_parallel_chunks=False,
+        privacy_mode="cloud",
+    ),
+    "mlx": TranscriptionBackendCapabilities(
+        max_input_bytes=None,
+        accepts_video=False,
+        needs_ffmpeg=False,
+        supports_segments=False,
+        supports_diarization=False,
+        supports_streaming=False,
+        safe_parallel_chunks=False,
+        privacy_mode="local",
+    ),
+    "whisper_cpp": TranscriptionBackendCapabilities(
+        max_input_bytes=None,
+        accepts_video=False,
+        needs_ffmpeg=False,
+        supports_segments=False,
+        supports_diarization=False,
+        supports_streaming=False,
+        safe_parallel_chunks=False,
+        privacy_mode="local",
+    ),
+    "whisperx": TranscriptionBackendCapabilities(
+        max_input_bytes=None,
+        accepts_video=False,
+        needs_ffmpeg=False,
+        supports_segments=True,
+        supports_diarization=True,
+        supports_streaming=False,
+        safe_parallel_chunks=False,
+        privacy_mode="local",
+    ),
+}
+
+
+def resolve_transcription_backend(backend: Optional[str] = None) -> str:
+    candidate = (backend or TRANSCRIPTION_BACKEND or "openai").strip().lower()
+    if candidate == "auto":
+        return "openai"
+    if candidate in _BACKEND_CAPABILITIES:
+        return candidate
+    logger.warning("Unknown transcription backend '%s'; falling back to openai.", candidate)
+    return "openai"
+
+
+def transcription_capabilities(backend: Optional[str] = None) -> dict[str, Any]:
+    selected = resolve_transcription_backend(backend)
+    caps = _BACKEND_CAPABILITIES[selected]
+    return {
+        "backend": selected,
+        "max_input_bytes": caps.max_input_bytes,
+        "accepts_video": caps.accepts_video,
+        "needs_ffmpeg": caps.needs_ffmpeg,
+        "supports_segments": caps.supports_segments,
+        "supports_diarization": caps.supports_diarization,
+        "supports_streaming": caps.supports_streaming,
+        "safe_parallel_chunks": caps.safe_parallel_chunks,
+        "privacy_mode": caps.privacy_mode,
+    }
+
+
+def build_transcription_plan(
+    source_path: str | Path,
+    *,
+    backend: Optional[str] = None,
+    chunker: Optional[str] = None,
+) -> dict[str, Any]:
+    path = Path(source_path)
+    selected_backend = resolve_transcription_backend(backend)
+    selected_chunker = (chunker or CHUNKER or "size").strip().lower()
+    caps = transcription_capabilities(selected_backend)
+    file_size = path.stat().st_size
+    suffix = path.suffix.lower()
+    large = file_size > CHUNK_THRESHOLD_BYTES
+    reasons: list[str] = []
+    if large:
+        reasons.append("exceeds_chunk_threshold")
+    if suffix in VIDEO_SOURCE_EXTENSIONS:
+        reasons.append("video_source_requires_extraction")
+
+    if not large:
+        strategy = "single_pass"
+    elif selected_backend == "whisperx" and selected_chunker != "vad":
+        strategy = "whole_file"
+    elif selected_chunker == "vad":
+        strategy = "chunked_vad"
+    else:
+        strategy = "chunked_size"
+
+    return {
+        "backend": selected_backend,
+        "chunker": selected_chunker,
+        "strategy": strategy,
+        "file_size_bytes": file_size,
+        "chunk_threshold_bytes": CHUNK_THRESHOLD_BYTES,
+        "source_suffix": suffix,
+        "requires_ffmpeg": bool(suffix in VIDEO_SOURCE_EXTENSIONS or caps["needs_ffmpeg"]),
+        "capabilities": caps,
+        "reasons": reasons,
+    }
 
 
 def _openai() -> OpenAI:

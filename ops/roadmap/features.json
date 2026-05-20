@@ -695,6 +695,28 @@
       ]
     },
     {
+      "id": "wf-transcription-router",
+      "title": "Implement provider router from transcription matrix",
+      "phase": "Next Round",
+      "priority": "P1",
+      "kind": "feature",
+      "status": "shipped",
+      "githubIssue": 48,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/48",
+      "acceptance": [
+        "Add explicit backend capability metadata for openai, mlx, whisper_cpp, and whisperx.",
+        "Add a deterministic chunk-plan helper that reports backend, extension/size signals, and strategy.",
+        "Preserve existing runtime defaults while introducing the planner layer.",
+        "Add fixture-only tests for capabilities and chunk-plan policy cases.",
+        "Sync roadmap/status documentation with the shipped slice."
+      ],
+      "verification": [
+        "make test",
+        "venv/bin/python -m pytest tests/test_audio.py -q",
+        "git diff --check"
+      ]
+    },
+    {
       "id": "wf-release-target",
       "title": "Pick next release target and align milestone scope",
       "phase": "Next Round",

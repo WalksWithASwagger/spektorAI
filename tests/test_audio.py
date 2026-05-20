@@ -93,3 +93,48 @@ class TestTranscribe:
         monkeypatch.setattr(audio, "_openai", lambda: client)
         # Single-chunk call returns "" on failure rather than raising.
         assert audio.transcribe_chunk(silent_wav) == ""
+
+
+class TestTranscriptionRouterPlan:
+    def test_transcription_capabilities_reports_whisperx_supports_segments(self):
+        caps = audio.transcription_capabilities("whisperx")
+        assert caps["backend"] == "whisperx"
+        assert caps["supports_segments"] is True
+        assert caps["supports_diarization"] is True
+        assert caps["privacy_mode"] == "local"
+
+    def test_plan_large_openai_uses_size_chunking(self, tmp_path):
+        path = tmp_path / "large.wav"
+        path.write_bytes(b"0" * (audio.CHUNK_THRESHOLD_BYTES + 1024))
+
+        plan = audio.build_transcription_plan(path, backend="openai", chunker="size")
+
+        assert plan["strategy"] == "chunked_size"
+        assert "exceeds_chunk_threshold" in plan["reasons"]
+        assert plan["requires_ffmpeg"] is False
+
+    def test_plan_large_whisperx_prefers_whole_file_without_vad(self, tmp_path):
+        path = tmp_path / "large.wav"
+        path.write_bytes(b"0" * (audio.CHUNK_THRESHOLD_BYTES + 1024))
+
+        plan = audio.build_transcription_plan(path, backend="whisperx", chunker="size")
+
+        assert plan["strategy"] == "whole_file"
+        assert plan["capabilities"]["supports_segments"] is True
+
+    def test_plan_large_whisperx_uses_vad_when_requested(self, tmp_path):
+        path = tmp_path / "large.wav"
+        path.write_bytes(b"0" * (audio.CHUNK_THRESHOLD_BYTES + 1024))
+
+        plan = audio.build_transcription_plan(path, backend="whisperx", chunker="vad")
+
+        assert plan["strategy"] == "chunked_vad"
+
+    def test_plan_video_source_flags_ffmpeg_requirement(self, tmp_path):
+        path = tmp_path / "clip.mp4"
+        path.write_bytes(b"video-bytes")
+
+        plan = audio.build_transcription_plan(path, backend="openai")
+
+        assert plan["requires_ffmpeg"] is True
+        assert "video_source_requires_extraction" in plan["reasons"]

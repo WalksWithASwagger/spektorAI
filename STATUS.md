@@ -45,7 +45,7 @@ Last updated: 2026-05-20
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `268 passed`.
+- `make test` -> `273 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
@@ -83,9 +83,10 @@ Last updated: 2026-05-20
 - Services-mode now forwards transcription `segments` and `language` over HTTP
   when the backend emits rich details; non-rich backends still return empty
   segment lists by design.
-- The transcription/provider matrix is a decision artifact; runtime provider
-  routing still needs implementation and real audio fixtures before defaults
-  should change.
+- The transcription/provider matrix now has a shipped capability/planner layer
+  (`#48`) in `whisperforge_core/audio.py`, but runtime defaults remain unchanged.
+  FFmpeg media extraction/normalization and parallel chunk execution are still
+  deferred until fixture-backed follow-up work is scoped.
 - SongForge is intentionally text-first and deterministic. It is ready as a
   source-linked creative pack, not as an audio/music-generation integration.
 - Resurfacing digest is report-only. Any notification, publishing, routing, or
@@ -105,6 +106,6 @@ Last updated: 2026-05-20
 
 ## Next Round
 
-Dogfood closeout is complete. Next roadmap slice is the local-first milestone
-continuation work (`wf-transcription-router`, `wf-kb-governance`,
+Dogfood closeout plus first router slice are complete. Next roadmap slice is
+local-first milestone continuation work (`wf-kb-governance`,
 `wf-handoff-routing-followups` digest/Notion destinations).
