@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 from ui import dialogs, input as input_mod, output as output_mod, pipeline as pipeline_mod
 from whisperforge_core import adapters as adapters_mod
+from whisperforge_core import captures
 from whisperforge_core import pipeline as core_pipeline
 from whisperforge_core import run_artifacts
 
@@ -152,3 +153,29 @@ def test_primary_loop_run_then_reopen_restores_output(tmp_path, monkeypatch):
     assert state["wisdom"] == "A grounded insight."
     assert state["compare_label"] == "OpenAI gpt-4o-mini"
     assert state["last_notion_url"] == "https://notion.so/primary-loop"
+
+
+def test_mark_capture_status_refreshes_run_manifest_capture_metadata(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_artifacts, "RUNS_DIR", tmp_path / "runs")
+    monkeypatch.setattr(captures, "CAPTURES_DIR", tmp_path / "captures")
+
+    record = captures.create_capture(
+        capture_id="cap-1",
+        source="wispr_flow",
+        filename="wispr.txt",
+        title="Capture title",
+        text="Real owner text.",
+    )
+    captures.attach_run(record.capture_id, "run-1", status="running")
+    run_artifacts.start_run("run-1", {"capture": captures.run_metadata(record.capture_id)})
+
+    state = FakeSessionState({
+        "run_id": "run-1",
+        "capture_id": record.capture_id,
+    })
+    pipeline_mod._mark_capture_status(state, "completed")
+
+    manifest = run_artifacts.load_manifest("run-1")
+    capture_meta = (manifest.get("metadata") or {}).get("capture") or {}
+    assert capture_meta.get("capture_id") == "cap-1"
+    assert capture_meta.get("status") == "completed"

@@ -437,5 +437,11 @@ def _mark_capture_status(s, status: str) -> None:
         return
     try:
         captures_mod.mark_status(capture_id, status)
+        run_id = s.get("run_id")
+        if run_id:
+            run_artifacts.refresh_capture_metadata(
+                run_id,
+                captures_mod.run_metadata(capture_id),
+            )
     except Exception as e:
         logger.warning("failed to mark capture status %s: %s", status, e)

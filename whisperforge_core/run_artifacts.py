@@ -180,6 +180,22 @@ def mark_status(run_id: str, status: str, *, error: Optional[str] = None) -> Non
     _write_json(manifest_path(run_id), manifest)
 
 
+def refresh_capture_metadata(run_id: str, capture_metadata: dict[str, Any] | None) -> None:
+    if not capture_metadata:
+        return
+    manifest = load_manifest(run_id)
+    metadata = manifest.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+    metadata["capture"] = _jsonable(capture_metadata)
+    manifest.update({
+        "run_id": run_id,
+        "metadata": metadata,
+        "updated_at": now_iso(),
+    })
+    _write_json(manifest_path(run_id), manifest)
+
+
 def _write_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.tmp")
