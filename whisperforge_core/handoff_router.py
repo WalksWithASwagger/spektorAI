@@ -20,9 +20,12 @@ must be passed as IDs in this v1; name-based labels would need an extra
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -62,7 +65,8 @@ def routing_available() -> dict[str, bool]:
     linear_ok = bool(os.getenv("LINEAR_API_KEY")) and bool(
         os.getenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID")
     )
-    return {"github": github_ok, "linear": linear_ok}
+    followup_ok = bool(os.getenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH"))
+    return {"github": github_ok, "linear": linear_ok, "followup_queue": followup_ok}
 
 
 def create_github_issue(
@@ -207,6 +211,52 @@ def create_linear_issue(
         target="linear",
         url=url,
         details={"identifier": issue.get("identifier")},
+    )
+
+
+def create_followup_queue_item(
+    *,
+    queue_path: str,
+    title: str,
+    body: str,
+    dry_run: bool = False,
+) -> HandoffResult:
+    if _force_dry_run() or dry_run:
+        return HandoffResult(success=True, target="followup_queue", dry_run=True)
+    if not queue_path:
+        return HandoffResult(
+            success=False,
+            target="followup_queue",
+            dry_run=True,
+            error=(
+                "No follow-up queue path configured (set "
+                "WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH or pass queue_path)."
+            ),
+        )
+
+    path = Path(queue_path).expanduser()
+    record = {
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "title": title,
+        "body": body,
+    }
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError as exc:
+        logger.warning("follow-up queue write failed: %s", exc)
+        return HandoffResult(
+            success=False,
+            target="followup_queue",
+            error=str(exc),
+        )
+
+    return HandoffResult(
+        success=True,
+        target="followup_queue",
+        url=path.resolve().as_uri(),
+        details={"queue_path": str(path)},
     )
 
 

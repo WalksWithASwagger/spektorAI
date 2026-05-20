@@ -32,7 +32,8 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Pull requests `#25` through `#35`: merged.
 - Latest shipped feature baseline:
   `4ff3681 test(e2e): replace fresh smoke monkeypatch with recorded fixtures`.
-- Open GitHub issues: `#41` and `#43` (`#42` release-target decision shipped).
+- Open GitHub issues: `#41` (`#42` release-target decision shipped; `#43`
+  routing follow-up expansion shipped).
 - Open GitHub PRs: none.
 - Current unit baseline: `261 passed`.
 - Audio repo consolidation audit:
@@ -92,13 +93,12 @@ and a migration path for profile metadata.
 The product should help agents avoid using stale or sensitive context before
 generation starts.
 
-### 6. Expand Human-Gated Routing
+### 6. Expand Human-Gated Routing (Shipped Slice + Next)
 
-Handoff drafts now support explicit approval to create GitHub/Linear issues with
-dry-run defaults and an env kill switch. The next useful step is expanding that
-approval boundary to:
+Handoff drafts now support explicit approval to create GitHub/Linear issues and
+append to a local follow-up queue with dry-run defaults and an env kill switch.
+The next useful step is expanding that approval boundary to:
 
-- add follow-up queue item,
 - publish/send digest,
 - create/update Notion task pages.
 
@@ -120,7 +120,7 @@ useful in real sessions.
 | `wf-e2e-browser` | P0 | Add end-to-end UI coverage for paste recipe and export loop | Test harness chosen |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Provider/privacy choice confirmed |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
-| `wf-handoff-routing-followups` | P1 | Extend approved routing to follow-up queue and digest destinations | GitHub/Linear approve-and-create shipped |
+| `wf-handoff-routing-followups` | P1 | Extend approved routing to follow-up queue and digest destinations | Follow-up queue routing shipped; digest/Notion destinations remain |
 | `wf-digest-automation` | P2 | Add optional resurfacing digest schedule/report flow | Cadence and destination confirmed |
 | `wf-songforge-polish` | P2 | Improve SongForge creative quality and exports | Target use case confirmed |
 

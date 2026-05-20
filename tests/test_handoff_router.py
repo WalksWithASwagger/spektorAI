@@ -277,8 +277,11 @@ def test_routing_available_reports_both_off_when_unconfigured(monkeypatch):
     monkeypatch.delenv("WHISPERFORGE_HANDOFF_GITHUB_REPO", raising=False)
     monkeypatch.delenv("LINEAR_API_KEY", raising=False)
     monkeypatch.delenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID", raising=False)
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH", raising=False)
 
-    assert handoff_router.routing_available() == {"github": False, "linear": False}
+    assert handoff_router.routing_available() == {
+        "github": False, "linear": False, "followup_queue": False
+    }
 
 
 def test_routing_available_detects_both_on_when_configured(monkeypatch):
@@ -286,5 +289,83 @@ def test_routing_available_detects_both_on_when_configured(monkeypatch):
     monkeypatch.setenv("WHISPERFORGE_HANDOFF_GITHUB_REPO", "owner/repo")
     monkeypatch.setenv("LINEAR_API_KEY", "key")
     monkeypatch.setenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID", "team-uuid")
+    monkeypatch.setenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH", "/tmp/followups.jsonl")
 
-    assert handoff_router.routing_available() == {"github": True, "linear": True}
+    assert handoff_router.routing_available() == {
+        "github": True, "linear": True, "followup_queue": True
+    }
+
+
+# --- Follow-up queue ------------------------------------------------------
+
+
+def test_followup_queue_dry_run_skips_file_write(monkeypatch, tmp_path):
+    queue_path = tmp_path / "followups.jsonl"
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = handoff_router.create_followup_queue_item(
+        queue_path=str(queue_path),
+        title="Follow-up",
+        body="Body",
+        dry_run=True,
+    )
+
+    assert result.success is True
+    assert result.dry_run is True
+    assert not queue_path.exists()
+
+
+def test_followup_queue_missing_path_returns_dry_run_with_error(monkeypatch):
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = handoff_router.create_followup_queue_item(
+        queue_path="",
+        title="Follow-up",
+        body="Body",
+        dry_run=False,
+    )
+
+    assert result.success is False
+    assert result.dry_run is True
+    assert "WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH" in (result.error or "")
+
+
+def test_followup_queue_success_appends_jsonl(monkeypatch, tmp_path):
+    queue_path = tmp_path / "followups.jsonl"
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = handoff_router.create_followup_queue_item(
+        queue_path=str(queue_path),
+        title="Follow-up title",
+        body="Follow-up body",
+        dry_run=False,
+    )
+
+    assert result.success is True
+    assert result.dry_run is False
+    assert queue_path.exists()
+    lines = queue_path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    assert "Follow-up title" in lines[0]
+    assert result.url == queue_path.resolve().as_uri()
+
+
+def test_followup_queue_write_failure_surfaces_error(monkeypatch, tmp_path):
+    queue_path = tmp_path / "missing" / "followups.jsonl"
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    def boom(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(handoff_router.Path, "open", boom)
+
+    result = handoff_router.create_followup_queue_item(
+        queue_path=str(queue_path),
+        title="Follow-up title",
+        body="Follow-up body",
+        dry_run=False,
+    )
+
+    assert result.success is False
+    assert result.dry_run is False
+    assert "disk full" in (result.error or "")

@@ -9,7 +9,7 @@
     "workflowDoc": "docs/LINEAR-GITHUB-PIPELINE.md",
     "lastSeededAt": "2026-05-18",
     "lastAuditedAt": "2026-05-20",
-    "deliveryState": "active-next-round",
+    "deliveryState": "active-dogfood",
     "currentAudit": "docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md",
     "releaseTarget": "local-first personal workbench",
     "releaseTargetDecidedAt": "2026-05-20",
@@ -658,7 +658,7 @@
       "phase": "Next Round",
       "priority": "P1",
       "kind": "feature",
-      "status": "open",
+      "status": "shipped",
       "githubIssue": 43,
       "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/43",
       "acceptance": [

@@ -60,9 +60,9 @@ Then demo in this order:
 4. Run the full pipeline.
 5. Open `🧭 Review` and show source receipts, scorecard, and claim flags.
 6. Generate an agent handoff draft, then approve-and-create a real GitHub or
-   Linear issue from the same panel. Dry-run is the default when `gh` CLI or
-   `LINEAR_API_KEY` is not configured; set `WHISPERFORGE_HANDOFF_DRY_RUN=1` to
-   force dry-run during a live demo.
+   Linear issue (or append to a local follow-up queue) from the same panel.
+   Dry-run is the default when target config is missing; set
+   `WHISPERFORGE_HANDOFF_DRY_RUN=1` to force dry-run during a live demo.
 7. Export markdown and show run artifacts.
 8. Reopen the run from the Runs dialog.
 9. Generate a resurfacing digest:
@@ -82,11 +82,12 @@ Safe claims:
 - Services-mode transcription forwards `text`, `segments`, and `language` over
   HTTP when the backend emits rich details (WhisperX). Non-rich backends still
   return empty segment lists by design.
-- Agent handoff drafts can create real GitHub or Linear issues from the Review
-  tab, gated by an explicit "Approve and create" click. The router defaults to
-  dry-run when external config is missing and honors a
+- Agent handoff drafts can create real GitHub/Linear issues or append to a
+  local follow-up queue from the Review tab, gated by an explicit
+  "Approve and create" click. The router defaults to dry-run when target config
+  is missing and honors a
   `WHISPERFORGE_HANDOFF_DRY_RUN=1` kill switch. Requires `gh` CLI authenticated
-  and/or `LINEAR_API_KEY` env var to actually fire.
+  and/or `LINEAR_API_KEY` env var for tracker writes.
 
 Do not over-claim yet:
 

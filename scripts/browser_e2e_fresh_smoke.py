@@ -121,7 +121,7 @@ def _run_browser_flow(cache_dir: Path) -> str:
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
         # 1. Open the Paste tab and drop in a Wispr Flow transcript.
-        page.get_by_role("tab", name="✎ Paste").click()
+        page.get_by_role("tab", name=re.compile("Paste")).click()
         page.get_by_placeholder(
             "Drop in a Wispr Flow dictation, transcript, or some notes..."
         ).fill(TRANSCRIPT)
@@ -145,7 +145,7 @@ def _run_browser_flow(cache_dir: Path) -> str:
         # 4. Wait for the post-run tabs to appear and assert the article is
         #    visible inside the Article tab (the Review tab also renders an
         #    article preview, so scope strictly to one tabpanel).
-        article_tab = page.get_by_role("tab", name="📝 Article")
+        article_tab = page.get_by_role("tab", name=re.compile("Article"))
         article_tab.wait_for(state="visible", timeout=120_000)
         article_tab.click()
         article_panel = page.get_by_role("tabpanel").filter(
@@ -154,7 +154,7 @@ def _run_browser_flow(cache_dir: Path) -> str:
         article_panel.wait_for(timeout=30_000)
 
         # 5. Switch to the Review tab and assert scorecard surfaces render.
-        review_tab = page.get_by_role("tab", name="🧭 Review")
+        review_tab = page.get_by_role("tab", name=re.compile("Review"))
         review_tab.wait_for(state="visible", timeout=30_000)
         review_tab.click()
         page.get_by_text(re.compile("Verdict|Score|Receipts", re.I)).first.wait_for(

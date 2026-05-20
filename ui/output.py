@@ -345,7 +345,7 @@ def _approval_panel(preview: dict) -> None:
     st.markdown("**Approve and create**")
 
     available = handoff_router_mod.routing_available()
-    target_options = ["GitHub", "Linear"]
+    target_options = ["GitHub", "Linear", "Follow-up queue"]
     target = st.radio(
         "Target",
         target_options,
@@ -353,9 +353,11 @@ def _approval_panel(preview: dict) -> None:
         key="handoff_target_select",
     )
 
+    destination = ""
+    labels_raw = ""
     if target == "GitHub":
         default_repo = os.getenv("WHISPERFORGE_HANDOFF_GITHUB_REPO", "")
-        repo = st.text_input(
+        destination = st.text_input(
             "Repo (owner/name)", value=default_repo, key="handoff_github_repo",
         )
         labels_raw = st.text_input(
@@ -369,9 +371,9 @@ def _approval_panel(preview: dict) -> None:
             else "Dry-run only - install `gh` and set WHISPERFORGE_HANDOFF_GITHUB_REPO to enable live creation."
         )
         st.caption(status_line)
-    else:
+    elif target == "Linear":
         default_team = os.getenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID", "")
-        repo = st.text_input(
+        destination = st.text_input(
             "Linear team ID", value=default_team, key="handoff_linear_team",
         )
         labels_raw = st.text_input(
@@ -383,6 +385,19 @@ def _approval_panel(preview: dict) -> None:
             "Ready to create live issues via Linear API."
             if available["linear"]
             else "Dry-run only - set LINEAR_API_KEY and WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID to enable live creation."
+        )
+        st.caption(status_line)
+    else:
+        default_queue = os.getenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH", "")
+        destination = st.text_input(
+            "Queue path (jsonl)",
+            value=default_queue,
+            key="handoff_followup_queue_path",
+        )
+        status_line = (
+            "Ready to append approved follow-ups to the local queue file."
+            if available["followup_queue"]
+            else "Dry-run only - set WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH to enable queue writes."
         )
         st.caption(status_line)
 
@@ -407,17 +422,23 @@ def _approval_panel(preview: dict) -> None:
         with st.spinner(f"Submitting to {target}..."):
             if target == "GitHub":
                 result = handoff_router_mod.create_github_issue(
-                    repo=repo,
+                    repo=destination,
                     title=title_text,
                     body=body_text,
                     labels=labels,
                 )
-            else:
+            elif target == "Linear":
                 result = handoff_router_mod.create_linear_issue(
-                    team_id=repo,
+                    team_id=destination,
                     title=title_text,
                     description=body_text,
                     label_ids=labels,
+                )
+            else:
+                result = handoff_router_mod.create_followup_queue_item(
+                    queue_path=destination,
+                    title=title_text,
+                    body=body_text,
                 )
         s["handoff_created"][draft_key] = {
             "url": result.url,

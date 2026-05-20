@@ -39,8 +39,9 @@ a capture, transcript, or selected output and persist it under
 `.cache/runs/<run_id>/handoffs/` before any external tracker record is created.
 
 Draft generation stays preview-first, but v1 now supports explicit
-approve-and-create routing to GitHub and Linear from the Review tab. Routing
-defaults to dry-run when external config is missing and honors
+approve-and-create routing to GitHub, Linear, and a local follow-up queue from
+the Review tab. Routing defaults to dry-run when external config is missing and
+honors
 `WHISPERFORGE_HANDOFF_DRY_RUN=1` as a hard kill switch.
 
 ## Runner Flow

@@ -64,8 +64,9 @@ WhisperForge implementation, roadmap, and issue work.
   blocking saves.
 - **Agent handoff drafts**: the Review tab can turn a capture, transcript, or
   selected output into a GitHub/Linear-ready issue brief, persist it under the
-  current run artifacts, and route it to GitHub/Linear after explicit approval.
-  If external config is missing, approval stays dry-run and surfaces the reason.
+  current run artifacts, and route it to GitHub/Linear or a local follow-up
+  queue after explicit approval. If external config is missing, approval stays
+  dry-run and surfaces the reason.
 - **Run workspace**: the Runs dialog reads `.cache/runs` manifests, flags
   partial/error runs, and can reopen completed outputs so Markdown, Notion, or
   handoff exports can be retried without regenerating content.
@@ -328,8 +329,9 @@ variants, plus an advisory scorecard for voice, grounding, usefulness, recipe
 compliance, and handoff readiness. It is a review surface, not a collaborative
 editor; edits still happen by rerunning with adjusted prompts, recipes, or
 settings. The same tab includes an **Agent handoff draft** preview that writes
-local issue drafts and can create a GitHub/Linear issue after explicit approval.
-When routing config is missing, approval remains dry-run and shows the blocker.
+local issue drafts and can create a GitHub/Linear issue or append to a local
+follow-up queue after explicit approval. When routing config is missing,
+approval remains dry-run and shows the blocker.
 Use the sidebar's **Runs** dialog to reopen completed run artifacts
 into this output/review surface and retry downstream exports. Partial runs are
 listed with their last stage and errors, but arbitrary stage replay is still out
@@ -489,6 +491,7 @@ adds that routing.
 | `WHISPERFORGE_HANDOFF_DRY_RUN` | Force handoff routing dry-run (`1`/`true`) | no      |
 | `WHISPERFORGE_HANDOFF_GITHUB_REPO` | Default GitHub repo for approved handoff issue creation (`owner/name`) | no |
 | `WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID` | Default Linear team ID for approved handoff issue creation | no |
+| `WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH` | Default local JSONL queue path for approved follow-up routing | no |
 | `WHISPERFORGE_E2E_FIXTURE_PATH` | Fixture payload path for browser E2E runs (used by `make browser-e2e-fresh`) | no |
 | `WF_RAG`                 | Force RAG on/off (`1`/`true` or `0`/`false`) | no            |
 | `WF_RAG_TOPK`            | Retrieved KB chunks per stage (default `5`) | no            |
