@@ -31,11 +31,11 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
 - Latest shipped feature baseline:
-  `4ff3681 test(e2e): replace fresh smoke monkeypatch with recorded fixtures`.
-- Open GitHub issues: `#41` (`#42` release-target decision shipped; `#43`
-  routing follow-up expansion shipped).
+  `12e373a feat(handoff): add follow-up queue routing target`.
+- Open GitHub issues: `#45`, `#46`, `#47` (`#41`, `#42`, and `#43` are
+  shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `261 passed`.
+- Current unit baseline: `265 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
@@ -45,14 +45,16 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 
 ## Roadmap From Here
 
-### 1. Dogfood The Full Loop
+### 1. Dogfood The Full Loop (Shipped)
 
-Run real Wispr Flow captures through the whole system and measure friction:
-capture inbox, recipe selection, review, markdown/Notion export, handoff draft,
-run reopen, and resurfacing digest.
+Real owner-text capture is now run through capture inbox, recipe selection,
+review, markdown/Notion export, run reopen, and resurfacing digest, with
+durable artifacts and command outputs recorded in:
 
-Success looks like a documented session report with concrete UX gaps, not more
-architecture.
+[`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md).
+
+The report produced three concrete friction issues (`#45`-`#47`) that now
+replace the original dogfood issue as the next implementation lane.
 
 ### 2. Add End-To-End Browser Coverage
 
@@ -115,9 +117,9 @@ useful in real sessions.
 
 | ID | Priority | Title | Gate |
 | --- | --- | --- | --- |
-| `wf-dogfood-loop` | P0 | Run and document a real Wispr Flow-to-output dogfood session | Human supplies real capture/export target |
-| `wf-release-target` | P0 | Decide and implement the next release target | Shipped/decided in `#42` |
-| `wf-e2e-browser` | P0 | Add end-to-end UI coverage for paste recipe and export loop | Test harness chosen |
+| `wf-digest-signal-filter` | P0 | Filter digest signal so real captures are not drowned by smoke/demo artifacts | Dogfood report completed in `#41` |
+| `wf-run-capture-status-sync` | P0 | Sync run-manifest capture metadata with final capture status | Dogfood report completed in `#41` |
+| `wf-export-readiness-refresh` | P0 | Refresh scorecard/handoff readiness signals after export events | Dogfood report completed in `#41` |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Provider/privacy choice confirmed |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
 | `wf-handoff-routing-followups` | P1 | Extend approved routing to follow-up queue and digest destinations | Follow-up queue routing shipped; digest/Notion destinations remain |

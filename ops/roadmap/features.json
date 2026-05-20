@@ -616,7 +616,7 @@
       "phase": "Next Round",
       "priority": "P0",
       "kind": "ops",
-      "status": "open",
+      "status": "shipped",
       "githubIssue": 41,
       "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/41",
       "acceptance": [
@@ -630,6 +630,68 @@
         "make browser-e2e",
         "make browser-e2e-fresh",
         "make digest"
+      ]
+    },
+    {
+      "id": "wf-digest-signal-filter",
+      "title": "Filter digest signal so real captures are not drowned by smoke/demo artifacts",
+      "phase": "Next Round",
+      "priority": "P0",
+      "kind": "feature",
+      "status": "open",
+      "githubIssue": 45,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/45",
+      "acceptance": [
+        "Add a way to identify non-production captures (seeded demo and smoke artifacts).",
+        "Default digest output suppresses obvious smoke/demo captures and prioritizes real captures.",
+        "Provide an explicit opt-in mode to include all captures.",
+        "Keep digest report-only behavior unchanged.",
+        "Add tests for default filtering and opt-in full mode."
+      ],
+      "verification": [
+        "make test",
+        "make digest",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-run-capture-status-sync",
+      "title": "Sync run-manifest capture metadata with final capture status",
+      "phase": "Next Round",
+      "priority": "P0",
+      "kind": "feature",
+      "status": "open",
+      "githubIssue": 46,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/46",
+      "acceptance": [
+        "Run manifest capture metadata reflects final lifecycle status by end of run.",
+        "Manifest capture updated timestamp refreshes when status changes.",
+        "Behavior is consistent for success and failure paths.",
+        "Tests assert manifest capture metadata matches the capture record after run completion."
+      ],
+      "verification": [
+        "make test",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-export-readiness-refresh",
+      "title": "Refresh handoff-readiness and scorecard signals after export events",
+      "phase": "Next Round",
+      "priority": "P0",
+      "kind": "feature",
+      "status": "open",
+      "githubIssue": 47,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/47",
+      "acceptance": [
+        "Handoff readiness/scorecard signals update after markdown/notion export events.",
+        "UI reflects export-aware readiness without a full rerun.",
+        "Run artifacts persist refreshed readiness state for reopen flows.",
+        "Tests prove readiness notes update after exports are recorded."
+      ],
+      "verification": [
+        "make test",
+        "git diff --check"
       ]
     },
     {

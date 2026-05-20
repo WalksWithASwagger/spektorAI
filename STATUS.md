@@ -6,14 +6,13 @@ Last updated: 2026-05-20
 
 - Current branch: `main`, synced with `origin/main`.
 - Latest shipped feature baseline:
-  `4ff3681 test(e2e): replace fresh smoke monkeypatch with recorded fixtures`.
+  `12e373a feat(handoff): add follow-up queue routing target`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: open issues are `#41` and `#43` (`#42` is shipped as the
-  release-target decision); no open PRs.
+- Live GitHub queue: friction follow-ups `#45`, `#46`, `#47`; no open PRs.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -30,12 +29,14 @@ Last updated: 2026-05-20
   [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
 - Presentation runbook:
   [`docs/PRESENTATION-RUNBOOK-2026-05-19.md`](docs/PRESENTATION-RUNBOOK-2026-05-19.md).
+- Dogfood report:
+  [`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md).
 
 ## Verified Baseline
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> open issues `#41`, `#43`.
+- `gh issue list --state open --limit 20` -> open issues `#45`, `#46`, `#47`.
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
@@ -44,10 +45,13 @@ Last updated: 2026-05-20
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `261 passed`.
+- `make test` -> `265 passed`.
+- `make browser-e2e` -> `browser-e2e: OK`.
+- `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
 - `venv/bin/python tests/ui_smoke.py` passes rendered Streamlit shell smoke.
 - `make smoke` passes Streamlit health smoke on the default smoke port.
+- `make digest` -> `.cache/digests/2026-05-19-resurfacing-digest.md`.
 - `git diff --check` passes.
 
 ## Active Handles
@@ -64,6 +68,7 @@ Last updated: 2026-05-20
 - Large-file router evaluation: [`docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md`](docs/LARGE-FILE-ROUTER-EVALUATION-2026-05-19.md)
 - Next round plan: [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md)
 - Presentation runbook: [`docs/PRESENTATION-RUNBOOK-2026-05-19.md`](docs/PRESENTATION-RUNBOOK-2026-05-19.md)
+- Dogfood report: [`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md)
 
 ## Known Risks
 
@@ -90,6 +95,9 @@ Last updated: 2026-05-20
   remains dry-run when target config is missing;
   `WHISPERFORGE_HANDOFF_DRY_RUN=1` is a forced-dry-run kill switch for demos
   and tests.
+- Dogfood found three concrete UX/data-quality gaps now tracked in `#45`-`#47`:
+  digest noise from smoke/demo captures, stale capture status in run-manifest
+  metadata, and stale scorecard readiness notes after exports.
 - GitHub/Linear state can drift quickly; refresh live tracker state before
   creating or closing new roadmap work.
 - Legacy audio repos are being archived as pointers to this canonical repo;
@@ -97,6 +105,6 @@ Last updated: 2026-05-20
 
 ## Next Round
 
-Run the real Wispr Flow dogfood session (`#41`) against the local-first
-milestone target. The durable plan is in
-[`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
+Swarm the dogfood follow-up fixes in `#45`, `#46`, and `#47`, using
+[`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md)
+as the evidence anchor.
