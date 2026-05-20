@@ -30,10 +30,34 @@ class DigestEntry:
     link: str = ""
 
 
-def build_digest(limit: int = 50, *, now: datetime | None = None) -> dict[str, Any]:
+def build_digest(
+    limit: int = 50,
+    *,
+    now: datetime | None = None,
+    include_nonprod: bool = False,
+) -> dict[str, Any]:
     now = now or datetime.now()
-    capture_records = captures.list_captures(limit=limit)
-    manifests = run_artifacts.list_manifests(limit=limit)
+    capture_records_all = captures.list_captures(limit=limit)
+    nonprod_capture_ids = {
+        record.capture_id
+        for record in capture_records_all
+        if _is_nonprod_capture(record)
+    }
+    capture_records = (
+        capture_records_all
+        if include_nonprod
+        else [r for r in capture_records_all if r.capture_id not in nonprod_capture_ids]
+    )
+    manifests_all = run_artifacts.list_manifests(limit=limit)
+    manifests = (
+        manifests_all
+        if include_nonprod
+        else [
+            m
+            for m in manifests_all
+            if _manifest_capture_id(m) not in nonprod_capture_ids
+        ]
+    )
     sections = {name: [] for name in DIGEST_SECTIONS}
 
     for record in capture_records:
@@ -87,6 +111,7 @@ def build_digest(limit: int = 50, *, now: datetime | None = None) -> dict[str, A
     return {
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "mode": "report-only",
+        "capture_filter": "all" if include_nonprod else "default",
         "sections": {
             name: [entry.__dict__ for entry in entries]
             for name, entries in sections.items()
@@ -190,10 +215,15 @@ def render_markdown(digest: dict[str, Any]) -> str:
     return "\n".join(parts).rstrip() + "\n"
 
 
-def write_digest(out_dir: Path | None = None, *, limit: int = 50) -> Path:
+def write_digest(
+    out_dir: Path | None = None,
+    *,
+    limit: int = 50,
+    include_nonprod: bool = False,
+) -> Path:
     out_dir = out_dir or DEFAULT_DIGEST_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
-    digest = build_digest(limit=limit)
+    digest = build_digest(limit=limit, include_nonprod=include_nonprod)
     stamp = digest["generated_at"][:10]
     path = out_dir / f"{stamp}-resurfacing-digest.md"
     path.write_text(render_markdown(digest), encoding="utf-8")
@@ -296,3 +326,25 @@ def _parse_datetime(value: str) -> datetime:
         except ValueError:
             pass
     return datetime.fromtimestamp(0, tz=timezone.utc)
+
+
+def _manifest_capture_id(manifest: dict[str, Any]) -> str:
+    metadata = manifest.get("metadata") or {}
+    capture = metadata.get("capture") or {}
+    if isinstance(capture, dict):
+        capture_id = capture.get("capture_id")
+        if capture_id:
+            return str(capture_id)
+    return ""
+
+
+def _is_nonprod_capture(record: captures.CaptureRecord) -> bool:
+    metadata = record.metadata or {}
+    created_by = str(metadata.get("created_by") or "").strip().lower()
+    if created_by in {"demo_seed", "seed_demo_dataset"}:
+        return True
+
+    sample_text = " ".join(
+        (str(record.title or ""), str(record.text_excerpt or ""), str(record.filename or ""))
+    ).strip().lower()
+    return sample_text.startswith("primary loop smoke transcript from wispr flow")

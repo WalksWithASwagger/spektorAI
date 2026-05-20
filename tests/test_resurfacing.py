@@ -50,6 +50,90 @@ def test_render_markdown_is_report_only_and_has_all_sections():
         assert f"## {section}" in markdown
 
 
+def test_digest_filters_demo_and_smoke_captures_by_default(tmp_path, monkeypatch):
+    monkeypatch.setattr(captures, "CAPTURES_DIR", tmp_path / "captures")
+    monkeypatch.setattr(run_artifacts, "RUNS_DIR", tmp_path / "runs")
+
+    captures.create_capture(
+        capture_id="cap-real",
+        source="wispr_flow",
+        filename="real.txt",
+        title="Real capture",
+        text="Owner planning note for a real workflow.",
+        metadata={"created_by": "streamlit_input"},
+    )
+    captures.create_capture(
+        capture_id="cap-demo",
+        source="wispr_flow",
+        filename="demo.txt",
+        title="Demo capture",
+        text="Seeded demo text for cold-start data.",
+        metadata={"created_by": "demo_seed"},
+    )
+    captures.create_capture(
+        capture_id="cap-smoke",
+        source="wispr_flow",
+        filename="smoke.txt",
+        title="Primary loop smoke transcript from Wispr Flow.",
+        text="Primary loop smoke transcript from Wispr Flow.",
+        metadata={"created_by": "streamlit_input"},
+    )
+
+    run_artifacts.start_run("run-real", {"capture": {"capture_id": "cap-real"}})
+    run_artifacts.write_stage("run-real", "session_output", {
+        "article": "# Real output\n\nBody",
+        "wisdom": "Real insight.",
+    })
+    run_artifacts.write_stage("run-real", "scorecard", {
+        "average_score": 91,
+        "verdict_label": "Ready",
+    })
+    run_artifacts.mark_status("run-real", "completed")
+
+    run_artifacts.start_run("run-demo", {"capture": {"capture_id": "cap-demo"}})
+    run_artifacts.write_stage("run-demo", "session_output", {
+        "article": "# Demo output\n\nBody",
+        "wisdom": "Demo insight.",
+    })
+    run_artifacts.write_stage("run-demo", "scorecard", {
+        "average_score": 92,
+        "verdict_label": "Ready",
+    })
+    run_artifacts.mark_status("run-demo", "completed")
+
+    digest = resurfacing.build_digest()
+    sections = digest["sections"]
+    notable_sources = {entry["source"] for entry in sections["Notable captures"]}
+    strong_sources = {entry["source"] for entry in sections["Strong outputs"]}
+
+    assert digest["capture_filter"] == "default"
+    assert "capture:cap-real" in notable_sources
+    assert "capture:cap-demo" not in notable_sources
+    assert "capture:cap-smoke" not in notable_sources
+    assert "run:run-real" in strong_sources
+    assert "run:run-demo" not in strong_sources
+
+
+def test_digest_can_include_nonprod_captures_when_requested(tmp_path, monkeypatch):
+    monkeypatch.setattr(captures, "CAPTURES_DIR", tmp_path / "captures")
+    monkeypatch.setattr(run_artifacts, "RUNS_DIR", tmp_path / "runs")
+
+    captures.create_capture(
+        capture_id="cap-demo",
+        source="wispr_flow",
+        filename="demo.txt",
+        title="Demo capture",
+        text="Seeded demo text for cold-start data.",
+        metadata={"created_by": "demo_seed"},
+    )
+
+    digest = resurfacing.build_digest(include_nonprod=True)
+    notable_sources = {entry["source"] for entry in digest["sections"]["Notable captures"]}
+
+    assert digest["capture_filter"] == "all"
+    assert "capture:cap-demo" in notable_sources
+
+
 def test_weekly_recaps_group_capture_and_run_metadata():
     capture_records = [
         captures.CaptureRecord(

@@ -12,7 +12,7 @@ Last updated: 2026-05-20
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: friction follow-ups `#45`, `#46`, `#47`; no open PRs.
+- Live GitHub queue: friction follow-ups `#46`, `#47`; no open PRs.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -36,7 +36,7 @@ Last updated: 2026-05-20
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> open issues `#45`, `#46`, `#47`.
+- `gh issue list --state open --limit 20` -> open issues `#46`, `#47`.
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
@@ -45,7 +45,7 @@ Last updated: 2026-05-20
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `265 passed`.
+- `make test` -> `267 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
@@ -95,9 +95,10 @@ Last updated: 2026-05-20
   remains dry-run when target config is missing;
   `WHISPERFORGE_HANDOFF_DRY_RUN=1` is a forced-dry-run kill switch for demos
   and tests.
-- Dogfood found three concrete UX/data-quality gaps now tracked in `#45`-`#47`:
-  digest noise from smoke/demo captures, stale capture status in run-manifest
-  metadata, and stale scorecard readiness notes after exports.
+- Dogfood follow-up `#45` is now shipped (default digest filtering of known
+  smoke/demo captures, with explicit include-all override). Remaining tracked
+  gaps are `#46` and `#47`: stale capture status in run-manifest metadata and
+  stale scorecard readiness notes after exports.
 - GitHub/Linear state can drift quickly; refresh live tracker state before
   creating or closing new roadmap work.
 - Legacy audio repos are being archived as pointers to this canonical repo;
@@ -105,6 +106,6 @@ Last updated: 2026-05-20
 
 ## Next Round
 
-Swarm the dogfood follow-up fixes in `#45`, `#46`, and `#47`, using
+Swarm the remaining dogfood follow-up fixes in `#46` and `#47`, using
 [`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md)
 as the evidence anchor.

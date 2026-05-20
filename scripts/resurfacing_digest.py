@@ -17,8 +17,17 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--limit", type=int, default=50)
+    parser.add_argument(
+        "--include-all-captures",
+        action="store_true",
+        help="Include smoke/demo captures instead of default real-signal filtering.",
+    )
     args = parser.parse_args()
-    path = resurfacing.write_digest(args.output_dir, limit=args.limit)
+    path = resurfacing.write_digest(
+        args.output_dir,
+        limit=args.limit,
+        include_nonprod=args.include_all_captures,
+    )
     print(path)
     return 0
 

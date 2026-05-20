@@ -638,7 +638,7 @@
       "phase": "Next Round",
       "priority": "P0",
       "kind": "feature",
-      "status": "open",
+      "status": "shipped",
       "githubIssue": 45,
       "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/45",
       "acceptance": [

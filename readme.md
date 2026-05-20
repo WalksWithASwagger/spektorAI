@@ -460,7 +460,10 @@ Run `make digest` weekly, or after a heavy capture/editing session, to surface
 useful signal without routing it anywhere. The digest is local and report-only:
 it links back to captures, run manifests, and exports, but it does not email,
 post, create issues, or schedule follow-ups unless a later explicit workflow
-adds that routing.
+adds that routing. By default it filters known smoke/demo captures so real
+session signal stays readable; use
+`venv/bin/python scripts/resurfacing_digest.py --include-all-captures` to
+include everything.
 
 ### Directory structure for day-to-day work
 
