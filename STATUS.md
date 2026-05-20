@@ -6,7 +6,7 @@ Last updated: 2026-05-20
 
 - Current branch: `main`, synced with `origin/main`.
 - Latest shipped feature baseline:
-  `3d89114 fix(scorecard): refresh export readiness after run exports`.
+  `7397b7f feat(audio): add transcription capability metadata and chunk planner`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.

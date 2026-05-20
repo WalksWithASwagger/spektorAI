@@ -31,7 +31,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
 - Latest shipped feature baseline:
-  `3d89114 fix(scorecard): refresh export readiness after run exports`.
+  `7397b7f feat(audio): add transcription capability metadata and chunk planner`.
 - Open GitHub issues: none (`#41`, `#42`, `#43`, `#45`, `#46`, `#47`, and
   `#48` are shipped).
 - Open GitHub PRs: none.
