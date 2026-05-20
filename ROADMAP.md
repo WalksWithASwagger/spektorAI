@@ -35,7 +35,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Open GitHub issues: none (`#41`, `#42`, `#43`, `#45`, `#46`, `#47`, and
   `#48` are shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `273 passed`.
+- Current unit baseline: `274 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
@@ -144,6 +144,7 @@ PR closeout. See
 ## Verification Defaults
 
 - Registry/docs: `python3 -m json.tool ops/roadmap/features.json`, `git diff --check`
+- Syntax rail: `make lint`
 - Core Python: `make test`
 - Editorial/source receipts: `make eval-fixture`
 - Rendered Streamlit shell: `venv/bin/python tests/ui_smoke.py`

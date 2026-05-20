@@ -8,6 +8,8 @@ on-demand dialogs.
 
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
 from whisperforge_core import images as images_mod
@@ -18,6 +20,11 @@ from whisperforge_core.llm import discover_ollama_models
 from . import dialogs, session
 
 
+def _ollama_discovery_enabled() -> bool:
+    value = os.getenv("WHISPERFORGE_DISCOVER_OLLAMA", "1").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
 def _providers_and_models() -> dict[str, dict[str, str]]:
     """Return the live LLM_MODELS dict with Ollama models refreshed from the
     running daemon (if any). Cached in session_state for one render."""
@@ -25,12 +32,13 @@ def _providers_and_models() -> dict[str, dict[str, str]]:
     if cache_key in st.session_state:
         return st.session_state[cache_key]
     models = {**LLM_MODELS}
-    try:
-        ollama = discover_ollama_models()
-        if ollama:
-            models["Ollama (local)"] = ollama
-    except Exception:
-        pass  # Ollama not running = no discovery; fall back to static entry
+    if _ollama_discovery_enabled():
+        try:
+            ollama = discover_ollama_models()
+            if ollama:
+                models["Ollama (local)"] = ollama
+        except Exception:
+            pass  # Ollama not running = no discovery; fall back to static entry
     st.session_state[cache_key] = models
     return models
 

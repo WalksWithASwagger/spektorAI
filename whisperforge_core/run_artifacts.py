@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -12,6 +13,108 @@ from typing import Any, Optional
 from .config import CACHE_DIR
 
 RUNS_DIR = CACHE_DIR / "runs"
+ARTIFACT_SCHEMA_VERSION = 1
+
+
+@dataclass(frozen=True)
+class ManifestStage:
+    stage: str
+    path: str
+    updated_at: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ManifestStage":
+        return cls(
+            stage=str(data.get("stage") or ""),
+            path=str(data.get("path") or ""),
+            updated_at=str(data.get("updated_at") or ""),
+        )
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "stage": self.stage,
+            "path": self.path,
+            "updated_at": self.updated_at,
+        }
+
+
+@dataclass(frozen=True)
+class ManifestExport:
+    kind: str
+    value: str
+    updated_at: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ManifestExport":
+        return cls(
+            kind=str(data.get("kind") or ""),
+            value=str(data.get("value") or ""),
+            updated_at=str(data.get("updated_at") or ""),
+        )
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "kind": self.kind,
+            "value": self.value,
+            "updated_at": self.updated_at,
+        }
+
+
+@dataclass(frozen=True)
+class RunManifest:
+    run_id: str
+    status: str = "running"
+    created_at: str = ""
+    updated_at: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+    stages: list[ManifestStage] = field(default_factory=list)
+    exports: list[ManifestExport] = field(default_factory=list)
+    current_stage: str = ""
+    error: str = ""
+    artifact_schema_version: int = ARTIFACT_SCHEMA_VERSION
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RunManifest":
+        stages = [
+            ManifestStage.from_dict(item)
+            for item in data.get("stages", [])
+            if isinstance(item, dict)
+        ]
+        exports = [
+            ManifestExport.from_dict(item)
+            for item in data.get("exports", [])
+            if isinstance(item, dict)
+        ]
+        metadata = data.get("metadata")
+        return cls(
+            run_id=str(data.get("run_id") or ""),
+            status=str(data.get("status") or "running"),
+            created_at=str(data.get("created_at") or ""),
+            updated_at=str(data.get("updated_at") or ""),
+            metadata=metadata if isinstance(metadata, dict) else {},
+            stages=stages,
+            exports=exports,
+            current_stage=str(data.get("current_stage") or ""),
+            error=str(data.get("error") or ""),
+            artifact_schema_version=_schema_version(data.get("artifact_schema_version")),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        data = {
+            "artifact_schema_version": self.artifact_schema_version,
+            "run_id": self.run_id,
+            "status": self.status,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "metadata": _jsonable(self.metadata),
+            "stages": [stage.to_dict() for stage in self.stages],
+            "exports": [item.to_dict() for item in self.exports],
+        }
+        if self.current_stage:
+            data["current_stage"] = self.current_stage
+        if self.error:
+            data["error"] = self.error
+        return data
 
 
 def now_iso() -> str:
@@ -38,7 +141,10 @@ def load_manifest(run_id: str) -> dict:
     path = manifest_path(run_id)
     if not path.exists():
         return {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        return {}
+    return RunManifest.from_dict(raw).to_dict()
 
 
 def list_manifests(limit: int = 50) -> list[dict[str, Any]]:
@@ -47,7 +153,10 @@ def list_manifests(limit: int = 50) -> list[dict[str, Any]]:
     manifests = []
     for path in RUNS_DIR.glob("*/manifest.json"):
         try:
-            manifest = json.loads(path.read_text(encoding="utf-8"))
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, dict):
+                continue
+            manifest = RunManifest.from_dict(raw).to_dict()
             manifest["_path"] = str(path)
             manifests.append(manifest)
         except (OSError, json.JSONDecodeError):
@@ -108,6 +217,7 @@ def start_run(run_id: str, metadata: dict[str, Any]) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     manifest = load_manifest(run_id)
     manifest.update({
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "run_id": run_id,
         "status": "running",
         "created_at": manifest.get("created_at") or now_iso(),
@@ -123,6 +233,7 @@ def start_run(run_id: str, metadata: dict[str, Any]) -> Path:
 def write_stage(run_id: str, stage: str, payload: dict[str, Any]) -> Path:
     stage_path = run_dir(run_id) / "stages" / f"{_slug(stage)}.json"
     stage_record = {
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "run_id": run_id,
         "stage": stage,
         "updated_at": now_iso(),
@@ -209,6 +320,13 @@ def _write_json(path: Path, data: dict[str, Any]) -> None:
 def _slug(value: str) -> str:
     slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip(".-").lower()
     return slug or "stage"
+
+
+def _schema_version(value: Any) -> int:
+    try:
+        return int(value or ARTIFACT_SCHEMA_VERSION)
+    except (TypeError, ValueError):
+        return ARTIFACT_SCHEMA_VERSION
 
 
 def _jsonable(value: Any) -> Any:

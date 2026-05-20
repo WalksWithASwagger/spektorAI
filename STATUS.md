@@ -45,7 +45,8 @@ Last updated: 2026-05-20
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
-- `make test` -> `273 passed`.
+- `make lint` passes dependency-light Python syntax checks.
+- `make test` -> `274 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` passes editorial and SongForge fixtures.

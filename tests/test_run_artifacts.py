@@ -27,6 +27,7 @@ def test_start_run_writes_manifest(tmp_runs_dir):
     path = run_artifacts.start_run("run-1", {"mode": "full_pipeline"})
 
     manifest = json.loads((path / "manifest.json").read_text())
+    assert manifest["artifact_schema_version"] == 1
     assert manifest["run_id"] == "run-1"
     assert manifest["status"] == "running"
     assert manifest["metadata"] == {"mode": "full_pipeline"}
@@ -100,3 +101,30 @@ def test_load_stage_payload_returns_saved_payload(tmp_runs_dir):
         "article": "draft",
     }
     assert run_artifacts.load_stage_payload("run-1", "missing") == {}
+
+
+def test_load_manifest_normalizes_legacy_artifacts(tmp_runs_dir):
+    path = run_artifacts.run_dir("legacy-run")
+    path.mkdir(parents=True)
+    (path / "manifest.json").write_text(
+        json.dumps({
+            "run_id": "legacy-run",
+            "created_at": "2026-05-20T00:00:00Z",
+            "metadata": {"source": "paste"},
+            "stages": [{"stage": "session_output", "path": "/tmp/out.json"}],
+        }),
+        encoding="utf-8",
+    )
+
+    manifest = run_artifacts.load_manifest("legacy-run")
+
+    assert manifest["artifact_schema_version"] == 1
+    assert manifest["status"] == "running"
+    assert manifest["exports"] == []
+    assert manifest["stages"] == [
+        {
+            "stage": "session_output",
+            "path": "/tmp/out.json",
+            "updated_at": "",
+        }
+    ]

@@ -30,6 +30,7 @@ def main() -> int:
     os.chdir(ROOT)
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
+    os.environ.setdefault("WHISPERFORGE_DISCOVER_OLLAMA", "0")
 
     app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=20)
     app.run()

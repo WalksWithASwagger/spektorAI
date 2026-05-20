@@ -158,7 +158,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        246 tests + health/rendered UI smokes
+tests/                        274 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -297,7 +297,9 @@ streamlit run app.py
 ```
 
 The installed Ollama models are auto-discovered at sidebar load, so new
-`ollama pull`s appear without restarting. Transcription backends available:
+`ollama pull`s appear without restarting. Set
+`WHISPERFORGE_DISCOVER_OLLAMA=0` to skip local discovery in hermetic tests or
+demos. Transcription backends available:
 `openai` (cloud default), `mlx` (local Apple Silicon via `mlx-whisper`), and
 `whisper_cpp` (local via the `whisper-cli` binary; set `WHISPER_CPP_MODEL` to
 a ggml bin path), and `whisperx` (word timestamps plus optional pyannote
@@ -445,6 +447,7 @@ handoff_targets:
 ```bash
 pip install -r requirements-dev.txt
 make test                 # unit tests
+make lint                 # dependency-light Python syntax check
 make eval-fixture         # credential-free editorial/source-receipt fixture
 make digest               # report-only resurfacing digest from local artifacts
 make smoke                # boots streamlit, hits /_stcore/health
@@ -496,6 +499,7 @@ include everything.
 | `WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID` | Default Linear team ID for approved handoff issue creation | no |
 | `WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH` | Default local JSONL queue path for approved follow-up routing | no |
 | `WHISPERFORGE_E2E_FIXTURE_PATH` | Fixture payload path for browser E2E runs (used by `make browser-e2e-fresh`) | no |
+| `WHISPERFORGE_DISCOVER_OLLAMA` | Set `0`/`false` to skip sidebar Ollama model discovery | no |
 | `WF_RAG`                 | Force RAG on/off (`1`/`true` or `0`/`false`) | no            |
 | `WF_RAG_TOPK`            | Retrieved KB chunks per stage (default `5`) | no            |
 | `WF_RAG_THRESHOLD`       | Auto-RAG chunk threshold (default `25`)     | no            |

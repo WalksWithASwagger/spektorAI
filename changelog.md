@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Audio repo consolidation audit** —
   `docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md` records the canonical
   `spektorAI` decision, legacy repo salvage matrix, and archive plan.
+- **Presentation-readiness quality rail** — `make lint` now provides a
+  dependency-light syntax check, rendered UI smoke skips live Ollama discovery
+  by default, and run manifests are normalized through a versioned
+  `artifact_schema_version=1` contract.
 - **Import-folder capture helpers** — `whisperforge_core.captures` can now
   import text/markdown notes and audio pointers from files or folders, dedupe
   obvious repeats, and ignore generated chunk/temp files.
