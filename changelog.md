@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependency-light syntax check, rendered UI smoke skips live Ollama discovery
   by default, and run manifests are normalized through a versioned
   `artifact_schema_version=1` contract.
+- **Run story timeline** — the Review tab now renders a compact capture ->
+  context -> composition -> review -> export -> handoff timeline from the run
+  manifest, backed by pure `whisperforge_core.run_story` tests. Review rendering
+  now lives in `ui/review.py` so `ui/output.py` can focus on output tabs and
+  export/save orchestration.
+- **Current local-first workplan** — `docs/NEXT-ROUND-PLAN-2026-05-19.md` and
+  `ops/roadmap/features.json` now track the next presentation-polish and
+  local-first reliability wave.
 - **Import-folder capture helpers** — `whisperforge_core.captures` can now
   import text/markdown notes and audio pointers from files or folders, dedupe
   obvious repeats, and ignore generated chunk/temp files.
@@ -128,14 +136,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   questions.
 
 ### Changed
+- Runs dialog reopen now restores the run manifest `capture_id`, and the Review
+  tab feeds capture metadata into the Run Story timeline so reopened runs keep
+  their source receipts and friendlier capture labels.
 - Audio unit fixtures now use WAV so `make test` does not require machine-level
   `ffmpeg` just to generate test audio.
-- Root docs now describe 246 passing tests, the current prompt profile
-  layout, Ollama as a first-class provider lane, rendered UI smoke testing, and
-  the current services-mode parity boundary.
+- Root docs now describe the current prompt profile layout, Ollama as a
+  first-class provider lane, rendered UI smoke testing, and the current
+  services-mode parity boundary.
 - Root docs now describe the post-consolidation baseline: no open issues or
   PRs remain, only `origin/main` remains remotely, stale detached worktrees were
-  removed, and the unit baseline is `246 passed`.
+  removed, and the active verification baseline lives in `STATUS.md`.
 - `ROADMAP.md` and `STATUS.md` now describe the post-swarm state instead of
   the pre-implementation planning baseline.
 - `ROADMAP.md` is now a concise index into the 2026 master plan and active

@@ -30,6 +30,7 @@ def test_reopen_run_restores_primary_output_state(tmp_runs_dir, monkeypatch):
     run_id = "run-1"
     run_artifacts.start_run(run_id, {
         "source": "paste",
+        "capture": {"capture_id": "cap-run-1", "source": "wispr_flow"},
         "recipe": {"recipe_name": "Issue handoff"},
     })
     run_artifacts.write_stage(run_id, "transcription", {
@@ -74,6 +75,7 @@ def test_reopen_run_restores_primary_output_state(tmp_runs_dir, monkeypatch):
     assert state["pipeline_running"] is False
     assert state["pipeline_stage_idx"] == 8
     assert state["transcription"] == "Transcript text from paste input."
+    assert state["capture_id"] == "cap-run-1"
     assert state["article"] == "# Draft Article\n\nBody"
     assert state["wisdom"] == "Key grounded insight."
     assert state["article_compare"] == "Alternate article"

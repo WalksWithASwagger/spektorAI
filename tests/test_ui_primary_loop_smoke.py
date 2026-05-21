@@ -114,6 +114,9 @@ def test_ui_primary_loop_smoke_paste_run_and_artifacts(monkeypatch, tmp_path):
     assert app.session_state["article"] == "Long-form article draft."
     assert app.session_state["last_notion_url"] == "https://notion.so/ui-smoke"
     assert {"📝 Article", "🧭 Review"}.issubset({tab.label for tab in app.tabs})
+    markdown_text = "\n".join(str(item.value) for item in app.markdown)
+    assert "Run story" in markdown_text
+    assert "Recorded exports: Notion." in markdown_text
 
     manifest = run_artifacts.load_manifest(run_id)
     assert manifest.get("status") == "completed"

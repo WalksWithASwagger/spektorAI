@@ -26,7 +26,7 @@ make smoke
 
 Expected now:
 
-- `make test` -> `274 passed`
+- `make test` -> `278 passed`
 - fixture and UI/smoke checks pass
 
 If Docker is running and you want services proof:
@@ -58,7 +58,8 @@ Then demo in this order:
 2. Save to capture inbox.
 3. Pick a recipe from the command palette.
 4. Run the full pipeline.
-5. Open `🧭 Review` and show source receipts, scorecard, and claim flags.
+5. Open `🧭 Review` and show the run story, source receipts, scorecard, and
+   claim flags.
 6. Generate an agent handoff draft, then approve-and-create a real GitHub or
    Linear issue (or append to a local follow-up queue) from the same panel.
    Dry-run is the default when target config is missing; set
@@ -106,8 +107,10 @@ Use these to get actionable feedback:
 
 ## 5) Next Dev Slice (After Review)
 
-1. Tighten agentic acceptance gates beyond structural checklist matching.
-2. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover
-   additional recipes and a partial/failed run for the Runs dialog.
-3. Expand the fresh-run recorded fixture set so the smoke covers at least one
-   alternate recipe plus one partial/failure-path report.
+1. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover one
+   strong completed article/handoff run, one SongForge run, and one
+   partial/failed run for the Runs dialog.
+2. Polish the Review tab: status-aware Run Story rendering, clearer empty/error
+   states, and a copy-friendly handoff preview path.
+3. Add KB governance so stale/private/canonical profile context is visible
+   before generation.

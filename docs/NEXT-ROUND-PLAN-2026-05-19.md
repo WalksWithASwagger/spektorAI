@@ -1,92 +1,98 @@
 # WhisperForge Next Round Plan
 
-Date: 2026-05-20
+Last refreshed: 2026-05-21
+
+This is the active workplan for the local-first WhisperForge milestone. Older
+dated audit docs remain historical snapshots; use this file, `ROADMAP.md`, and
+`STATUS.md` for current direction.
 
 ## Current State
 
-WhisperForge is consolidated into `WalksWithASwagger/spektorAI`.
+WhisperForge is consolidated into `WalksWithASwagger/spektorAI` and the product
+name remains WhisperForge.
 
-- Legacy audio repositories are archived.
-- Only `origin/main` remains for this repo after branch cleanup.
-- Local stale detached Codex worktrees were removed.
-- GitHub issues `#36` through `#40` are closed.
-- No open PRs remain.
-- GitHub metadata points to this canonical WhisperForge repo.
-- No open-source license is currently granted; the archived `whisperforge` MIT
-  license is not inherited without an explicit owner decision.
-- Current verification baseline is `261 passed`, plus eval fixture, UI smoke,
-  Streamlit health smoke, JSON validation, and whitespace checks.
+- Current branch: `main`, synced with `origin/main` before this closeout.
+- GitHub issues and PRs: no open items after a live refresh on 2026-05-21.
+- Remote branches: only `origin/main`.
+- Legacy audio repositories are archived as historical pointers.
+- Release target: local-first personal workbench.
+- Current verification baseline: `make test` -> `278 passed`, plus lint, JSON,
+  rendered UI, browser, fixture, and Streamlit health smokes in normal closeout.
+- Latest polish slice: Run Story timeline, Review tab extraction, and
+  capture-aware run reopen/review receipts.
 
-## Release Target Decision (2026-05-20)
+## Product Direction
 
-- Owner decision: **local-first personal workbench** (issue `#42`).
-- Why now: fastest dogfood cycle, lowest operational drag, and clearest
-  evidence path before hosted/services commitments.
+The right next move is not a new architecture. It is making the current loop
+feel inevitable:
 
-Mandatory now:
+capture -> recipe -> review -> export -> reopen -> resurface -> handoff.
 
-- direct-mode UX reliability for capture -> recipe -> review -> export,
-- deterministic local verification (`make test`, browser smokes, digest),
-- explicit human approval boundaries for any outbound routing.
+The product is strongest when it behaves like a local creative operating system
+for real voice notes and collaborator follow-through. Keep hosted auth,
+multi-user accounts, and direct music-generation service calls deferred until
+the local loop feels boringly reliable.
 
-Deferred for later milestone:
+## Prioritized Workplan
 
-- hosted auth / multi-user accounts,
-- deeper services-mode parity work beyond current baseline,
-- deployment hardening for private/public hosted targets.
-
-## Next Round Recommendation
-
-### 1. Dogfood A Real Wispr Flow Capture
-
-Run one real capture through the current product loop:
-
-- save/import the capture,
-- run a practical recipe,
-- inspect review receipts and scorecards,
-- export markdown or Notion,
-- reopen the run,
-- generate the resurfacing digest,
-- record friction and missing affordances.
-
-This should produce a short session report before more architecture work.
-
-### 2. Add End-To-End UI Coverage
-
-After dogfooding identifies the true primary path, add browser or Streamlit
-interaction coverage for that path. Start with paste/import -> recipe run ->
-review -> markdown/vault export -> run reopen.
-
-### 3. Pick The Release Target
-
-Choose one target for the next milestone:
-
-- local-first personal workbench,
-- private hosted Streamlit app,
-- services-mode deployment,
-- packageable desktop/local workflow.
-
-This decides how much auth, storage, Docker parity, and Notion behavior matter
-now.
-
-## Candidate Issue Wave
-
-Create these only after the dogfood report and release-target decision are
-clear:
-
-| ID | Priority | Title | Gate |
+| ID | Priority | Title | Why Now |
 | --- | --- | --- | --- |
-| `wf-dogfood-loop` | P0 | Run and document a real Wispr Flow-to-output session | Human supplies capture/export target |
-| `wf-e2e-primary-loop` | P0 | Add end-to-end coverage for the chosen primary loop | Dogfood path identified |
-| `wf-release-target` | P0 | Decide and document the next release target | Shipped/decided in `#42` |
-| `wf-provider-router-capabilities` | P1 | Add provider-router capability metadata and fixtures | Large-file evaluation accepted |
-| `wf-kb-governance` | P1 | Add canonical KB pack and stale/private review workflow | Human confirms policy |
-| `wf-human-approved-routing-followups` | P1 | Extend approve-and-create routing to follow-up queue and digest destinations | GitHub/Linear approve-and-create shipped |
+| `wf-demo-fixture-pack` | P0 | Expand the presentation demo fixture pack | Reviewers need a crisp, repeatable demo without live credentials. |
+| `wf-review-polish` | P0 | Polish the Review tab for presentation and daily use | Review is now the trust surface; make it legible, calm, and copy-friendly. |
+| `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | The KB is powerful enough to need explicit stale/private/canonical controls. |
+| `wf-router-media-normalization` | P1 | Add fixture-backed media normalization for the transcription router | Large audio/video intake is the next practical extraction bottleneck. |
+| `wf-digest-approved-routing` | P1 | Add human-approved routing for resurfacing digests | Resurfacing should become actionable without becoming autonomous spam. |
+| `wf-songforge-polish` | P2 | Improve SongForge creative quality and exports | The creative lane is promising, but should mature as text/source workflow first. |
+
+These items are also registered in
+[`ops/roadmap/features.json`](../ops/roadmap/features.json) with acceptance
+criteria and verification gates.
+
+## Today/Tomorrow Execution Order
+
+1. **Demo fixture pack**
+   - Extend `scripts/seed_demo_dataset.py` so the presentation path has one
+     strong completed article/handoff run, one SongForge run, and one partial or
+     failed run.
+   - Update the presentation runbook with exactly which seeded runs to show.
+   - Gate with `make browser-e2e` and `make browser-e2e-fresh`.
+
+2. **Review tab polish**
+   - Add status-aware Run Story rendering, timestamps where available, and
+     compact empty/error states.
+   - Add a copy-friendly handoff preview export/download path that works
+     without GitHub or Linear credentials.
+   - Keep UI tests focused on labels and behavior, not brittle styling.
+
+3. **KB governance**
+   - Turn audit warnings into reviewer actions: canonical, ignore, quarantine,
+     needs-update.
+   - Document the privacy/stale policy for humans and future agents.
+   - Surface unresolved governance warnings before generation.
+
+4. **Router media normalization**
+   - Convert the provider matrix into fixture-backed FFmpeg/media inspection
+     and chunk normalization behavior.
+   - Preserve current runtime defaults until privacy/cost receipts are visible.
+
+5. **Digest approved routing**
+   - Keep digest generation report-only by default.
+   - Add explicit approval for local follow-up queue and Notion draft paths.
+
+## Human Decisions Needed
+
+- What should count as canonical profile context: only curated files, or any KB
+  file not flagged as stale/private?
+- Should presentation reviewers see Notion export live, or should the default
+  demo stay local markdown/vault-only?
+- For router work, is the first real priority long audio, video extraction,
+  speaker diarization, or private/local transcription?
+- Should digest routing create tasks, pages, or queue items first?
 
 ## Not Yet
 
-- Do not add new transcription providers before router capability fixtures.
-- Do not automate digest routing before approval UI/CLI exists.
-- Do not build hosted/multi-user auth until the release target says hosted.
+- Do not add new transcription providers before router fixtures exist.
+- Do not automate digest publication without an explicit approval boundary.
+- Do not build hosted/multi-user auth until the local-first milestone is stable.
 - Do not expand SongForge into direct music-generation service calls before the
   text workflow has real-session feedback.

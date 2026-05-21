@@ -2,6 +2,10 @@
 
 Date: 2026-05-18
 
+Historical snapshot: use `STATUS.md`, `ROADMAP.md`, and
+`docs/NEXT-ROUND-PLAN-2026-05-19.md` for the current verification baseline and
+active workplan.
+
 ## Executive Read
 
 WhisperForge is in a much better place than it was at the start of the reset.
@@ -160,7 +164,8 @@ Candidate work:
 
 - `python3 -m json.tool ops/roadmap/features.json` passed.
 - `git diff --check` passed.
-- `make test` passed: 229 tests, with four third-party `pydub` SyntaxWarnings.
+- At audit time, `make test` passed: 229 tests, with four third-party `pydub`
+  SyntaxWarnings.
 - `make eval-fixture` passed editorial and SongForge fixture checks.
 - `venv/bin/python tests/ui_smoke.py` passed rendered shell smoke.
 - `make smoke` passed Streamlit health smoke on port `8599`.

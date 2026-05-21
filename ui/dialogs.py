@@ -613,6 +613,11 @@ def _reopen_run(run_id: str) -> bool:
     s.retrieval_inspector = retrieval or s.get("retrieval_inspector")
     if scorecard:
         s.scorecard_summary = scorecard
+    manifest = run_artifacts.load_manifest(run_id)
+    metadata = manifest.get("metadata") or {}
+    capture = metadata.get("capture") or {}
+    if capture.get("capture_id"):
+        s.capture_id = capture["capture_id"]
     s.run_id = run_id
     s.run_artifact_dir = str(run_artifacts.run_dir(run_id))
     s.pipeline_running = False

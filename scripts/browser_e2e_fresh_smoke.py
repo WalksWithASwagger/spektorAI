@@ -122,9 +122,11 @@ def _run_browser_flow(cache_dir: Path) -> str:
 
         # 1. Open the Paste tab and drop in a Wispr Flow transcript.
         page.get_by_role("tab", name=re.compile("Paste")).click()
-        page.get_by_placeholder(
-            "Drop in a Wispr Flow dictation, transcript, or some notes..."
-        ).fill(TRANSCRIPT)
+        paste_box = page.locator(
+            'textarea[placeholder="Drop in a Wispr Flow dictation, transcript, or some notes..."]:visible'
+        )
+        paste_box.wait_for(state="visible")
+        paste_box.fill(TRANSCRIPT)
         page.keyboard.press("Tab")
         page.wait_for_timeout(500)
 

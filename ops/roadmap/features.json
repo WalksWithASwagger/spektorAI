@@ -756,6 +756,122 @@
         "python3 -m json.tool ops/roadmap/features.json",
         "git diff --check"
       ]
+    },
+    {
+      "id": "wf-demo-fixture-pack",
+      "title": "Expand the presentation demo fixture pack",
+      "phase": "Presentation Polish",
+      "priority": "P0",
+      "kind": "tooling",
+      "status": "planned",
+      "acceptance": [
+        "Seed demo data includes at least one strong completed article/handoff run, one SongForge run, and one partial or failed run.",
+        "The presentation runbook names exactly which seeded runs to show and which claims to avoid.",
+        "Browser smokes continue to cover run reopen and fresh paste-to-review export flows.",
+        "No provider credentials are required for the demo fixture path."
+      ],
+      "verification": [
+        "venv/bin/python scripts/seed_demo_dataset.py",
+        "make browser-e2e",
+        "make browser-e2e-fresh",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-review-polish",
+      "title": "Polish the Review tab for presentation and daily use",
+      "phase": "Presentation Polish",
+      "priority": "P0",
+      "kind": "ux",
+      "status": "planned",
+      "acceptance": [
+        "Run Story steps render with clear status, timestamps where available, and no layout jitter.",
+        "Review, scorecard, receipt, and handoff sections have useful empty/error states.",
+        "The handoff preview has a copy-friendly export or download path without requiring a live tracker.",
+        "Rendered UI smoke covers the Review tab labels introduced by the polish."
+      ],
+      "verification": [
+        "make test",
+        "venv/bin/python tests/ui_smoke.py",
+        "make browser-e2e-fresh",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-kb-governance",
+      "title": "Add KB governance and profile-pack review workflow",
+      "phase": "Local-First Milestone",
+      "priority": "P1",
+      "kind": "feature",
+      "status": "planned",
+      "acceptance": [
+        "Profile KB audit separates stale, duplicate, private-looking, and oversized findings into clear actions.",
+        "A reviewer can mark canonical voice anchors and intentionally ignored files without editing code.",
+        "Generation surfaces a concise warning when selected profile context has unresolved governance findings.",
+        "Docs explain the private/stale policy and how future agents should treat flagged context."
+      ],
+      "verification": [
+        "make test",
+        "make eval-fixture",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-router-media-normalization",
+      "title": "Add fixture-backed media normalization for the transcription router",
+      "phase": "Local-First Milestone",
+      "priority": "P1",
+      "kind": "feature",
+      "status": "planned",
+      "acceptance": [
+        "Large audio/video inputs can be inspected and normalized through an FFmpeg-backed plan before transcription.",
+        "Router fixtures cover local/private, cloud, chunked, timestamped, and diarization-capable paths.",
+        "Runtime defaults remain unchanged until the router has explicit privacy and cost receipts.",
+        "Docs connect the provider matrix to the implemented router behavior."
+      ],
+      "verification": [
+        "make test",
+        "venv/bin/python -m pytest tests/test_audio.py -q",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-digest-approved-routing",
+      "title": "Add human-approved routing for resurfacing digests",
+      "phase": "Local-First Milestone",
+      "priority": "P1",
+      "kind": "feature",
+      "status": "planned",
+      "acceptance": [
+        "Digest routing remains report-only until an explicit approve action is taken.",
+        "Approved destinations support at least local follow-up queue and Notion task/page draft paths.",
+        "Dry-run and missing-config behavior is visible before any outbound write.",
+        "Tests cover approved write, dry-run, and missing-config paths."
+      ],
+      "verification": [
+        "make test",
+        "make digest",
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "wf-songforge-polish",
+      "title": "Improve SongForge creative quality and exports",
+      "phase": "Creative Lane",
+      "priority": "P2",
+      "kind": "feature",
+      "status": "planned",
+      "acceptance": [
+        "SongForge emits multiple structure variants with source notes and originality guardrails.",
+        "Markdown/vault exports preserve lyric, spoken-word, prompt-pack, and source-note sections cleanly.",
+        "Presentation docs describe SongForge as a source-linked text workflow, not direct music generation.",
+        "Fixture tests pin the output structure."
+      ],
+      "verification": [
+        "make test",
+        "make eval-fixture",
+        "git diff --check"
+      ]
     }
   ]
 }

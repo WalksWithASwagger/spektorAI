@@ -2,6 +2,10 @@
 
 Date: 2026-05-18
 
+Historical snapshot: use `STATUS.md`, `ROADMAP.md`, and
+`docs/NEXT-ROUND-PLAN-2026-05-19.md` for current repo state, verification
+counts, and active roadmap work.
+
 ## Decision
 
 `WalksWithASwagger/spektorAI` is the canonical WhisperForge repository.
@@ -33,7 +37,7 @@ Verified state entering this consolidation pass:
 - Open GitHub issues: none at audit time.
 - Open GitHub PRs: none at audit time.
 - Tracked files before this consolidation artifact: 414.
-- Recent verification baseline: `make test` passed with 229 tests, plus
+- Verification at audit time: `make test` passed with 229 tests, plus
   `make eval-fixture`, `venv/bin/python tests/ui_smoke.py`, `make smoke`,
   `python3 -m json.tool ops/roadmap/features.json`, and `git diff --check`.
 

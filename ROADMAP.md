@@ -1,6 +1,6 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-20
+Last reviewed: 2026-05-21
 
 The May 2026 reset wave is now complete. The strategic anchor remains
 [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md);
@@ -19,7 +19,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - recipe command palette for repeatable article, social, issue-handoff, and
   SongForge workflows;
 - source-grounded review surface with receipts, excerpts, scorecards, claim
-  flags, compare/persona variants, and handoff drafts;
+  flags, run story timeline, compare/persona variants, and handoff drafts;
 - local run workspace with manifests, stage artifacts, reopen, and downstream
   export retry;
 - local report-only resurfacing digest;
@@ -30,12 +30,12 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - GitHub issues `#13` through `#24`: closed.
 - Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
-- Latest shipped feature baseline:
-  `7397b7f feat(audio): add transcription capability metadata and chunk planner`.
+- Latest feature baseline: presentation quality gates plus the Run Story/Review
+  tab polish slice on current `main`.
 - Open GitHub issues: none (`#41`, `#42`, `#43`, `#45`, `#46`, `#47`, and
   `#48` are shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `274 passed`.
+- Current unit baseline: `278 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
@@ -56,14 +56,15 @@ durable artifacts and command outputs recorded in:
 The report produced three concrete friction issues (`#45`-`#47`) that now
 replace the original dogfood issue as the next implementation lane.
 
-### 2. Add End-To-End Browser Coverage
+### 2. Harden Demo Fixtures And Browser Coverage
 
-The test suite is broad, but the riskiest product surface is still the rendered
-Streamlit workflow. Add browser-level or Streamlit interaction tests that prove
-the primary loop works with real UI state transitions.
+The primary browser smokes now cover run-history reopen plus a fresh
+paste -> recipe -> review -> export loop. The next useful step is expanding the
+seeded demo fixture pack so collaborators can inspect one strong completed run,
+one SongForge run, and one partial/error run without live credentials.
 
-Focus first on paste input, recipe run, review tab rendering, markdown export,
-run reopen, and digest generation.
+Keep browser coverage focused on the same public demo path: paste input, recipe
+run, review tab rendering, markdown export, run reopen, and digest generation.
 
 ### 3. Execute The Local-First Milestone
 
@@ -121,9 +122,11 @@ useful in real sessions.
 | `wf-run-capture-status-sync` | P0 | Sync run-manifest capture metadata with final capture status | Shipped in `#46` |
 | `wf-export-readiness-refresh` | P0 | Refresh scorecard/handoff readiness signals after export events | Shipped in `#47` |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Shipped in `#48` |
+| `wf-demo-fixture-pack` | P0 | Expand the presentation demo fixture pack | Browser smokes stay credential-free |
+| `wf-review-polish` | P0 | Polish the Review tab for presentation and daily use | Rendered UI smoke covers labels/behavior |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
-| `wf-handoff-routing-followups` | P1 | Extend approved routing to follow-up queue and digest destinations | Follow-up queue routing shipped; digest/Notion destinations remain |
-| `wf-digest-automation` | P2 | Add optional resurfacing digest schedule/report flow | Cadence and destination confirmed |
+| `wf-router-media-normalization` | P1 | Add fixture-backed media normalization for the transcription router | Runtime defaults preserved |
+| `wf-digest-approved-routing` | P1 | Add human-approved routing for resurfacing digests | Explicit approval remains required |
 | `wf-songforge-polish` | P2 | Improve SongForge creative quality and exports | Target use case confirmed |
 
 ## Audio Repo Consolidation Wave

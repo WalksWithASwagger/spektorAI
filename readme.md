@@ -59,6 +59,9 @@ WhisperForge implementation, roadmap, and issue work.
 - **Composition review**: the Output card includes a Review tab where the draft
   sits beside source receipts, excerpts, claim flags, revision notes, compare
   variants, and persona variants before export.
+- **Run story timeline**: the Review tab summarizes capture, transcription,
+  KB context, composition, review, export, and handoff state so collaborators
+  can see what happened without spelunking run artifacts.
 - **Advisory scorecards**: deterministic, credential-free checks summarize
   voice, grounding, usefulness, recipe compliance, and handoff readiness without
   blocking saves.
@@ -144,10 +147,13 @@ whisperforge_core/            pure-logic package (no Streamlit)
 ├── llm.py                    unified generate() for OpenAI/Anthropic/Ollama
 ├── notion.py                 ContentBundle + 1900-char block chunker
 ├── pipeline.py               orchestration with progress callback
+├── run_story.py              human-readable run timeline summaries
 ├── adapters.py               Local{Transcriber,Processor,Storage}
 └── http_adapters.py          Http{Transcriber,Processor,Storage}
 
 app.py                        Streamlit UI shell (imports whisperforge_core)
+ui/output.py                  output tabs, export bar, bundle/save orchestration
+ui/review.py                  Review tab evidence, run story, scorecards, handoffs
 styles.py                     all CSS
 whisperforge.py               45-line CLI wrapper for transcription only
 
@@ -158,7 +164,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        274 tests + health/rendered UI smokes
+tests/                        278 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```

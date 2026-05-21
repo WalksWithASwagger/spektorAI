@@ -1,12 +1,12 @@
 # WhisperForge Status
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 ## Current State
 
 - Current branch: `main`, synced with `origin/main`.
-- Latest shipped feature baseline:
-  `7397b7f feat(audio): add transcription capability metadata and chunk planner`.
+- Latest feature baseline: presentation quality gates plus the Run Story/Review
+  tab polish slice on current `main`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.
@@ -46,7 +46,7 @@ Last updated: 2026-05-20
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
 - `make lint` passes dependency-light Python syntax checks.
-- `make test` -> `274 passed`.
+- `make test` -> `278 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
@@ -107,6 +107,17 @@ Last updated: 2026-05-20
 
 ## Next Round
 
-Dogfood closeout plus first router slice are complete. Next roadmap slice is
-local-first milestone continuation work (`wf-kb-governance`,
-`wf-handoff-routing-followups` digest/Notion destinations).
+Dogfood closeout, first router slice, and Run Story/Review extraction are
+complete. The next roadmap slice should stay focused on presentation polish and
+local-first reliability:
+
+1. `wf-demo-fixture-pack` - seed strong completed, SongForge, and partial/error
+   runs for repeatable collaborator demos.
+2. `wf-review-polish` - make the Review tab more legible, status-aware, and
+   copy-friendly.
+3. `wf-kb-governance` - define canonical, stale, private, and ignored KB
+   context so agents do not over-trust messy source material.
+4. `wf-router-media-normalization` - add fixture-backed FFmpeg/media
+   normalization before changing transcription defaults.
+5. `wf-digest-approved-routing` - route resurfacing digests only after explicit
+   approval.
