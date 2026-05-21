@@ -763,7 +763,7 @@
       "phase": "Presentation Polish",
       "priority": "P0",
       "kind": "tooling",
-      "status": "planned",
+      "status": "shipped",
       "acceptance": [
         "Seed demo data includes at least one strong completed article/handoff run, one SongForge run, and one partial or failed run.",
         "The presentation runbook names exactly which seeded runs to show and which claims to avoid.",
@@ -771,6 +771,7 @@
         "No provider credentials are required for the demo fixture path."
       ],
       "verification": [
+        "venv/bin/python -m pytest tests/test_seed_demo_dataset.py -q",
         "venv/bin/python scripts/seed_demo_dataset.py",
         "make browser-e2e",
         "make browser-e2e-fresh",

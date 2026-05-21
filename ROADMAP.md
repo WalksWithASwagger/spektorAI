@@ -35,7 +35,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Open GitHub issues: none (`#41`, `#42`, `#43`, `#45`, `#46`, `#47`, and
   `#48` are shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `278 passed`.
+- Current unit baseline: `279 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
@@ -59,9 +59,9 @@ replace the original dogfood issue as the next implementation lane.
 ### 2. Harden Demo Fixtures And Browser Coverage
 
 The primary browser smokes now cover run-history reopen plus a fresh
-paste -> recipe -> review -> export loop. The next useful step is expanding the
-seeded demo fixture pack so collaborators can inspect one strong completed run,
-one SongForge run, and one partial/error run without live credentials.
+paste -> recipe -> review -> export loop. The seeded demo fixture pack now gives
+collaborators one strong completed article/handoff run, one SongForge run, and
+one partial/error run without live credentials.
 
 Keep browser coverage focused on the same public demo path: paste input, recipe
 run, review tab rendering, markdown export, run reopen, and digest generation.
@@ -122,7 +122,7 @@ useful in real sessions.
 | `wf-run-capture-status-sync` | P0 | Sync run-manifest capture metadata with final capture status | Shipped in `#46` |
 | `wf-export-readiness-refresh` | P0 | Refresh scorecard/handoff readiness signals after export events | Shipped in `#47` |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Shipped in `#48` |
-| `wf-demo-fixture-pack` | P0 | Expand the presentation demo fixture pack | Browser smokes stay credential-free |
+| `wf-demo-fixture-pack` | P0 | Expand the presentation demo fixture pack | Shipped; browser smokes stay credential-free |
 | `wf-review-polish` | P0 | Polish the Review tab for presentation and daily use | Rendered UI smoke covers labels/behavior |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
 | `wf-router-media-normalization` | P1 | Add fixture-backed media normalization for the transcription router | Runtime defaults preserved |

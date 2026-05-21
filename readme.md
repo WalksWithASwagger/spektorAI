@@ -164,7 +164,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        278 tests + health/rendered UI smokes
+tests/                        279 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -459,6 +459,7 @@ make digest               # report-only resurfacing digest from local artifacts
 make smoke                # boots streamlit, hits /_stcore/health
 SMOKE_PORT=8601 make smoke
 venv/bin/python tests/ui_smoke.py  # renders the Streamlit shell without a browser driver
+venv/bin/python scripts/seed_demo_dataset.py  # seed article, SongForge, and partial demo runs
 ```
 
 Run `make help` for the full operations command list. The Makefile is the

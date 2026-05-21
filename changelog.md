@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Current local-first workplan** — `docs/NEXT-ROUND-PLAN-2026-05-19.md` and
   `ops/roadmap/features.json` now track the next presentation-polish and
   local-first reliability wave.
+- **Presentation demo fixture pack** — `scripts/seed_demo_dataset.py` now seeds
+  a completed article/handoff run, a SongForge creative-pack run, and a
+  partial/failed run so cold-start demos have useful Runs-dialog material
+  without live credentials.
 - **Import-folder capture helpers** — `whisperforge_core.captures` can now
   import text/markdown notes and audio pointers from files or folders, dedupe
   obvious repeats, and ignore generated chunk/temp files.

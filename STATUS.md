@@ -46,7 +46,7 @@ Last updated: 2026-05-21
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
 - `make lint` passes dependency-light Python syntax checks.
-- `make test` -> `278 passed`.
+- `make test` -> `279 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
@@ -107,17 +107,15 @@ Last updated: 2026-05-21
 
 ## Next Round
 
-Dogfood closeout, first router slice, and Run Story/Review extraction are
-complete. The next roadmap slice should stay focused on presentation polish and
-local-first reliability:
+Dogfood closeout, first router slice, Run Story/Review extraction, and the demo
+fixture pack are complete. The next roadmap slice should stay focused on
+presentation polish and local-first reliability:
 
-1. `wf-demo-fixture-pack` - seed strong completed, SongForge, and partial/error
-   runs for repeatable collaborator demos.
-2. `wf-review-polish` - make the Review tab more legible, status-aware, and
+1. `wf-review-polish` - make the Review tab more legible, status-aware, and
    copy-friendly.
-3. `wf-kb-governance` - define canonical, stale, private, and ignored KB
+2. `wf-kb-governance` - define canonical, stale, private, and ignored KB
    context so agents do not over-trust messy source material.
-4. `wf-router-media-normalization` - add fixture-backed FFmpeg/media
+3. `wf-router-media-normalization` - add fixture-backed FFmpeg/media
    normalization before changing transcription defaults.
-5. `wf-digest-approved-routing` - route resurfacing digests only after explicit
+4. `wf-digest-approved-routing` - route resurfacing digests only after explicit
    approval.

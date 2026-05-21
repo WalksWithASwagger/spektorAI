@@ -8,7 +8,7 @@ feedback to request.
 
 ## 1) Credibility Check (2 minutes)
 
-On a fresh clone, seed one capture and one completed run so the inbox and
+On a fresh clone, seed the credential-free demo fixture pack so the inbox and
 Runs dialog are not empty when the demo starts:
 
 ```bash
@@ -26,7 +26,7 @@ make smoke
 
 Expected now:
 
-- `make test` -> `278 passed`
+- `make test` -> `279 passed`
 - fixture and UI/smoke checks pass
 
 If Docker is running and you want services proof:
@@ -65,12 +65,20 @@ Then demo in this order:
    Dry-run is the default when target config is missing; set
    `WHISPERFORGE_HANDOFF_DRY_RUN=1` to force dry-run during a live demo.
 7. Export markdown and show run artifacts.
-8. Reopen the run from the Runs dialog.
+8. Reopen the seeded `20260519T170015Z-demo0001` article/handoff run from the
+   Runs dialog.
 9. Generate a resurfacing digest:
 
 ```bash
-make digest
+venv/bin/python scripts/resurfacing_digest.py --include-all-captures
 ```
+
+Seeded runs to show:
+
+- `20260519T170015Z-demo0001`: completed article plus persisted handoff draft.
+- `20260519T170415Z-demo0002`: completed SongForge source-linked creative pack.
+- `20260519T170815Z-demo0003`: failed/partial run for Runs-dialog recovery
+  behavior.
 
 ## 3) What To Claim vs Not Claim
 
@@ -107,10 +115,9 @@ Use these to get actionable feedback:
 
 ## 5) Next Dev Slice (After Review)
 
-1. Extend the seeded demo dataset (`scripts/seed_demo_dataset.py`) to cover one
-   strong completed article/handoff run, one SongForge run, and one
-   partial/failed run for the Runs dialog.
-2. Polish the Review tab: status-aware Run Story rendering, clearer empty/error
+1. Polish the Review tab: status-aware Run Story rendering, clearer empty/error
    states, and a copy-friendly handoff preview path.
-3. Add KB governance so stale/private/canonical profile context is visible
+2. Add KB governance so stale/private/canonical profile context is visible
    before generation.
+3. Add fixture-backed media normalization for large audio/video routing before
+   changing transcription defaults.
