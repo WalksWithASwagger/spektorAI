@@ -12,7 +12,7 @@ Last updated: 2026-05-21
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: no open issues or PRs.
+- Live GitHub queue: open agent-ready issues `#49` through `#52`; no open PRs.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -36,7 +36,8 @@ Last updated: 2026-05-21
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> no open issues.
+- `gh issue list --state open --limit 20` -> issues `#49` through `#52`,
+  all marked `agent:ready`.
 - `gh pr list --state open --limit 50` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
@@ -111,9 +112,12 @@ Dogfood closeout, first router slice, Run Story/Review extraction, the demo
 fixture pack, and Review polish are complete. The next roadmap slice should
 stay focused on local-first reliability:
 
-1. `wf-kb-governance` - define canonical, stale, private, and ignored KB
+1. [`#49`](https://github.com/WalksWithASwagger/spektorAI/issues/49)
+   `wf-kb-governance` - define canonical, stale, private, and ignored KB
    context so agents do not over-trust messy source material.
-2. `wf-router-media-normalization` - add fixture-backed FFmpeg/media
+2. [`#50`](https://github.com/WalksWithASwagger/spektorAI/issues/50)
+   `wf-router-media-normalization` - add fixture-backed FFmpeg/media
    normalization before changing transcription defaults.
-3. `wf-digest-approved-routing` - route resurfacing digests only after explicit
+3. [`#51`](https://github.com/WalksWithASwagger/spektorAI/issues/51)
+   `wf-digest-approved-routing` - route resurfacing digests only after explicit
    approval.

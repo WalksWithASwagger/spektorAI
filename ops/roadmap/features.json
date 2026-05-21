@@ -806,6 +806,8 @@
       "priority": "P1",
       "kind": "feature",
       "status": "planned",
+      "githubIssue": 49,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/49",
       "acceptance": [
         "Profile KB audit separates stale, duplicate, private-looking, and oversized findings into clear actions.",
         "A reviewer can mark canonical voice anchors and intentionally ignored files without editing code.",
@@ -825,6 +827,8 @@
       "priority": "P1",
       "kind": "feature",
       "status": "planned",
+      "githubIssue": 50,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/50",
       "acceptance": [
         "Large audio/video inputs can be inspected and normalized through an FFmpeg-backed plan before transcription.",
         "Router fixtures cover local/private, cloud, chunked, timestamped, and diarization-capable paths.",
@@ -844,6 +848,8 @@
       "priority": "P1",
       "kind": "feature",
       "status": "planned",
+      "githubIssue": 51,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/51",
       "acceptance": [
         "Digest routing remains report-only until an explicit approve action is taken.",
         "Approved destinations support at least local follow-up queue and Notion task/page draft paths.",
@@ -863,6 +869,8 @@
       "priority": "P2",
       "kind": "feature",
       "status": "planned",
+      "githubIssue": 52,
+      "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/52",
       "acceptance": [
         "SongForge emits multiple structure variants with source notes and originality guardrails.",
         "Markdown/vault exports preserve lyric, spoken-word, prompt-pack, and source-note sections cleanly.",

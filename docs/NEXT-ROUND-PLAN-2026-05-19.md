@@ -12,7 +12,8 @@ WhisperForge is consolidated into `WalksWithASwagger/spektorAI` and the product
 name remains WhisperForge.
 
 - Current branch: `main`, synced with `origin/main` before this closeout.
-- GitHub issues and PRs: no open items after a live refresh on 2026-05-21.
+- GitHub issues: `#49` through `#52` are open and marked `agent:ready` after
+  the roadmap reseed on 2026-05-21. No open PRs.
 - Remote branches: only `origin/main`.
 - Legacy audio repositories are archived as historical pointers.
 - Release target: local-first personal workbench.
@@ -35,12 +36,12 @@ the local loop feels boringly reliable.
 
 ## Prioritized Workplan
 
-| ID | Priority | Title | Why Now |
-| --- | --- | --- | --- |
-| `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | The KB is powerful enough to need explicit stale/private/canonical controls. |
-| `wf-router-media-normalization` | P1 | Add fixture-backed media normalization for the transcription router | Large audio/video intake is the next practical extraction bottleneck. |
-| `wf-digest-approved-routing` | P1 | Add human-approved routing for resurfacing digests | Resurfacing should become actionable without becoming autonomous spam. |
-| `wf-songforge-polish` | P2 | Improve SongForge creative quality and exports | The creative lane is promising, but should mature as text/source workflow first. |
+| ID | Issue | Priority | Title | Why Now |
+| --- | --- | --- | --- | --- |
+| `wf-kb-governance` | [#49](https://github.com/WalksWithASwagger/spektorAI/issues/49) | P1 | Add KB governance and profile-pack review workflow | The KB is powerful enough to need explicit stale/private/canonical controls. |
+| `wf-router-media-normalization` | [#50](https://github.com/WalksWithASwagger/spektorAI/issues/50) | P1 | Add fixture-backed media normalization for the transcription router | Large audio/video intake is the next practical extraction bottleneck. |
+| `wf-digest-approved-routing` | [#51](https://github.com/WalksWithASwagger/spektorAI/issues/51) | P1 | Add human-approved routing for resurfacing digests | Resurfacing should become actionable without becoming autonomous spam. |
+| `wf-songforge-polish` | [#52](https://github.com/WalksWithASwagger/spektorAI/issues/52) | P2 | Improve SongForge creative quality and exports | The creative lane is promising, but should mature as text/source workflow first. |
 
 These items are also registered in
 [`ops/roadmap/features.json`](../ops/roadmap/features.json) with acceptance
