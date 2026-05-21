@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a completed article/handoff run, a SongForge creative-pack run, and a
   partial/failed run so cold-start demos have useful Runs-dialog material
   without live credentials.
+- **Review tab polish** — Run Story steps now show readable statuses and UTC
+  timestamps, Review sections surface clearer empty states, and handoff previews
+  can be downloaded as Markdown before any tracker routing.
 - **Import-folder capture helpers** — `whisperforge_core.captures` can now
   import text/markdown notes and audio pointers from files or folders, dedupe
   obvious repeats, and ignore generated chunk/temp files.

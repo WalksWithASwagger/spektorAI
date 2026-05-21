@@ -26,7 +26,7 @@ make smoke
 
 Expected now:
 
-- `make test` -> `279 passed`
+- `make test` -> `281 passed`
 - fixture and UI/smoke checks pass
 
 If Docker is running and you want services proof:
@@ -115,9 +115,9 @@ Use these to get actionable feedback:
 
 ## 5) Next Dev Slice (After Review)
 
-1. Polish the Review tab: status-aware Run Story rendering, clearer empty/error
-   states, and a copy-friendly handoff preview path.
-2. Add KB governance so stale/private/canonical profile context is visible
+1. Add KB governance so stale/private/canonical profile context is visible
    before generation.
-3. Add fixture-backed media normalization for large audio/video routing before
+2. Add fixture-backed media normalization for large audio/video routing before
    changing transcription defaults.
+3. Add approved digest routing only after the local follow-up/Notion destination
+   rules are clear.

@@ -16,10 +16,10 @@ name remains WhisperForge.
 - Remote branches: only `origin/main`.
 - Legacy audio repositories are archived as historical pointers.
 - Release target: local-first personal workbench.
-- Current verification baseline: `make test` -> `279 passed`, plus lint, JSON,
+- Current verification baseline: `make test` -> `281 passed`, plus lint, JSON,
   rendered UI, browser, fixture, and Streamlit health smokes in normal closeout.
-- Latest polish slice: credential-free demo fixture pack with article/handoff,
-  SongForge, and partial/failed runs.
+- Latest polish slice: Review tab status/empty-state polish plus handoff draft
+  download.
 
 ## Product Direction
 
@@ -37,7 +37,6 @@ the local loop feels boringly reliable.
 
 | ID | Priority | Title | Why Now |
 | --- | --- | --- | --- |
-| `wf-review-polish` | P0 | Polish the Review tab for presentation and daily use | Review is now the trust surface; make it legible, calm, and copy-friendly. |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | The KB is powerful enough to need explicit stale/private/canonical controls. |
 | `wf-router-media-normalization` | P1 | Add fixture-backed media normalization for the transcription router | Large audio/video intake is the next practical extraction bottleneck. |
 | `wf-digest-approved-routing` | P1 | Add human-approved routing for resurfacing digests | Resurfacing should become actionable without becoming autonomous spam. |
@@ -49,25 +48,18 @@ criteria and verification gates.
 
 ## Today/Tomorrow Execution Order
 
-1. **Review tab polish**
-   - Add status-aware Run Story rendering, timestamps where available, and
-     compact empty/error states.
-   - Add a copy-friendly handoff preview export/download path that works
-     without GitHub or Linear credentials.
-   - Keep UI tests focused on labels and behavior, not brittle styling.
-
-2. **KB governance**
+1. **KB governance**
    - Turn audit warnings into reviewer actions: canonical, ignore, quarantine,
      needs-update.
    - Document the privacy/stale policy for humans and future agents.
    - Surface unresolved governance warnings before generation.
 
-3. **Router media normalization**
+2. **Router media normalization**
    - Convert the provider matrix into fixture-backed FFmpeg/media inspection
      and chunk normalization behavior.
    - Preserve current runtime defaults until privacy/cost receipts are visible.
 
-4. **Digest approved routing**
+3. **Digest approved routing**
    - Keep digest generation report-only by default.
    - Add explicit approval for local follow-up queue and Notion draft paths.
 

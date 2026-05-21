@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
+from datetime import datetime, timezone
 from typing import Optional
 
 import streamlit as st
@@ -15,6 +17,14 @@ from whisperforge_core import handoffs as handoffs_mod
 from whisperforge_core import run_artifacts
 from whisperforge_core import run_story as run_story_mod
 from whisperforge_core import scorecards as scorecards_mod
+
+_RUN_STORY_STATUS_LABELS = {
+    "active": "Active",
+    "complete": "Complete",
+    "error": "Error",
+    "skipped": "Skipped",
+    "waiting": "Waiting",
+}
 
 
 def render() -> None:
@@ -58,6 +68,8 @@ def render() -> None:
             st.markdown("**Receipts**")
             for source in summary["sources"]:
                 st.markdown(f"- {source}")
+        else:
+            st.caption("Receipts appear after capture, transcript, or retrieval metadata is recorded.")
         if summary["quotes"]:
             st.markdown("**Quotes / excerpts**")
             for item in summary["quotes"]:
@@ -111,8 +123,12 @@ def _scorecard_panel(scorecard: dict) -> None:
     st.markdown("**Scorecard**")
     st.metric("Verdict", scorecards_mod.compact_verdict(scorecard))
     st.caption("Advisory only; saves are not blocked.")
+    dimensions = scorecard.get("dimensions", [])
+    if not dimensions:
+        st.caption("Detailed scorecard dimensions appear after a full review run.")
+        return
     with st.expander("Scorecard details", expanded=False):
-        for dimension in scorecard.get("dimensions", []):
+        for dimension in dimensions:
             score = int(dimension.get("score", 0))
             st.progress(
                 score / 100,
@@ -129,12 +145,15 @@ def _scorecard_panel(scorecard: dict) -> None:
 def _run_story_panel(s) -> None:
     run_id = s.get("run_id")
     if not run_id:
+        st.caption("Run story appears after this output is linked to a run artifact.")
         return
     try:
         manifest = run_artifacts.load_manifest(run_id)
     except Exception:
+        st.caption("Run story unavailable; the run manifest could not be read.")
         return
     if not manifest:
+        st.caption("Run story unavailable; no manifest was found for this run.")
         return
 
     story = run_story_mod.build_run_story(
@@ -142,14 +161,44 @@ def _run_story_panel(s) -> None:
         capture_metadata=captures_mod.run_metadata(s.get("capture_id")),
     )
     if not story:
+        st.caption("Run story has no recorded steps yet.")
         return
 
     st.markdown("**Run story**")
     st.caption(f"Run `{manifest.get('run_id') or run_id}`")
     for step in story:
-        status = str(step.get("status") or "unknown").replace("_", " ")
-        detail = step.get("detail") or ""
-        st.markdown(f"- **{step.get('label', 'Step')}** · `{status}`  \n  {detail}")
+        st.markdown(_run_story_step_markdown(step))
+
+
+def _run_story_step_markdown(step: dict[str, str]) -> str:
+    label = step.get("label") or "Step"
+    status = _run_story_status_label(step.get("status") or "")
+    timestamp = _format_run_story_timestamp(step.get("timestamp") or "")
+    detail = step.get("detail") or "No detail recorded."
+    meta = f"`{status}`"
+    if timestamp:
+        meta = f"{meta} · {timestamp}"
+    return f"- **{label}** · {meta}  \n  {detail}"
+
+
+def _run_story_status_label(status: str) -> str:
+    normalized = str(status or "").replace("_", " ").strip().lower()
+    return _RUN_STORY_STATUS_LABELS.get(normalized, normalized.title() or "Unknown")
+
+
+def _format_run_story_timestamp(value: str) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    candidate = raw[:-1] + "+00:00" if raw.endswith("Z") else raw
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError:
+        return raw
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    parsed = parsed.astimezone(timezone.utc)
+    return parsed.strftime("%Y-%m-%d %H:%M UTC")
 
 
 def _review_summary_from_state(s) -> dict:
@@ -226,6 +275,7 @@ def _handoff_panel() -> None:
     s = st.session_state
     sources = _handoff_sources(s)
     if not sources:
+        st.caption("Handoff draft appears after an output, transcript, or capture is available.")
         return
     with st.expander("Agent handoff draft", expanded=False):
         st.caption(
@@ -264,8 +314,27 @@ def _handoff_panel() -> None:
                 st.caption(f"Saved to `{preview['path']}`")
             else:
                 st.caption("Preview only; start a run to persist the draft under run artifacts.")
+            st.download_button(
+                "Download draft",
+                data=_handoff_preview_markdown(preview),
+                file_name=_handoff_preview_filename(preview.get("title") or ""),
+                mime="text/markdown",
+                key="download_handoff_draft",
+                use_container_width=True,
+            )
             st.text_area("Preview", preview.get("body") or "", height=420, key="handoff_preview_body")
             _approval_panel(preview)
+
+
+def _handoff_preview_markdown(preview: dict) -> str:
+    title = str(preview.get("title") or "WhisperForge handoff draft").strip()
+    body = str(preview.get("body") or "").strip()
+    return f"# {title}\n\n{body}\n"
+
+
+def _handoff_preview_filename(title: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", str(title or "").lower()).strip(".-")
+    return f"{(slug[:80] or 'whisperforge-handoff-draft')}.md"
 
 
 def _approval_panel(preview: dict) -> None:

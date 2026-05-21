@@ -35,7 +35,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Open GitHub issues: none (`#41`, `#42`, `#43`, `#45`, `#46`, `#47`, and
   `#48` are shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `279 passed`.
+- Current unit baseline: `281 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
@@ -123,7 +123,7 @@ useful in real sessions.
 | `wf-export-readiness-refresh` | P0 | Refresh scorecard/handoff readiness signals after export events | Shipped in `#47` |
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Shipped in `#48` |
 | `wf-demo-fixture-pack` | P0 | Expand the presentation demo fixture pack | Shipped; browser smokes stay credential-free |
-| `wf-review-polish` | P0 | Polish the Review tab for presentation and daily use | Rendered UI smoke covers labels/behavior |
+| `wf-review-polish` | P0 | Polish the Review tab for presentation and daily use | Shipped; rendered UI smoke covers labels/behavior |
 | `wf-kb-governance` | P1 | Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
 | `wf-router-media-normalization` | P1 | Add fixture-backed media normalization for the transcription router | Runtime defaults preserved |
 | `wf-digest-approved-routing` | P1 | Add human-approved routing for resurfacing digests | Explicit approval remains required |

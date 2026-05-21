@@ -784,7 +784,7 @@
       "phase": "Presentation Polish",
       "priority": "P0",
       "kind": "ux",
-      "status": "planned",
+      "status": "shipped",
       "acceptance": [
         "Run Story steps render with clear status, timestamps where available, and no layout jitter.",
         "Review, scorecard, receipt, and handoff sections have useful empty/error states.",
@@ -793,6 +793,7 @@
       ],
       "verification": [
         "make test",
+        "venv/bin/python -m pytest tests/test_review_ui.py -q",
         "venv/bin/python tests/ui_smoke.py",
         "make browser-e2e-fresh",
         "git diff --check"
