@@ -22,11 +22,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from dataclasses import dataclass, field
 from typing import Optional
 
 import requests
@@ -66,7 +67,14 @@ def routing_available() -> dict[str, bool]:
         os.getenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID")
     )
     followup_ok = bool(os.getenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH"))
-    return {"github": github_ok, "linear": linear_ok, "followup_queue": followup_ok}
+    notion_draft_ok = bool(os.getenv("WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR"))
+    return {
+        "github": github_ok,
+        "linear": linear_ok,
+        "followup_queue": followup_ok,
+        "notion_page_draft": notion_draft_ok,
+        "notion_task_draft": notion_draft_ok,
+    }
 
 
 def create_github_issue(
@@ -260,6 +268,62 @@ def create_followup_queue_item(
     )
 
 
+def create_notion_draft(
+    *,
+    draft_dir: str,
+    title: str,
+    body: str,
+    draft_type: str,
+    dry_run: bool = False,
+) -> HandoffResult:
+    target = f"notion_{draft_type}_draft"
+    if _force_dry_run() or dry_run:
+        return HandoffResult(success=True, target=target, dry_run=True)
+    if draft_type not in {"page", "task"}:
+        return HandoffResult(
+            success=False,
+            target=target,
+            error="Notion draft type must be `page` or `task`.",
+        )
+    if not draft_dir:
+        return HandoffResult(
+            success=False,
+            target=target,
+            dry_run=True,
+            error=(
+                "No Notion draft directory configured (set "
+                "WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR or pass draft_dir)."
+            ),
+        )
+
+    directory = Path(draft_dir).expanduser()
+    path = directory / f"{_slug(title)}.{draft_type}.md"
+    content = "\n".join([
+        "---",
+        f"draft_type: notion_{draft_type}",
+        "status: draft",
+        "---",
+        "",
+        f"# {title}",
+        "",
+        body.strip(),
+        "",
+    ])
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        logger.warning("Notion draft write failed: %s", exc)
+        return HandoffResult(success=False, target=target, error=str(exc))
+
+    return HandoffResult(
+        success=True,
+        target=target,
+        url=path.resolve().as_uri(),
+        details={"draft_path": str(path), "draft_type": draft_type},
+    )
+
+
 def _extract_github_url(stdout: str) -> Optional[str]:
     # `gh issue create` prints the URL on its own line (sometimes after a
     # "Creating issue in ..." banner). Take the last https URL we see.
@@ -268,3 +332,8 @@ def _extract_github_url(stdout: str) -> Optional[str]:
         if line.startswith("https://"):
             return line
     return None
+
+
+def _slug(value: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", str(value or "").lower()).strip(".-")
+    return slug[:80] or "notion-draft"

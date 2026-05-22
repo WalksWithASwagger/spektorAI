@@ -1,8 +1,24 @@
 """Tests for report-only resurfacing digests."""
 
+import json
 from datetime import datetime, timezone
 
 from whisperforge_core import captures, resurfacing, run_artifacts
+
+
+def _routing_digest():
+    sections = {name: [] for name in resurfacing.DIGEST_SECTIONS}
+    sections["Unresolved follow-ups"].append({
+        "title": "Follow up with Maya",
+        "source": "capture:cap-1",
+        "detail": "Capture status is `captured`.",
+        "link": "/tmp/cap-1.json",
+    })
+    return {
+        "generated_at": "2026-05-18T00:00:00Z",
+        "mode": "report-only",
+        "sections": sections,
+    }
 
 
 def test_digest_groups_captures_runs_and_source_links(tmp_path, monkeypatch):
@@ -48,6 +64,72 @@ def test_render_markdown_is_report_only_and_has_all_sections():
     assert "Mode: report-only" in markdown
     for section in resurfacing.DIGEST_SECTIONS:
         assert f"## {section}" in markdown
+
+
+def test_digest_route_without_approval_stays_report_only(tmp_path):
+    queue_path = tmp_path / "followups.jsonl"
+
+    result = resurfacing.route_digest(
+        _routing_digest(),
+        destination="followup_queue",
+        approved=False,
+        queue_path=str(queue_path),
+    )
+
+    assert result.success is True
+    assert result.dry_run is True
+    assert result.details["approval_required"] is True
+    assert not queue_path.exists()
+
+
+def test_digest_route_approved_followup_queue_writes(tmp_path, monkeypatch):
+    queue_path = tmp_path / "followups.jsonl"
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = resurfacing.route_digest(
+        _routing_digest(),
+        destination="followup_queue",
+        approved=True,
+        queue_path=str(queue_path),
+    )
+
+    record = json.loads(queue_path.read_text(encoding="utf-8").splitlines()[0])
+    assert result.success is True
+    assert result.dry_run is False
+    assert record["title"] == "WhisperForge resurfacing digest 2026-05-18"
+    assert "Mode: report-only" in record["body"]
+    assert "Follow up with Maya" in record["body"]
+
+
+def test_digest_route_approved_dry_run_skips_notion_draft_write(tmp_path, monkeypatch):
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = resurfacing.route_digest(
+        _routing_digest(),
+        destination="notion_page_draft",
+        approved=True,
+        dry_run=True,
+        notion_draft_dir=str(tmp_path),
+    )
+
+    assert result.success is True
+    assert result.dry_run is True
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_digest_route_missing_notion_draft_config_is_visible(monkeypatch):
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR", raising=False)
+
+    result = resurfacing.route_digest(
+        _routing_digest(),
+        destination="notion_task_draft",
+        approved=True,
+    )
+
+    assert result.success is False
+    assert result.dry_run is True
+    assert "WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR" in (result.error or "")
 
 
 def test_digest_filters_demo_and_smoke_captures_by_default(tmp_path, monkeypatch):

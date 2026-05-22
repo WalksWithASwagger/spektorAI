@@ -468,10 +468,11 @@ remain plain `pytest`, `streamlit`, and `docker compose`.
 
 Run `make digest` weekly, or after a heavy capture/editing session, to surface
 useful signal without routing it anywhere. The digest is local and report-only:
-it links back to captures, run manifests, and exports, but it does not email,
-post, create issues, or schedule follow-ups unless a later explicit workflow
-adds that routing. By default it filters known smoke/demo captures so real
-session signal stays readable; use
+it links back to captures, run manifests, and exports, but by default it does
+not email, post, create issues, or schedule follow-ups. Approved local routing
+requires both `--route-to` and `--approve-routing`; without approval the routing
+result stays a visible dry-run. By default it filters known smoke/demo captures
+so real session signal stays readable; use
 `venv/bin/python scripts/resurfacing_digest.py --include-all-captures` to
 include everything.
 
@@ -505,6 +506,7 @@ include everything.
 | `WHISPERFORGE_HANDOFF_GITHUB_REPO` | Default GitHub repo for approved handoff issue creation (`owner/name`) | no |
 | `WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID` | Default Linear team ID for approved handoff issue creation | no |
 | `WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH` | Default local JSONL queue path for approved follow-up routing | no |
+| `WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR` | Local directory for approved Notion task/page draft routing | no |
 | `WHISPERFORGE_E2E_FIXTURE_PATH` | Fixture payload path for browser E2E runs (used by `make browser-e2e-fresh`) | no |
 | `WHISPERFORGE_DISCOVER_OLLAMA` | Set `0`/`false` to skip sidebar Ollama model discovery | no |
 | `WF_RAG`                 | Force RAG on/off (`1`/`true` or `0`/`false`) | no            |
