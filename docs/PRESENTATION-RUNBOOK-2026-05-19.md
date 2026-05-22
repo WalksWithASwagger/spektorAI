@@ -26,7 +26,7 @@ make smoke
 
 Expected now:
 
-- `make test` -> `281 passed`
+- `make test` -> `301 passed`
 - fixture and UI/smoke checks pass
 
 If Docker is running and you want services proof:
