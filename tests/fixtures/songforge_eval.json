@@ -3,11 +3,42 @@
   "knowledge_base": {
     "voice.md": "Keep the voice intimate, warm, direct, and source-grounded. Prefer original language over borrowed style references."
   },
+  "expected_pack_keys": [
+    "emotional_arc",
+    "lyric_draft",
+    "mode",
+    "motifs",
+    "music_prompt_pack",
+    "originality_guardrails",
+    "phrases",
+    "safety_note",
+    "source_notes",
+    "spoken_word",
+    "structure_variants",
+    "themes",
+    "title"
+  ],
+  "expected_structure_variants": [
+    "Hook-first source braid",
+    "Narrative arc build",
+    "Spoken-word crescendo"
+  ],
+  "expected_originality_guardrails": [
+    "Use source themes and receipts as anchors, not copied lyrics.",
+    "Avoid named artist, soundalike, and copyrighted lyric references.",
+    "Keep the pack service-agnostic and text-only; do not claim final audio."
+  ],
   "expected_markdown": [
+    "## Originality Guardrails",
+    "## Structure Variants",
+    "Hook-first source braid",
+    "Narrative arc build",
+    "Spoken-word crescendo",
     "## Lyric Draft",
     "## Spoken-Word Variant",
     "## Music Prompt Pack",
     "do not imitate living artists",
+    "service-agnostic and text-only",
     "KB: voice.md"
   ]
 }

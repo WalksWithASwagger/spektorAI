@@ -88,6 +88,8 @@ Safe claims:
 - Capture -> recipe -> review -> export loop is functional.
 - Run artifacts and reopen/retry flow are functional.
 - Resurfacing digest and SongForge are report-only, source-linked outputs.
+- SongForge is a source-linked text workflow for lyric drafts, spoken-word
+  variants, structure options, service-agnostic prompt packs, and source notes.
 - Services-mode transcription forwards `text`, `segments`, and `language` over
   HTTP when the backend emits rich details (WhisperX). Non-rich backends still
   return empty segment lists by design.
@@ -102,6 +104,8 @@ Do not over-claim yet:
 
 - Fully autonomous issue/PR acceptance checking quality.
 - Resurfacing-digest auto-routing without human approval.
+- SongForge generating final songs, mastered audio, or direct paid
+  music-generation service calls.
 
 ## 4) Reviewer Questions
 

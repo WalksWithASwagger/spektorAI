@@ -11,6 +11,11 @@ SAFETY_NOTE = (
     "Original lyrics only. Use supplied transcript and KB material as source "
     "context; do not imitate living artists or interpolate copyrighted lyrics."
 )
+ORIGINALITY_GUARDRAILS = [
+    "Use source themes and receipts as anchors, not copied lyrics.",
+    "Avoid named artist, soundalike, and copyrighted lyric references.",
+    "Keep the pack service-agnostic and text-only; do not claim final audio.",
+]
 
 _STOPWORDS = {
     "about", "after", "again", "also", "because", "been", "being", "between",
@@ -43,14 +48,17 @@ def build_pack(
     phrases = _phrases(transcript)
     emotional_arc = _emotional_arc(transcript, themes)
     source_notes = _source_notes(transcript, kb_notes, themes)
+    structure_variants = _structure_variants(emotional_arc, motifs, source_notes)
     return {
         "title": title,
         "mode": "songforge",
         "safety_note": SAFETY_NOTE,
+        "originality_guardrails": list(ORIGINALITY_GUARDRAILS),
         "themes": themes,
         "motifs": motifs,
         "phrases": phrases,
         "emotional_arc": emotional_arc,
+        "structure_variants": structure_variants,
         "lyric_draft": _lyric_draft(themes, motifs, phrases),
         "spoken_word": _spoken_word(themes, motifs, emotional_arc),
         "music_prompt_pack": _music_prompt_pack(themes, motifs, emotional_arc),
@@ -61,10 +69,14 @@ def build_pack(
 def render_markdown(pack: Mapping[str, Any]) -> str:
     """Render a SongForge pack as markdown for Article/export surfaces."""
     prompt_pack = pack.get("music_prompt_pack") or {}
+    guardrails = pack.get("originality_guardrails") or ORIGINALITY_GUARDRAILS
     parts = [
         "# SongForge Creative Pack",
         "",
         f"Safety: {pack.get('safety_note') or SAFETY_NOTE}",
+        "",
+        "## Originality Guardrails",
+        *[f"- {item}" for item in guardrails],
         "",
         "## Themes",
         *[f"- {item}" for item in pack.get("themes") or []],
@@ -79,8 +91,20 @@ def render_markdown(pack: Mapping[str, Any]) -> str:
     ]
     for item in pack.get("emotional_arc") or []:
         parts.append(f"- **{item.get('label', 'Beat')}:** {item.get('summary', '')}")
+    parts.extend(["", "## Structure Variants"])
+    for variant in pack.get("structure_variants") or []:
+        sections = ", ".join(str(item) for item in variant.get("sections") or [])
+        source_refs = ", ".join(str(item) for item in variant.get("source_notes") or [])
+        variant_guardrails = ", ".join(str(item) for item in variant.get("guardrails") or [])
+        parts.extend([
+            f"### {variant.get('name', 'Variant')}",
+            f"- **Best for:** {variant.get('best_for', '')}",
+            f"- **Sections:** {sections}",
+            f"- **Source notes:** {source_refs}",
+            f"- **Guardrails:** {variant_guardrails}",
+            "",
+        ])
     parts.extend([
-        "",
         "## Lyric Draft",
         str(pack.get("lyric_draft") or "").strip(),
         "",
@@ -167,6 +191,48 @@ def _source_notes(
         })
     notes.extend(kb_notes[:3])
     return notes
+
+
+def _structure_variants(
+    arc: list[dict[str, str]],
+    motifs: list[str],
+    source_notes: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    source_labels = _source_labels(source_notes)
+    arc_labels = [item["label"] for item in arc]
+    motif = motifs[0] if motifs else "source refrain"
+    return [
+        {
+            "name": "Hook-first source braid",
+            "best_for": "quick demo prompt or chorus-first lyric pass",
+            "sections": [
+                "Cold open", "Chorus", "Verse", "Chorus", "Bridge", "Final refrain",
+            ],
+            "source_notes": source_labels[:2],
+            "guardrails": ORIGINALITY_GUARDRAILS[:2],
+        },
+        {
+            "name": "Narrative arc build",
+            "best_for": "full lyric draft that follows the captured story",
+            "sections": arc_labels + ["Chorus", "Outro"],
+            "source_notes": source_labels[:3],
+            "guardrails": [ORIGINALITY_GUARDRAILS[0], ORIGINALITY_GUARDRAILS[2]],
+        },
+        {
+            "name": "Spoken-word crescendo",
+            "best_for": "performance read or spoken-sung bridge",
+            "sections": [
+                "Spoken intro", f"{motif} refrain", "Sung response", "Final spoken tag",
+            ],
+            "source_notes": source_labels[:2],
+            "guardrails": ORIGINALITY_GUARDRAILS[1:],
+        },
+    ]
+
+
+def _source_labels(source_notes: list[dict[str, str]]) -> list[str]:
+    labels = [str(note.get("source") or "Source") for note in source_notes]
+    return labels or ["Transcript"]
 
 
 def _kb_notes(knowledge_base: Mapping[str, str]) -> list[dict[str, str]]:

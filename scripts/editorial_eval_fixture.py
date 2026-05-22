@@ -67,11 +67,18 @@ def run_songforge_eval(path: Path = SONGFORGE_FIXTURE) -> None:
         fixture["transcript"],
         fixture.get("knowledge_base") or {},
     )
+    if sorted(pack) != fixture["expected_pack_keys"]:
+        raise AssertionError("SongForge pack keys do not match fixture")
+    variant_names = [variant["name"] for variant in pack["structure_variants"]]
+    if variant_names != fixture["expected_structure_variants"]:
+        raise AssertionError("SongForge structure variants do not match fixture")
+    if pack["originality_guardrails"] != fixture["expected_originality_guardrails"]:
+        raise AssertionError("SongForge originality guardrails do not match fixture")
     markdown = songforge.render_markdown(pack)
     for expected in fixture["expected_markdown"]:
         if expected not in markdown:
             raise AssertionError(f"missing expected SongForge markdown: {expected!r}")
-    print("songforge-eval: lyric, spoken-word, prompt pack, and source notes rendered")
+    print("songforge-eval: structure variants, guardrails, prompt pack, and source notes rendered")
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from whisperforge_core import export, notion
+from whisperforge_core import export, notion, songforge
 
 
 def _bundle(**overrides) -> notion.ContentBundle:
@@ -260,6 +260,35 @@ class TestVaultExport:
         assert "## Source receipts" in content
         assert "**Fixture**" in content
         assert "**Path:** tests/data.txt" in content
+
+    def test_vault_export_preserves_songforge_sections(self, tmp_path):
+        article = songforge.render_markdown(songforge.build_pack(
+            "A capture about community trust, buried signal, and creative pressure.",
+            {"voice.md": "Keep the voice source-linked and direct."},
+        ))
+        path = export.export_vault(
+            _bundle(
+                title="SongForge Vault",
+                article=article,
+                wisdom="",
+                outline="",
+                social_content="",
+                image_prompts="",
+            ),
+            vault_dir=tmp_path,
+        )
+        content = path.read_text()
+
+        headings = [
+            "## Lyric Draft",
+            "## Spoken-Word Variant",
+            "## Music Prompt Pack",
+            "## Source Notes",
+        ]
+        positions = [content.find(heading) for heading in headings]
+        assert all(position > -1 for position in positions)
+        assert positions == sorted(positions)
+        assert "KB: voice.md" in content
 
     def test_vault_export_writes_index_with_obsidian_link(self, tmp_path):
         path = export.export_vault(_bundle(title="Index Run"), vault_dir=tmp_path)
