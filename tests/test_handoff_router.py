@@ -278,9 +278,14 @@ def test_routing_available_reports_both_off_when_unconfigured(monkeypatch):
     monkeypatch.delenv("LINEAR_API_KEY", raising=False)
     monkeypatch.delenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID", raising=False)
     monkeypatch.delenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH", raising=False)
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR", raising=False)
 
     assert handoff_router.routing_available() == {
-        "github": False, "linear": False, "followup_queue": False
+        "github": False,
+        "linear": False,
+        "followup_queue": False,
+        "notion_page_draft": False,
+        "notion_task_draft": False,
     }
 
 
@@ -290,9 +295,14 @@ def test_routing_available_detects_both_on_when_configured(monkeypatch):
     monkeypatch.setenv("LINEAR_API_KEY", "key")
     monkeypatch.setenv("WHISPERFORGE_HANDOFF_LINEAR_TEAM_ID", "team-uuid")
     monkeypatch.setenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH", "/tmp/followups.jsonl")
+    monkeypatch.setenv("WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR", "/tmp/notion-drafts")
 
     assert handoff_router.routing_available() == {
-        "github": True, "linear": True, "followup_queue": True
+        "github": True,
+        "linear": True,
+        "followup_queue": True,
+        "notion_page_draft": True,
+        "notion_task_draft": True,
     }
 
 
@@ -369,3 +379,58 @@ def test_followup_queue_write_failure_surfaces_error(monkeypatch, tmp_path):
     assert result.success is False
     assert result.dry_run is False
     assert "disk full" in (result.error or "")
+
+
+# --- Notion drafts --------------------------------------------------------
+
+
+def test_notion_draft_dry_run_skips_file_write(monkeypatch, tmp_path):
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = handoff_router.create_notion_draft(
+        draft_dir=str(tmp_path),
+        title="Digest draft",
+        body="Body",
+        draft_type="page",
+        dry_run=True,
+    )
+
+    assert result.success is True
+    assert result.dry_run is True
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_notion_draft_missing_dir_returns_dry_run_with_error(monkeypatch):
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = handoff_router.create_notion_draft(
+        draft_dir="",
+        title="Digest draft",
+        body="Body",
+        draft_type="task",
+        dry_run=False,
+    )
+
+    assert result.success is False
+    assert result.dry_run is True
+    assert "WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR" in (result.error or "")
+
+
+def test_notion_draft_success_writes_local_markdown(monkeypatch, tmp_path):
+    monkeypatch.delenv("WHISPERFORGE_HANDOFF_DRY_RUN", raising=False)
+
+    result = handoff_router.create_notion_draft(
+        draft_dir=str(tmp_path),
+        title="Digest follow-up",
+        body="Digest body",
+        draft_type="task",
+        dry_run=False,
+    )
+
+    path = tmp_path / "digest-follow-up.task.md"
+    assert result.success is True
+    assert result.dry_run is False
+    assert result.url == path.resolve().as_uri()
+    assert result.details["draft_path"] == str(path)
+    assert "draft_type: notion_task" in path.read_text(encoding="utf-8")
+    assert "Digest body" in path.read_text(encoding="utf-8")

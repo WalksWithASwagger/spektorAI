@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from . import captures, run_artifacts
+from . import captures, handoff_router, run_artifacts
 from .config import CACHE_DIR
 
 DIGEST_SECTIONS = [
@@ -20,6 +21,11 @@ DIGEST_SECTIONS = [
     "Topic evolution",
 ]
 DEFAULT_DIGEST_DIR = CACHE_DIR / "digests"
+DIGEST_ROUTE_DESTINATIONS = [
+    "followup_queue",
+    "notion_page_draft",
+    "notion_task_draft",
+]
 
 
 @dataclass
@@ -220,14 +226,78 @@ def write_digest(
     *,
     limit: int = 50,
     include_nonprod: bool = False,
+    digest: dict[str, Any] | None = None,
 ) -> Path:
     out_dir = out_dir or DEFAULT_DIGEST_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
-    digest = build_digest(limit=limit, include_nonprod=include_nonprod)
+    digest = digest or build_digest(limit=limit, include_nonprod=include_nonprod)
     stamp = digest["generated_at"][:10]
     path = out_dir / f"{stamp}-resurfacing-digest.md"
     path.write_text(render_markdown(digest), encoding="utf-8")
     return path
+
+
+def route_digest(
+    digest: dict[str, Any],
+    *,
+    destination: str,
+    approved: bool = False,
+    dry_run: bool = False,
+    queue_path: str | None = None,
+    notion_draft_dir: str | None = None,
+) -> handoff_router.HandoffResult:
+    if destination not in DIGEST_ROUTE_DESTINATIONS:
+        return handoff_router.HandoffResult(
+            success=False,
+            target=destination,
+            error=f"Unsupported digest routing destination: {destination}",
+        )
+
+    title, body = _route_payload(digest)
+    if not approved:
+        return handoff_router.HandoffResult(
+            success=True,
+            target=destination,
+            dry_run=True,
+            details={
+                "approval_required": True,
+                "message": "Digest remains report-only until routing is explicitly approved.",
+            },
+        )
+
+    if destination == "followup_queue":
+        return handoff_router.create_followup_queue_item(
+            queue_path=queue_path
+            if queue_path is not None
+            else os.getenv("WHISPERFORGE_HANDOFF_FOLLOWUP_QUEUE_PATH", ""),
+            title=title,
+            body=body,
+            dry_run=dry_run,
+        )
+
+    draft_type = "page" if destination == "notion_page_draft" else "task"
+    return handoff_router.create_notion_draft(
+        draft_dir=notion_draft_dir
+        if notion_draft_dir is not None
+        else os.getenv("WHISPERFORGE_HANDOFF_NOTION_DRAFT_DIR", ""),
+        title=title,
+        body=body,
+        draft_type=draft_type,
+        dry_run=dry_run,
+    )
+
+
+def _route_payload(digest: dict[str, Any]) -> tuple[str, str]:
+    generated_at = str(digest.get("generated_at") or "")
+    day = generated_at[:10] if len(generated_at) >= 10 else "latest"
+    title = f"WhisperForge resurfacing digest {day}"
+    body = "\n".join([
+        "Approved digest routing payload.",
+        "",
+        render_markdown(digest).rstrip(),
+        "",
+    ])
+    return title, body
 
 
 def _run_title(output: dict[str, Any], run_id: str) -> str:
