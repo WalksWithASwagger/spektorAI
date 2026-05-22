@@ -29,7 +29,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 
 - GitHub issues `#13` through `#24`: closed.
 - Audio consolidation issues `#37` through `#40`: closed.
-- Pull requests `#25` through `#35`: merged.
+- Pull requests `#25` through `#35` and `#53` through `#56`: merged.
 - Latest feature baseline: KB governance, router media planning, approved digest
   routing, and SongForge export polish on current `main`.
 - Open GitHub issues: none (`#49` through `#52` are shipped).
