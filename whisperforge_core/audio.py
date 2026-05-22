@@ -9,9 +9,11 @@ sequentially and concatenated.
 """
 
 import hashlib
+import json
 import math
 import os
 import shutil
+import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -60,6 +62,10 @@ CHUNK_THRESHOLD_BYTES = 20 * 1024 * 1024
 MIN_CHUNK_LENGTH_MS = 5_000
 MAX_CHUNKS = 20
 VIDEO_SOURCE_EXTENSIONS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
+NORMALIZED_AUDIO_SAMPLE_RATE_HZ = 16_000
+NORMALIZED_AUDIO_CHANNELS = 1
+NORMALIZED_AUDIO_CODEC = "pcm_s16le"
+NORMALIZED_AUDIO_SUFFIX = ".wav"
 
 
 @dataclass(frozen=True)
@@ -144,11 +150,238 @@ def transcription_capabilities(backend: Optional[str] = None) -> dict[str, Any]:
     }
 
 
+def probe_media(source_path: str | Path) -> dict[str, Any]:
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v", "error",
+            "-print_format", "json",
+            "-show_format",
+            "-show_streams",
+            str(source_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(result.stdout or "{}")
+
+
+def _first_float(*values: Any) -> Optional[float]:
+    for value in values:
+        if value in (None, ""):
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _first_int(*values: Any) -> Optional[int]:
+    for value in values:
+        if value in (None, ""):
+            continue
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _media_summary(
+    media_probe: Optional[dict[str, Any]],
+    *,
+    suffix: str,
+) -> dict[str, Any]:
+    if not media_probe:
+        return {
+            "probe_available": False,
+            "source_suffix": suffix,
+            "has_audio": None,
+            "has_video": suffix in VIDEO_SOURCE_EXTENSIONS,
+            "duration_seconds": None,
+            "audio_codec": None,
+            "video_codec": None,
+            "sample_rate_hz": None,
+            "channels": None,
+            "container": None,
+        }
+
+    streams = media_probe.get("streams") or []
+    audio_stream = next(
+        (stream for stream in streams if stream.get("codec_type") == "audio"),
+        {},
+    )
+    video_stream = next(
+        (stream for stream in streams if stream.get("codec_type") == "video"),
+        {},
+    )
+    media_format = media_probe.get("format") or {}
+
+    return {
+        "probe_available": True,
+        "source_suffix": suffix,
+        "has_audio": bool(audio_stream),
+        "has_video": bool(video_stream),
+        "duration_seconds": _first_float(
+            media_format.get("duration"),
+            audio_stream.get("duration"),
+            video_stream.get("duration"),
+        ),
+        "audio_codec": audio_stream.get("codec_name"),
+        "video_codec": video_stream.get("codec_name"),
+        "sample_rate_hz": _first_int(audio_stream.get("sample_rate")),
+        "channels": _first_int(audio_stream.get("channels")),
+        "container": media_format.get("format_name"),
+    }
+
+
+def _normalization_reasons(
+    suffix: str,
+    media: dict[str, Any],
+    *,
+    large: bool,
+) -> list[str]:
+    if not large and suffix not in VIDEO_SOURCE_EXTENSIONS and not media.get("has_video"):
+        return []
+
+    reasons: list[str] = []
+    if suffix in VIDEO_SOURCE_EXTENSIONS or media.get("has_video"):
+        reasons.append("extract_audio_from_video")
+    if media.get("sample_rate_hz") not in (None, NORMALIZED_AUDIO_SAMPLE_RATE_HZ):
+        reasons.append("resample_audio")
+    if media.get("channels") not in (None, NORMALIZED_AUDIO_CHANNELS):
+        reasons.append("downmix_audio")
+    if media.get("audio_codec") not in (None, NORMALIZED_AUDIO_CODEC):
+        reasons.append("transcode_audio_codec")
+    return reasons
+
+
+def _normalization_plan(
+    source_path: Path,
+    *,
+    required: bool,
+    reasons: list[str],
+    output_path: Optional[str | Path] = None,
+) -> dict[str, Any]:
+    normalized_output = (
+        str(output_path) if output_path else f"<tempdir>/normalized{NORMALIZED_AUDIO_SUFFIX}"
+    )
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostdin",
+        "-y",
+        "-i", str(source_path),
+        "-map", "0:a:0",
+        "-vn",
+        "-ac", str(NORMALIZED_AUDIO_CHANNELS),
+        "-ar", str(NORMALIZED_AUDIO_SAMPLE_RATE_HZ),
+        "-c:a", NORMALIZED_AUDIO_CODEC,
+        normalized_output,
+    ]
+    return {
+        "required": required,
+        "tool": "ffmpeg",
+        "execution": "planned_only",
+        "target": {
+            "suffix": NORMALIZED_AUDIO_SUFFIX,
+            "codec": NORMALIZED_AUDIO_CODEC,
+            "sample_rate_hz": NORMALIZED_AUDIO_SAMPLE_RATE_HZ,
+            "channels": NORMALIZED_AUDIO_CHANNELS,
+        },
+        "reasons": reasons,
+        "output_path": normalized_output if required else None,
+        "commands": [{"argv": command, "purpose": "extract_normalized_audio"}]
+        if required else [],
+    }
+
+
+def _output_contract(
+    backend: str,
+    caps: dict[str, Any],
+) -> dict[str, Any]:
+    diarization_enabled = (
+        backend == "whisperx" and WHISPERX_DIARIZATION and bool(WHISPERX_HF_TOKEN)
+    )
+    return {
+        "text": True,
+        "segments": caps["supports_segments"],
+        "timestamps": "segments" if caps["supports_segments"] else "unavailable",
+        "diarization": {
+            "capable": caps["supports_diarization"],
+            "enabled": diarization_enabled,
+            "requires_hf_token": backend == "whisperx",
+        },
+    }
+
+
+def _privacy_receipt(
+    backend: str,
+    caps: dict[str, Any],
+    *,
+    media_inspected: bool,
+    normalization_required: bool,
+    chunked: bool,
+) -> dict[str, Any]:
+    local_steps: list[str] = []
+    if media_inspected:
+        local_steps.append("ffprobe")
+    if normalization_required:
+        local_steps.append("ffmpeg_normalization")
+    if chunked:
+        local_steps.append("chunking")
+
+    temp_artifacts: list[str] = []
+    if normalization_required:
+        temp_artifacts.append("normalized_audio")
+    if chunked:
+        temp_artifacts.append("chunks")
+
+    return {
+        "mode": caps["privacy_mode"],
+        "audio_leaves_device": caps["privacy_mode"] == "cloud",
+        "cloud_provider": "openai" if backend == "openai" else None,
+        "local_processing_steps": local_steps,
+        "temp_artifacts": temp_artifacts,
+        "requires_receipt_before_default_change": True,
+    }
+
+
+def _cost_receipt(
+    backend: str,
+    caps: dict[str, Any],
+    media: dict[str, Any],
+    *,
+    normalization_required: bool,
+) -> dict[str, Any]:
+    duration_seconds = media.get("duration_seconds")
+    estimated_minutes = (
+        round(duration_seconds / 60.0, 3)
+        if isinstance(duration_seconds, (int, float)) else None
+    )
+    provider_billable = caps["privacy_mode"] == "cloud"
+    return {
+        "provider_api_billable": provider_billable,
+        "billable_provider": "openai" if backend == "openai" else None,
+        "billable_unit": "audio_minutes" if provider_billable else None,
+        "estimated_billable_minutes": estimated_minutes if provider_billable else None,
+        "local_compute_required": caps["privacy_mode"] == "local"
+        or normalization_required,
+        "ffmpeg_compute_required": normalization_required,
+        "pricing_review_required": provider_billable,
+    }
+
+
 def build_transcription_plan(
     source_path: str | Path,
     *,
     backend: Optional[str] = None,
     chunker: Optional[str] = None,
+    inspect_media: bool = False,
+    media_probe: Optional[dict[str, Any]] = None,
+    normalized_audio_path: Optional[str | Path] = None,
 ) -> dict[str, Any]:
     path = Path(source_path)
     selected_backend = resolve_transcription_backend(backend)
@@ -163,6 +396,21 @@ def build_transcription_plan(
     if suffix in VIDEO_SOURCE_EXTENSIONS:
         reasons.append("video_source_requires_extraction")
 
+    media_inspected = media_probe is not None
+    if inspect_media and media_probe is None:
+        media_probe = probe_media(path)
+        media_inspected = True
+    media = _media_summary(media_probe, suffix=suffix)
+    normalization_reasons = _normalization_reasons(suffix, media, large=large)
+    normalization_required = bool(normalization_reasons)
+    reasons.extend(reason for reason in normalization_reasons if reason not in reasons)
+    normalization = _normalization_plan(
+        path,
+        required=normalization_required,
+        reasons=normalization_reasons,
+        output_path=normalized_audio_path,
+    )
+
     if not large:
         strategy = "single_pass"
     elif selected_backend == "whisperx" and selected_chunker != "vad":
@@ -172,6 +420,7 @@ def build_transcription_plan(
     else:
         strategy = "chunked_size"
 
+    chunked = strategy in {"chunked_size", "chunked_vad"}
     return {
         "backend": selected_backend,
         "chunker": selected_chunker,
@@ -179,8 +428,28 @@ def build_transcription_plan(
         "file_size_bytes": file_size,
         "chunk_threshold_bytes": CHUNK_THRESHOLD_BYTES,
         "source_suffix": suffix,
-        "requires_ffmpeg": bool(suffix in VIDEO_SOURCE_EXTENSIONS or caps["needs_ffmpeg"]),
+        "requires_ffmpeg": bool(
+            suffix in VIDEO_SOURCE_EXTENSIONS
+            or caps["needs_ffmpeg"]
+            or normalization_required
+        ),
         "capabilities": caps,
+        "media": media,
+        "normalization": normalization,
+        "output_contract": _output_contract(selected_backend, caps),
+        "privacy": _privacy_receipt(
+            selected_backend,
+            caps,
+            media_inspected=media_inspected,
+            normalization_required=normalization_required,
+            chunked=chunked,
+        ),
+        "cost": _cost_receipt(
+            selected_backend,
+            caps,
+            media,
+            normalization_required=normalization_required,
+        ),
         "reasons": reasons,
     }
 

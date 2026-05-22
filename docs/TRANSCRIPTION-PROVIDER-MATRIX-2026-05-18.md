@@ -46,6 +46,39 @@ adding more providers.
   the file-based OpenAI diarization path, because both have first-class
   streaming APIs and richer vocabulary/diarization controls.
 
+## Implemented Router Behavior
+
+`whisperforge_core.audio.build_transcription_plan()` now exposes the provider
+router contract as fixture-friendly structured data. This is a planning layer,
+not a runtime behavior change: `transcribe_audio()` still uses the existing
+default OpenAI path, size chunker, and sequential chunk transcription unless
+the caller explicitly selects another backend or chunker.
+
+The implemented plan fields connect this matrix to code:
+
+| Plan field | Implemented behavior |
+| --- | --- |
+| `capabilities` | Reports backend limits and feature flags for `openai`, `mlx`, `whisper_cpp`, and `whisperx`. |
+| `media` | Summarizes ffprobe-style media fixtures, or stays unprobed when no fixture/inspection is requested. |
+| `normalization` | Emits a planned-only FFmpeg command for video extraction or large probed audio that needs mono 16 kHz PCM normalization. |
+| `output_contract` | Marks text-only backends versus WhisperX segment timestamps and diarization capability. |
+| `privacy` | States whether audio leaves the device, which cloud provider receives it, and which local temp artifacts are expected. |
+| `cost` | States whether provider API billing applies, estimated billable minutes when duration is known, and whether local/FFmpeg compute is expected. |
+
+Current router fixture coverage pins the main lanes:
+
+- `openai`: cloud, billable audio-minute receipt, chunked for files over
+  `CHUNK_THRESHOLD_BYTES`, and no default FFmpeg probe.
+- `mlx`: local/private receipt, no provider API billing, and no normalization
+  for ordinary small audio.
+- `whisperx`: local timestamp-capable plan, whole-file default for large inputs
+  unless `CHUNKER=vad`, and explicit diarization-capable output metadata.
+- Video sources and large probed audio: planned FFmpeg extraction/resampling
+  before transcription, without requiring FFmpeg in the default unit suite.
+
+Do not enable this normalization path as a runtime default until a product
+decision accepts the `privacy` and `cost` receipts for the selected backend.
+
 ## Smallest Next Integration
 
 Add an OpenAI diarized transcription mode without changing the default.
