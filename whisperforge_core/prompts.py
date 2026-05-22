@@ -52,19 +52,37 @@ def list_users() -> List[str]:
 def load_knowledge_base(user: str) -> Dict[str, str]:
     """Load every .txt/.md file under prompts/<user>/knowledge_base/ and return
     a dict of {TitleCased name: file contents}."""
+    from . import kb_audit as kb_audit_mod
+
     kb: Dict[str, str] = {}
     kb_path = PROMPTS_DIR / user / "knowledge_base"
     if not kb_path.exists():
         return kb
-    for path in sorted(kb_path.iterdir()):
+    governance = kb_audit_mod.load_governance(user, prompts_dir=PROMPTS_DIR)
+    paths = [
+        path for path in kb_path.iterdir()
+        if path.suffix.lower() in {".txt", ".md"} and not path.name.startswith(".")
+    ]
+    paths.sort(key=lambda path: (not governance.is_canonical(path), path.name.lower()))
+    for path in paths:
         if path.suffix.lower() not in {".txt", ".md"} or path.name.startswith("."):
             continue
+        if governance.is_ignored(path):
+            continue
         name = path.stem.replace("_", " ").title()
+        if governance.is_canonical(path):
+            name = f"Canonical Voice Anchor: {name}"
         try:
             kb[name] = path.read_text(encoding="utf-8")
         except OSError as e:
             logger.warning("Failed to read kb file %s: %s", path, e)
     return kb
+
+
+def knowledge_base_generation_warning(user: str) -> str:
+    from . import kb_audit as kb_audit_mod
+
+    return kb_audit_mod.generation_warning_summary(user, prompts_dir=PROMPTS_DIR)
 
 
 def load_user_prompts(user: str) -> Dict[str, str]:

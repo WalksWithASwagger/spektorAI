@@ -49,6 +49,34 @@ class TestKnowledgeBase:
         loaded = prompts.load_knowledge_base("alice")
         assert loaded == {"Voice Guide": "friendly tone", "Style": "short sentences"}
 
+    def test_governance_ignores_files_and_labels_canonical_anchors(self, tmp_prompts_dir):
+        kb = tmp_prompts_dir / "alice" / "knowledge_base"
+        kb.mkdir(parents=True)
+        (kb / "voice.md").write_text("canonical tone")
+        (kb / "notes.md").write_text("usable notes")
+        (kb / "old.md").write_text("ignored notes")
+        (kb / "governance.yaml").write_text(
+            "canonical_files:\n"
+            "  - voice.md\n"
+            "ignored_files:\n"
+            "  - old.md\n"
+        )
+
+        loaded = prompts.load_knowledge_base("alice")
+
+        assert list(loaded) == ["Canonical Voice Anchor: Voice", "Notes"]
+        assert "Old" not in loaded
+
+    def test_generation_warning_summarizes_unresolved_governance(self, tmp_prompts_dir):
+        kb = tmp_prompts_dir / "alice" / "knowledge_base"
+        kb.mkdir(parents=True)
+        (kb / "private-token.md").write_text("local secret")
+
+        warning = prompts.knowledge_base_generation_warning("alice")
+
+        assert "unresolved KB governance" in warning
+        assert "private-token.md" in warning
+
 
 class TestPromptPrecedence:
     def test_custom_prompt_overrides_md(self, tmp_prompts_dir):
