@@ -1,18 +1,20 @@
 # WhisperForge Status
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22
 
 ## Current State
 
 - Current branch: `main`, synced with `origin/main`.
-- Latest feature baseline: presentation quality gates plus the Run Story/Review
-  tab polish slice on current `main`.
+- Latest feature baseline: the merged local-first reliability swarm for KB
+  governance, transcription-router media planning, approved digest routing, and
+  SongForge export polish on current `main`.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: open agent-ready issues `#49` through `#52`; no open PRs.
+- Live GitHub queue: no open issues and no open PRs after merging `#53`
+  through `#56`.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -36,9 +38,8 @@ Last updated: 2026-05-21
 
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 20` -> issues `#49` through `#52`,
-  all marked `agent:ready`.
-- `gh pr list --state open --limit 50` -> no open PRs.
+- `gh issue list --state open --limit 100` -> no open issues.
+- `gh pr list --state open --limit 20` -> no open PRs.
 - `git branch -r` -> only `origin/main` remains after pruning merged legacy
   PR branches.
 - `git worktree list --porcelain` -> only `/Users/kk/Code/spektorAI` remains
@@ -47,13 +48,13 @@ Last updated: 2026-05-21
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
 - `make lint` passes dependency-light Python syntax checks.
-- `make test` -> `281 passed`.
+- `make test` -> `301 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` passes editorial and SongForge fixtures.
 - `venv/bin/python tests/ui_smoke.py` passes rendered Streamlit shell smoke.
 - `make smoke` passes Streamlit health smoke on the default smoke port.
-- `make digest` -> `.cache/digests/2026-05-19-resurfacing-digest.md`.
+- `make digest` -> `.cache/digests/2026-05-21-resurfacing-digest.md`.
 - `git diff --check` passes.
 
 ## Active Handles
@@ -85,14 +86,16 @@ Last updated: 2026-05-21
 - Services-mode now forwards transcription `segments` and `language` over HTTP
   when the backend emits rich details; non-rich backends still return empty
   segment lists by design.
-- The transcription/provider matrix now has a shipped capability/planner layer
-  (`#48`) in `whisperforge_core/audio.py`, but runtime defaults remain unchanged.
-  FFmpeg media extraction/normalization and parallel chunk execution are still
-  deferred until fixture-backed follow-up work is scoped.
-- SongForge is intentionally text-first and deterministic. It is ready as a
-  source-linked creative pack, not as an audio/music-generation integration.
-- Resurfacing digest is report-only. Any notification, publishing, routing, or
-  recurring automation needs explicit human approval.
+- The transcription/provider matrix now has a fixture-backed media planning
+  layer (`#50`) with opt-in ffprobe inspection, planned-only FFmpeg
+  normalization, and visible privacy/cost receipts. Runtime transcription
+  defaults remain unchanged.
+- SongForge is intentionally text-first and deterministic. It now emits
+  structure variants and originality guardrails, but it is still not an
+  audio/music-generation integration.
+- Resurfacing digest is report-only by default. Approved local follow-up queue
+  and Notion draft routing now exist (`#51`), but outbound routing still needs
+  explicit approval and config.
 - Agent handoff drafts now support approval-gated GitHub/Linear creation plus
   local follow-up queue routing via `whisperforge_core.handoff_router`. Default
   remains dry-run when target config is missing;
@@ -109,15 +112,7 @@ Last updated: 2026-05-21
 ## Next Round
 
 Dogfood closeout, first router slice, Run Story/Review extraction, the demo
-fixture pack, and Review polish are complete. The next roadmap slice should
-stay focused on local-first reliability:
-
-1. [`#49`](https://github.com/WalksWithASwagger/spektorAI/issues/49)
-   `wf-kb-governance` - define canonical, stale, private, and ignored KB
-   context so agents do not over-trust messy source material.
-2. [`#50`](https://github.com/WalksWithASwagger/spektorAI/issues/50)
-   `wf-router-media-normalization` - add fixture-backed FFmpeg/media
-   normalization before changing transcription defaults.
-3. [`#51`](https://github.com/WalksWithASwagger/spektorAI/issues/51)
-   `wf-digest-approved-routing` - route resurfacing digests only after explicit
-   approval.
+fixture pack, Review polish, KB governance, router media planning, approved
+digest routing, and SongForge export polish are complete. The next roadmap
+slice should be created from fresh dogfood evidence rather than reopening the
+now-closed `#49` through `#52` queue.

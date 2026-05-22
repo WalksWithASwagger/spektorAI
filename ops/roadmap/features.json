@@ -805,7 +805,7 @@
       "phase": "Local-First Milestone",
       "priority": "P1",
       "kind": "feature",
-      "status": "planned",
+      "status": "shipped",
       "githubIssue": 49,
       "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/49",
       "acceptance": [
@@ -826,7 +826,7 @@
       "phase": "Local-First Milestone",
       "priority": "P1",
       "kind": "feature",
-      "status": "planned",
+      "status": "shipped",
       "githubIssue": 50,
       "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/50",
       "acceptance": [
@@ -847,7 +847,7 @@
       "phase": "Local-First Milestone",
       "priority": "P1",
       "kind": "feature",
-      "status": "planned",
+      "status": "shipped",
       "githubIssue": 51,
       "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/51",
       "acceptance": [
@@ -868,7 +868,7 @@
       "phase": "Creative Lane",
       "priority": "P2",
       "kind": "feature",
-      "status": "planned",
+      "status": "shipped",
       "githubIssue": 52,
       "githubUrl": "https://github.com/WalksWithASwagger/spektorAI/issues/52",
       "acceptance": [

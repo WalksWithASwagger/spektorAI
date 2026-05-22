@@ -141,6 +141,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md` records the completed
   issue wave, full repo audit findings, from-here roadmap, and human decision
   questions.
+- **KB governance review controls** — profile KB audits now support
+  canonical voice anchors, intentionally ignored files, reviewer actions, and
+  pre-generation governance warnings.
+- **Transcription router media plan** — the audio router now has
+  fixture-backed ffprobe inspection, planned-only FFmpeg normalization, output
+  contracts, and privacy/cost receipts without changing runtime defaults.
+- **Approved resurfacing digest routing** — `make digest` remains report-only
+  by default, while explicit CLI approval can route to the local follow-up
+  queue or local Notion page/task draft files.
+- **SongForge export polish** — SongForge packs now include deterministic
+  structure variants and originality guardrails, with fixture coverage and
+  markdown/vault export preservation.
 
 ### Changed
 - Runs dialog reopen now restores the run manifest `capture_id`, and the Review
@@ -158,6 +170,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the pre-implementation planning baseline.
 - `ROADMAP.md` is now a concise index into the 2026 master plan and active
   issue registry, instead of a stale long-form status dump.
+- `STATUS.md` and the active next-round plan now reflect the closed
+  `#49` through `#52` queue and merged PRs `#53` through `#56`.
 - User-defined personas now flow through both the Generation Settings selector
   and the pipeline resolver instead of being limited to built-ins at run time.
 - Run history now upserts by stable `run_id` and stores local artifact links

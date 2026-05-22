@@ -1,6 +1,6 @@
 # WhisperForge Next Round Plan
 
-Last refreshed: 2026-05-21
+Last refreshed: 2026-05-22
 
 This is the active workplan for the local-first WhisperForge milestone. Older
 dated audit docs remain historical snapshots; use this file, `ROADMAP.md`, and
@@ -11,16 +11,17 @@ dated audit docs remain historical snapshots; use this file, `ROADMAP.md`, and
 WhisperForge is consolidated into `WalksWithASwagger/spektorAI` and the product
 name remains WhisperForge.
 
-- Current branch: `main`, synced with `origin/main` before this closeout.
-- GitHub issues: `#49` through `#52` are open and marked `agent:ready` after
-  the roadmap reseed on 2026-05-21. No open PRs.
+- Current branch: `main`, synced with `origin/main` after merging the issue
+  swarm.
+- GitHub issues: no open issues after `#49` through `#52` were closed by
+  merged PRs `#53` through `#56`. No open PRs.
 - Remote branches: only `origin/main`.
 - Legacy audio repositories are archived as historical pointers.
 - Release target: local-first personal workbench.
-- Current verification baseline: `make test` -> `281 passed`, plus lint, JSON,
-  rendered UI, browser, fixture, and Streamlit health smokes in normal closeout.
-- Latest polish slice: Review tab status/empty-state polish plus handoff draft
-  download.
+- Current verification baseline: `make test` -> `301 passed`, plus `make lint`,
+  `make eval-fixture`, `make digest`, and `git diff --check` in closeout.
+- Latest shipped slice: KB governance controls, router media planning,
+  approved digest routing, and SongForge structure/export polish.
 
 ## Product Direction
 
@@ -34,35 +35,27 @@ for real voice notes and collaborator follow-through. Keep hosted auth,
 multi-user accounts, and direct music-generation service calls deferred until
 the local loop feels boringly reliable.
 
-## Prioritized Workplan
+## Shipped Workplan
 
 | ID | Issue | Priority | Title | Why Now |
 | --- | --- | --- | --- | --- |
-| `wf-kb-governance` | [#49](https://github.com/WalksWithASwagger/spektorAI/issues/49) | P1 | Add KB governance and profile-pack review workflow | The KB is powerful enough to need explicit stale/private/canonical controls. |
-| `wf-router-media-normalization` | [#50](https://github.com/WalksWithASwagger/spektorAI/issues/50) | P1 | Add fixture-backed media normalization for the transcription router | Large audio/video intake is the next practical extraction bottleneck. |
-| `wf-digest-approved-routing` | [#51](https://github.com/WalksWithASwagger/spektorAI/issues/51) | P1 | Add human-approved routing for resurfacing digests | Resurfacing should become actionable without becoming autonomous spam. |
-| `wf-songforge-polish` | [#52](https://github.com/WalksWithASwagger/spektorAI/issues/52) | P2 | Improve SongForge creative quality and exports | The creative lane is promising, but should mature as text/source workflow first. |
+| `wf-kb-governance` | [#49](https://github.com/WalksWithASwagger/spektorAI/issues/49) / [#53](https://github.com/WalksWithASwagger/spektorAI/pull/53) | P1 | Add KB governance and profile-pack review workflow | Shipped canonical/ignored KB controls, reviewer actions, warnings, docs, and tests. |
+| `wf-router-media-normalization` | [#50](https://github.com/WalksWithASwagger/spektorAI/issues/50) / [#54](https://github.com/WalksWithASwagger/spektorAI/pull/54) | P1 | Add fixture-backed media normalization for the transcription router | Shipped opt-in ffprobe planning, planned-only FFmpeg normalization, and privacy/cost receipts. |
+| `wf-digest-approved-routing` | [#51](https://github.com/WalksWithASwagger/spektorAI/issues/51) / [#55](https://github.com/WalksWithASwagger/spektorAI/pull/55) | P1 | Add human-approved routing for resurfacing digests | Shipped explicit approval gates, local follow-up queue routing, and Notion draft routing. |
+| `wf-songforge-polish` | [#52](https://github.com/WalksWithASwagger/spektorAI/issues/52) / [#56](https://github.com/WalksWithASwagger/spektorAI/pull/56) | P2 | Improve SongForge creative quality and exports | Shipped structure variants, originality guardrails, fixture evals, and export preservation. |
 
 These items are also registered in
 [`ops/roadmap/features.json`](../ops/roadmap/features.json) with acceptance
 criteria and verification gates.
 
-## Today/Tomorrow Execution Order
+## Next Execution Order
 
-1. **KB governance**
-   - Turn audit warnings into reviewer actions: canonical, ignore, quarantine,
-     needs-update.
-   - Document the privacy/stale policy for humans and future agents.
-   - Surface unresolved governance warnings before generation.
-
-2. **Router media normalization**
-   - Convert the provider matrix into fixture-backed FFmpeg/media inspection
-     and chunk normalization behavior.
-   - Preserve current runtime defaults until privacy/cost receipts are visible.
-
-3. **Digest approved routing**
-   - Keep digest generation report-only by default.
-   - Add explicit approval for local follow-up queue and Notion draft paths.
+1. Dogfood the merged local-first loop with a real capture and record the
+   resulting friction.
+2. Turn that evidence into the next issue wave instead of reopening the closed
+   `#49` through `#52` items.
+3. Keep runtime defaults conservative until router privacy/cost receipts and
+   approved routing paths have real-session review.
 
 ## Human Decisions Needed
 

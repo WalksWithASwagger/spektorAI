@@ -30,12 +30,11 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - GitHub issues `#13` through `#24`: closed.
 - Audio consolidation issues `#37` through `#40`: closed.
 - Pull requests `#25` through `#35`: merged.
-- Latest feature baseline: presentation quality gates plus the Run Story/Review
-  tab polish slice on current `main`.
-- Open GitHub issues: `#49` through `#52`, all seeded from the planned roadmap
-  wave and marked `agent:ready`.
+- Latest feature baseline: KB governance, router media planning, approved digest
+  routing, and SongForge export polish on current `main`.
+- Open GitHub issues: none (`#49` through `#52` are shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `281 passed`.
+- Current unit baseline: `301 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
@@ -78,20 +77,20 @@ Deferred until later milestone:
 - services-mode parity beyond current stability baseline,
 - deployment hardening for public/private hosted surfaces.
 
-### 4. Turn The Provider Matrix Into A Router
+### 4. Turn The Provider Matrix Into A Router (Shipped Slice + Next)
 
-The transcription matrix identifies the next provider choices. The next code
-step is a tested router with realistic fixtures for diarization, timestamps,
-local/private mode, and vocabulary/proper-noun handling.
+The transcription matrix now has fixture-backed media inspection, FFmpeg
+normalization planning, and privacy/cost receipts. The next code step is
+runtime validation and transcript assembly before changing defaults.
 
 No runtime default should change until the router has fixtures and a clear
 privacy/cost statement.
 
-### 5. Govern The Knowledge Base
+### 5. Govern The Knowledge Base (Shipped Slice + Next)
 
-The KB is now visible, but it still needs operating discipline: canonical
-packs, private-file policy, stale-file review cadence, voice-anchor ownership,
-and a migration path for profile metadata.
+The KB now has reviewer actions, canonical/ignored governance marks, and
+generation warnings for unresolved findings. The next operating step is real
+reviewer cleanup of stale/private-looking profile files.
 
 The product should help agents avoid using stale or sensitive context before
 generation starts.
@@ -105,11 +104,11 @@ The next useful step is expanding that approval boundary to:
 - publish/send digest,
 - create/update Notion task pages.
 
-### 7. Expand SongForge Carefully
+### 7. Expand SongForge Carefully (Shipped Slice + Next)
 
-SongForge is now a source-linked text pack. Next steps should improve creative
-quality while preserving originality and source receipts: optional LLM polish,
-more song structures, prompt-pack variants, and export presets.
+SongForge now emits multiple source-linked structure variants with originality
+guardrails and markdown/vault export coverage. Next steps should come from
+real-session creative feedback.
 
 Do not wire direct music-generation service calls until the text workflow is
 useful in real sessions.
@@ -124,10 +123,10 @@ useful in real sessions.
 | `wf-transcription-router` | P1 | Implement provider router from transcription matrix | Shipped in `#48` |
 | `wf-demo-fixture-pack` | P0 | Expand the presentation demo fixture pack | Shipped; browser smokes stay credential-free |
 | `wf-review-polish` | P0 | Polish the Review tab for presentation and daily use | Shipped; rendered UI smoke covers labels/behavior |
-| `wf-kb-governance` | P1 | [#49](https://github.com/WalksWithASwagger/spektorAI/issues/49) Add KB governance and profile-pack review workflow | Human confirms private/stale policy |
-| `wf-router-media-normalization` | P1 | [#50](https://github.com/WalksWithASwagger/spektorAI/issues/50) Add fixture-backed media normalization for the transcription router | Runtime defaults preserved |
-| `wf-digest-approved-routing` | P1 | [#51](https://github.com/WalksWithASwagger/spektorAI/issues/51) Add human-approved routing for resurfacing digests | Explicit approval remains required |
-| `wf-songforge-polish` | P2 | [#52](https://github.com/WalksWithASwagger/spektorAI/issues/52) Improve SongForge creative quality and exports | Target use case confirmed |
+| `wf-kb-governance` | P1 | [#49](https://github.com/WalksWithASwagger/spektorAI/issues/49) Add KB governance and profile-pack review workflow | Shipped in `#53` |
+| `wf-router-media-normalization` | P1 | [#50](https://github.com/WalksWithASwagger/spektorAI/issues/50) Add fixture-backed media normalization for the transcription router | Shipped in `#54`; runtime defaults preserved |
+| `wf-digest-approved-routing` | P1 | [#51](https://github.com/WalksWithASwagger/spektorAI/issues/51) Add human-approved routing for resurfacing digests | Shipped in `#55`; explicit approval remains required |
+| `wf-songforge-polish` | P2 | [#52](https://github.com/WalksWithASwagger/spektorAI/issues/52) Improve SongForge creative quality and exports | Shipped in `#56` |
 
 ## Audio Repo Consolidation Wave
 
