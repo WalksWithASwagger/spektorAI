@@ -73,6 +73,10 @@ def _execute_run() -> None:
     s = st.session_state
     adapters = adapters_mod.get_adapters()
     kb = prompts_mod.load_knowledge_base(s.selected_user) if s.selected_user else {}
+    s.kb_governance_warning = (
+        prompts_mod.knowledge_base_generation_warning(s.selected_user)
+        if s.selected_user and kb else None
+    )
 
     # Capture a start timestamp so the Run metrics block can report
     # wall-clock duration. End timestamp is written in `finally`.
@@ -144,6 +148,8 @@ def _execute_run() -> None:
                 return
 
             # ---- Full pipeline ---------------------------------------
+            if s.get("kb_governance_warning"):
+                status.write(f"KB governance warning: {s.kb_governance_warning}")
             _inspect_retrieval(s, status)
             # Progress callback writes to the sac.steps index and streams
             # a status line per stage.
@@ -290,6 +296,7 @@ def _run_metadata(pending, mode: str, s) -> dict:
             s.get("recipe_effective_settings"),
         ),
         "selected_user": s.selected_user,
+        "kb_governance_warning": s.get("kb_governance_warning"),
         "provider": s.ai_provider,
         "model": s.ai_model,
         "settings": {

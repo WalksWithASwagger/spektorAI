@@ -52,6 +52,43 @@ def test_duplicate_empty_private_and_stale_warnings(tmp_prompts_dir):
     assert "empty_file" in codes
     assert "private_marker" in codes
     assert "stale_file" in codes
+    assert all(warning.action for warning in audit.warnings)
+
+
+def test_governance_marks_canonical_and_ignored_files(tmp_prompts_dir):
+    kb = tmp_prompts_dir / "alice" / "knowledge_base"
+    kb.mkdir(parents=True)
+    (kb / "voice.md").write_text("voice")
+    (kb / "old.md").write_text("old")
+    (kb / "governance.yaml").write_text(
+        "canonical_files:\n"
+        "  - voice.md\n"
+        "ignored_files:\n"
+        "  - old.md\n"
+    )
+
+    audit = kb_audit.audit_profile("alice")
+    docs = {doc.name: doc for doc in audit.documents}
+
+    assert docs["voice"].canonical is True
+    assert docs["old"].ignored is True
+    assert any(warning.code == "ignored_file" for warning in audit.warnings)
+
+
+def test_generation_warnings_exclude_ignored_files(tmp_prompts_dir):
+    kb = tmp_prompts_dir / "alice" / "knowledge_base"
+    kb.mkdir(parents=True)
+    (kb / "private-token.md").write_text("keep local")
+    (kb / "confidential.md").write_text("ignored")
+    (kb / "governance.yaml").write_text(
+        "ignored_files:\n"
+        "  - confidential.md\n"
+    )
+
+    warnings = kb_audit.generation_warnings("alice")
+    names = {warning.path.rsplit("/", 1)[-1] for warning in warnings if warning.path}
+
+    assert names == {"private-token.md"}
 
 
 def test_to_dict_includes_summary(tmp_prompts_dir):

@@ -274,6 +274,37 @@ def knowledge_base_manager() -> None:
         f"{summary['approx_tokens']:,} est. tokens · "
         f"{summary['warnings']} signal(s)"
     )
+    if audit.documents:
+        file_names = [Path(doc.path).name for doc in audit.documents]
+        with st.expander("Review governance", expanded=False):
+            canonical = st.multiselect(
+                "Canonical voice anchors",
+                options=file_names,
+                default=[
+                    name for name in audit.governance.canonical_files
+                    if name.lower() in {item.lower() for item in file_names}
+                ],
+                help="Canonical anchors are prioritized and labeled in generation prompts.",
+                key="kb_governance_canonical",
+            )
+            ignored = st.multiselect(
+                "Ignored files",
+                options=file_names,
+                default=[
+                    name for name in audit.governance.ignored_files
+                    if name.lower() in {item.lower() for item in file_names}
+                ],
+                help="Ignored files stay in the audit but are excluded from generation.",
+                key="kb_governance_ignored",
+            )
+            if st.button("Save governance", type="primary", use_container_width=True):
+                kb_audit_mod.save_governance(
+                    user,
+                    canonical_files=canonical,
+                    ignored_files=ignored,
+                )
+                st.toast("KB governance saved.", icon=":material/check_circle:")
+                st.rerun()
     audit_json = json.dumps(audit.to_dict(), indent=2)
     st.download_button(
         "Download audit JSON",
@@ -292,13 +323,21 @@ def knowledge_base_manager() -> None:
             else:
                 st.info(message)
     if audit.documents:
+        actions_by_path = {
+            warning.path: warning.action
+            for warning in audit.warnings
+            if warning.path
+        }
         st.dataframe(
             [
                 {
                     "File": Path(doc.path).name,
                     "Role": doc.role,
+                    "Canonical": doc.canonical,
+                    "Ignored": doc.ignored,
                     "Tokens": doc.approx_tokens,
                     "Modified": doc.modified_at[:10],
+                    "Action": actions_by_path.get(doc.path, "Ready for generation."),
                 }
                 for doc in audit.documents
             ],

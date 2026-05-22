@@ -406,6 +406,14 @@ empty, duplicate, stale, oversized, or private-looking docs before they confuse
 the pipeline. Use **Benchmark** to compare whole-KB injection vs RAG and inspect
 the concrete retrieved chunks for a stage/query.
 
+The KB dialog also writes `prompts/<user>/knowledge_base/governance.yaml`.
+Use `canonical_files` for curated voice anchors that should be prioritized and
+labeled in prompts. Use `ignored_files` for stale, duplicate, private-looking,
+or oversized files that should remain auditable but stay out of generation.
+Unignored stale/private/duplicate/oversized findings surface as a concise run
+warning before generation starts, so future agents should treat them as review
+work instead of silently trusting the context.
+
 **Persona** files at `prompts/<user>/personas/*.md` appear beside the built-in
 persona variants in Generation Settings.
 
