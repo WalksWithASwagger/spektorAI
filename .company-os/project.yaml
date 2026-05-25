@@ -1,0 +1,87 @@
+project:
+  id: "spektorai"
+  name: "WhisperForge"
+  type: "repo"
+  owner: "kk"
+  production_surface: "local-first Streamlit voice-to-knowledge workbench; hosted service mode is optional"
+  primary_repo: "/Users/kk/Code/spektorAI"
+
+source_systems:
+  github: "WalksWithASwagger/spektorAI"
+  linear: "WhisperForge Roadmap"
+  docs:
+    - "README.md"
+    - "ROADMAP.md"
+    - "docs/LINEAR-GITHUB-PIPELINE.md"
+    - "docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md"
+    - "ops/roadmap/features.json"
+  analytics: []
+  crm: []
+
+loops:
+  - name: "local_first_delivery_sweep"
+    cadence: "weekly or before a new feature wave"
+    agent: "ai-native-company-os"
+    trigger: "scheduled sweep, roadmap reset, or queue review"
+    output_artifacts:
+      - "closeout ledger entry"
+      - "roadmap or issue handoff"
+      - "manifest or workflow proposal"
+    approval_required_for:
+      - "deploying or publishing live"
+      - "spending money or changing paid providers"
+      - "sending public or external messages"
+
+  - name: "github_linear_dev_loop"
+    cadence: "on demand"
+    agent: "github-linear-swarm"
+    trigger: "user asks to swarm WhisperForge issues or review PRs"
+    output_artifacts:
+      - "issue/PR map"
+      - "bounded implementation lanes"
+      - "verification summary"
+    approval_required_for:
+      - "merges"
+      - "public or external messages"
+
+memory:
+  hot_sources:
+    - "README.md"
+    - "ROADMAP.md"
+    - "docs/NEXT-ROUND-PLAN-2026-05-19.md"
+    - "docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md"
+    - "open GitHub issues and PRs"
+    - "Linear project: WhisperForge Roadmap"
+  durable_artifacts:
+    - "ROADMAP.md"
+    - "ops/roadmap/features.json"
+    - "docs/LINEAR-GITHUB-PIPELINE.md"
+    - "automation memory: ai-native-company-os-weekly-sweep"
+  lessons_path: ".company-os/lessons.md"
+
+validation:
+  commands:
+    - "make test"
+    - "make smoke"
+    - "make docs-check"
+    - "git diff --check"
+  smoke_checks:
+    - "browser smoke for Streamlit UI changes"
+    - "services smoke only when Docker and service-mode changes are in scope"
+    - "routing remains dry-run unless the request explicitly includes external updates"
+
+risk_policy:
+  autonomous_allowed:
+    - "read/search"
+    - "edit local files"
+    - "run local validation"
+    - "commit and push branches"
+    - "open or update PRs"
+    - "draft notes and follow-up queue entries"
+  approval_required:
+    - "merges"
+    - "deploying or publishing live"
+    - "deleting branches or work"
+    - "spending money or changing paid providers"
+    - "rotating real secrets"
+    - "public or external messages"
