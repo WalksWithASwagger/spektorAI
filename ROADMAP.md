@@ -1,6 +1,6 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-21
+Last reviewed: 2026-05-24
 
 The May 2026 reset wave is now complete. The strategic anchor remains
 [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md);
@@ -32,7 +32,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Pull requests `#25` through `#35` and `#53` through `#56`: merged.
 - Latest feature baseline: KB governance, router media planning, approved digest
   routing, and SongForge export polish on current `main`.
-- Open GitHub issues: none (`#49` through `#52` are shipped).
+- Open GitHub issues: none as of 2026-05-24 (`#49` through `#52` are shipped).
 - Open GitHub PRs: none.
 - Current unit baseline: `301 passed`.
 - Audio repo consolidation audit:
@@ -52,8 +52,9 @@ durable artifacts and command outputs recorded in:
 
 [`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md).
 
-The report produced three concrete friction issues (`#45`-`#47`) that now
-replace the original dogfood issue as the next implementation lane.
+The report produced three concrete friction issues (`#45`-`#47`), and that
+closeout wave is now shipped. Use the same dogfood-to-issue pattern to define
+the next lane instead of reopening closed items.
 
 ### 2. Harden Demo Fixtures And Browser Coverage
 
@@ -113,7 +114,10 @@ real-session creative feedback.
 Do not wire direct music-generation service calls until the text workflow is
 useful in real sessions.
 
-## Active Next Issue Wave
+## Most Recent Shipped Issue Wave (2026-05)
+
+As of 2026-05-24 there is no active open GitHub implementation wave. This table
+tracks the latest shipped slice for traceability.
 
 | ID | Priority | Title | Gate |
 | --- | --- | --- | --- |

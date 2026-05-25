@@ -1,6 +1,6 @@
 # Linear/GitHub Delivery Pipeline
 
-Last updated: 2026-05-18
+Last updated: 2026-05-24
 
 This repo follows the same delivery shape that worked for the kk-kb/cmvan
 workflow: a roadmap registry in git, implementation issues in GitHub, and
@@ -14,6 +14,7 @@ project tracking in Linear.
 - Backlog registry: [`../ops/roadmap/features.json`](../ops/roadmap/features.json)
 - Linear team: `Bc-ai` (`BC`)
 - Linear project: [WhisperForge Roadmap](https://linear.app/bc-ai/project/whisperforge-roadmap-317805524537)
+- Current queue snapshot (2026-05-24): no open GitHub issues, no open GitHub PRs.
 
 ## Workflow
 
@@ -49,7 +50,7 @@ Use these Linear labels consistently:
 - `agent:review`
 - `status:blocked`
 
-GitHub labels are available for the active wave. Use `repo:spektorAI`,
+GitHub labels are prepared for the next implementation wave. Use `repo:spektorAI`,
 `priority:p0` / `priority:p1` / `priority:p2`, and the most specific
 `kind:*` label. Add `agent:ready` only when you intentionally want to trigger
 the agentic dev loop.
@@ -73,11 +74,11 @@ Use the smallest verification that proves the work:
 - Local app start: `make app`
 - Service-mode run/smoke: `make services-run` / `make services-smoke`
 - Roadmap registry changes: `python3 -m json.tool ops/roadmap/features.json`
-- Markdown/checklist changes: `git diff --check`
-- Service-mode work: add or update a docker-compose/service smoke before
+- Documentation changes: `make docs-check`, `git diff --check`
+- Service-mode work: add or update a docker compose/service smoke before
   claiming parity.
 
-## Initial Seed
+## Initial Seed (Historical)
 
 The initial project seed created:
 
@@ -92,7 +93,7 @@ The initial project seed created:
 | [#7](https://github.com/WalksWithASwagger/spektorAI/issues/7) | [BC-90](https://linear.app/bc-ai/issue/BC-90/add-source-receipts-and-editorial-eval-fixtures) | Add source receipts and editorial eval fixtures |
 | [#8](https://github.com/WalksWithASwagger/spektorAI/issues/8) | [BC-91](https://linear.app/bc-ai/issue/BC-91/add-deployment-and-operations-commands) | Add deployment and operations commands |
 
-## 2026 Master Plan Seed
+## 2026 Master Plan Seed (Historical)
 
 The 2026 product reset lives in
 [`WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](WHISPERFORGE-MASTER-PLAN-2026-05-18.md).

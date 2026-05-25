@@ -1,0 +1,31 @@
+name: Documentation Truth Check
+
+on:
+  pull_request:
+    paths:
+      - "Makefile"
+      - "readme.md"
+      - "STATUS.md"
+      - "ROADMAP.md"
+      - "changelog.md"
+      - "docs/**"
+      - ".github/**/*.md"
+      - "scripts/docs_truth_check.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Run documentation truth checks
+        run: python3 scripts/docs_truth_check.py

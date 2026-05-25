@@ -1,6 +1,6 @@
 # WhisperForge Status
 
-Last updated: 2026-05-22
+Last updated: 2026-05-24
 
 ## Current State
 
@@ -13,8 +13,8 @@ Last updated: 2026-05-22
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: no open issues and no open PRs after merging `#53`
-  through `#56`.
+- Live GitHub queue: no open issues and no open PRs as of 2026-05-24 after
+  merging PRs `#53` through `#56`.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -36,25 +36,28 @@ Last updated: 2026-05-22
 
 ## Verified Baseline
 
+- Verified on 2026-05-24.
 - `git status --short --branch` -> clean `main...origin/main`.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
 - `gh issue list --state open --limit 100` -> no open issues.
 - `gh pr list --state open --limit 20` -> no open PRs.
-- `git branch -r` -> only `origin/main` remains after pruning merged legacy
-  PR branches.
+- `git branch -r` -> `origin/main` plus the default `origin/HEAD` pointer.
 - `git worktree list --porcelain` -> only `/Users/kk/Code/spektorAI` remains
   for this repo after removing stale detached Codex worktrees.
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
 - `python3 -m json.tool ops/roadmap/features.json` passes.
+- `make docs-check` passes documentation link, command reference, and freshness
+  checks.
 - `make lint` passes dependency-light Python syntax checks.
 - `make test` -> `301 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
-- `make eval-fixture` passes editorial and SongForge fixtures.
-- `venv/bin/python tests/ui_smoke.py` passes rendered Streamlit shell smoke.
+- `make eval-fixture` -> editorial and SongForge fixtures pass.
+- `venv/bin/python tests/ui_smoke.py` -> rendered Streamlit shell smoke passes
+  (bare-mode `ScriptRunContext` warnings are expected in this harness).
 - `make smoke` passes Streamlit health smoke on the default smoke port.
-- `make digest` -> `.cache/digests/2026-05-21-resurfacing-digest.md`.
+- `make digest` -> `.cache/digests/2026-05-24-resurfacing-digest.md`.
 - `git diff --check` passes.
 
 ## Active Handles

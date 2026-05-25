@@ -98,7 +98,7 @@ WhisperForge implementation, roadmap, and issue work.
 
 **Deployment**
 - Single-process **monolith** for local use.
-- **Microservices** via `docker-compose` — same UI, FastAPI workers wrap the
+- **Microservices** via `docker compose` — same UI, FastAPI workers wrap the
   same shared-logic package.
 
 ---
@@ -164,7 +164,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        281 tests + health/rendered UI smokes
+tests/                        301 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -262,7 +262,7 @@ pip install playwright
 playwright install chromium
 ```
 
-### Microservices (docker-compose)
+### Microservices (docker compose)
 
 ```bash
 make services-run
@@ -462,6 +462,7 @@ handoff_targets:
 pip install -r requirements-dev.txt
 make test                 # unit tests
 make lint                 # dependency-light Python syntax check
+make docs-check           # docs links, Makefile refs, and freshness fields
 make eval-fixture         # credential-free editorial/source-receipt fixture
 make digest               # report-only resurfacing digest from local artifacts
 make smoke                # boots streamlit, hits /_stcore/health
@@ -532,7 +533,7 @@ include everything.
 | `WHISPER_CPP_MODEL`      | Path to ggml bin for `whisper_cpp` backend   | whisper_cpp only |
 | `CHUNKER`                | `size` (default) \| `vad` (Silero VAD, cuts on silence) | no        |
 | `OLLAMA_BASE_URL`        | Override Ollama endpoint (default `http://localhost:11434/v1`) | no |
-| `TRANSCRIPTION_URL` / `PROCESSING_URL` / `STORAGE_URL` | Override service URLs (docker-compose sets these) | no |
+| `TRANSCRIPTION_URL` / `PROCESSING_URL` / `STORAGE_URL` | Override service URLs (docker compose sets these) | no |
 
 ---
 

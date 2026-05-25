@@ -6,6 +6,8 @@ This runbook is the shortest reliable path to show WhisperForge to collaborators
 It prioritizes what is complete now, what to avoid over-claiming, and what
 feedback to request.
 
+Verification refresh: Section 1 commands were re-run successfully on 2026-05-24.
+
 ## 1) Credibility Check (2 minutes)
 
 On a fresh clone, seed the credential-free demo fixture pack so the inbox and
@@ -119,9 +121,12 @@ Use these to get actionable feedback:
 
 ## 5) Next Dev Slice (After Review)
 
-1. Add KB governance so stale/private/canonical profile context is visible
-   before generation.
-2. Add fixture-backed media normalization for large audio/video routing before
-   changing transcription defaults.
-3. Add approved digest routing only after the local follow-up/Notion destination
-   rules are clear.
+The previous slice in this runbook is complete (`#49` through `#52`, closed by
+PRs `#53` through `#56`). Define the next slice from fresh dogfood evidence:
+
+1. Run one new real capture through the full loop and append friction notes to
+   `docs/dogfood/`.
+2. Convert the top 1-3 frictions into scoped GitHub issues and
+   `ops/roadmap/features.json` entries with explicit verification gates.
+3. Keep provider/routing defaults unchanged until new issues include concrete
+   privacy/cost and approval-boundary acceptance criteria.

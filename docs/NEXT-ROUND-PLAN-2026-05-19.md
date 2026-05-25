@@ -1,6 +1,6 @@
 # WhisperForge Next Round Plan
 
-Last refreshed: 2026-05-22
+Last refreshed: 2026-05-24
 
 This is the active workplan for the local-first WhisperForge milestone. Older
 dated audit docs remain historical snapshots; use this file, `ROADMAP.md`, and
@@ -11,15 +11,16 @@ dated audit docs remain historical snapshots; use this file, `ROADMAP.md`, and
 WhisperForge is consolidated into `WalksWithASwagger/spektorAI` and the product
 name remains WhisperForge.
 
-- Current branch: `main`, synced with `origin/main` after merging the issue
-  swarm.
-- GitHub issues: no open issues after `#49` through `#52` were closed by
-  merged PRs `#53` through `#56`. No open PRs.
-- Remote branches: only `origin/main`.
+- Current branch: `main`, synced with `origin/main` (verified 2026-05-24).
+- GitHub issues: no open issues after `#49` through `#52` were closed by merged
+  PRs `#53` through `#56` (verified 2026-05-24). No open PRs.
+- Remote branches: `origin/main` plus the default `origin/HEAD` pointer.
 - Legacy audio repositories are archived as historical pointers.
 - Release target: local-first personal workbench.
-- Current verification baseline: `make test` -> `301 passed`, plus `make lint`,
-  `make eval-fixture`, `make digest`, and `git diff --check` in closeout.
+- Current verification baseline (2026-05-24): `make test` -> `301 passed`,
+  plus passing `make lint`, `make eval-fixture`, `make smoke`,
+  `make browser-e2e`, `make browser-e2e-fresh`, `make digest`, and
+  `git diff --check`.
 - Latest shipped slice: KB governance controls, router media planning,
   approved digest routing, and SongForge structure/export polish.
 
@@ -50,10 +51,10 @@ criteria and verification gates.
 
 ## Next Execution Order
 
-1. Dogfood the merged local-first loop with a real capture and record the
-   resulting friction.
-2. Turn that evidence into the next issue wave instead of reopening the closed
-   `#49` through `#52` items.
+1. Dogfood one new real local-first loop capture and append friction evidence to
+   `docs/dogfood/`.
+2. Turn that evidence into the next issue wave instead of reopening the already
+   closed `#49` through `#52` items.
 3. Keep runtime defaults conservative until router privacy/cost receipts and
    approved routing paths have real-session review.
 

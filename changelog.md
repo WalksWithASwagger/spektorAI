@@ -153,6 +153,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SongForge export polish** — SongForge packs now include deterministic
   structure variants and originality guardrails, with fixture coverage and
   markdown/vault export preservation.
+- **Documentation truth check** — `make docs-check` now verifies project
+  markdown links, documented `make` targets, and freshness fields for current
+  status/roadmap docs. Pull requests that touch docs run the same check in CI.
 
 ### Changed
 - Runs dialog reopen now restores the run manifest `capture_id`, and the Review

@@ -3,27 +3,31 @@ PORT ?= 8501
 SMOKE_PORT ?= 8599
 COMPOSE ?= docker compose
 
-.PHONY: help lint test eval-fixture digest smoke browser-e2e browser-e2e-fresh app services-run services-smoke services-down
+.PHONY: help lint test docs-check eval-fixture digest smoke browser-e2e browser-e2e-fresh app services-run services-smoke services-down
 
 help:
 	@printf "WhisperForge operations commands\n\n"
 	@printf "  make lint            Run dependency-light Python syntax check\n"
 	@printf "  make test            Run unit tests\n"
+	@printf "  make docs-check      Run documentation truth checks\n"
 	@printf "  make eval-fixture    Run credential-free editorial fixture eval\n"
 	@printf "  make digest          Generate local resurfacing digest\n"
 	@printf "  make smoke           Boot Streamlit and check /_stcore/health\n"
 	@printf "  make browser-e2e     Run Playwright browser smoke (run-history reopen + export)\n"
 	@printf "  make browser-e2e-fresh Run Playwright fresh-run smoke (paste->recipe->review->export)\n"
 	@printf "  make app             Start the local Streamlit monolith on PORT=%s\n" "$(PORT)"
-	@printf "  make services-run    Start docker-compose services mode\n"
+	@printf "  make services-run    Start docker compose services mode\n"
 	@printf "  make services-smoke  Start services mode, wait for health, then stop\n"
-	@printf "  make services-down   Stop docker-compose services mode\n"
+	@printf "  make services-down   Stop docker compose services mode\n"
 
 lint:
 	$(PYTHON) -m compileall -q app.py whisperforge.py whisperforge_core ui services scripts tests
 
 test:
 	$(PYTHON) -m pytest tests/ -q
+
+docs-check:
+	$(PYTHON) scripts/docs_truth_check.py
 
 eval-fixture:
 	$(PYTHON) scripts/editorial_eval_fixture.py
