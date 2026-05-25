@@ -3,12 +3,13 @@ PORT ?= 8501
 SMOKE_PORT ?= 8599
 COMPOSE ?= docker compose
 
-.PHONY: help lint test docs-check eval-fixture digest smoke browser-e2e browser-e2e-fresh app services-run services-smoke services-down
+.PHONY: help lint test pip-check docs-check eval-fixture digest smoke browser-e2e browser-e2e-fresh app services-run services-smoke services-down
 
 help:
 	@printf "WhisperForge operations commands\n\n"
-	@printf "  make lint            Run dependency-light Python syntax check\n"
+	@printf "  make lint            Run Python syntax + high-signal Ruff checks\n"
 	@printf "  make test            Run unit tests\n"
+	@printf "  make pip-check       Check installed package dependency consistency\n"
 	@printf "  make docs-check      Run documentation truth checks\n"
 	@printf "  make eval-fixture    Run credential-free editorial fixture eval\n"
 	@printf "  make digest          Generate local resurfacing digest\n"
@@ -22,9 +23,13 @@ help:
 
 lint:
 	$(PYTHON) -m compileall -q app.py whisperforge.py whisperforge_core ui services scripts tests
+	$(PYTHON) -m ruff check --select E9,F63,F7,F82 app.py whisperforge.py whisperforge_core ui services scripts tests
 
 test:
 	$(PYTHON) -m pytest tests/ -q
+
+pip-check:
+	$(PYTHON) -m pip check
 
 docs-check:
 	$(PYTHON) scripts/docs_truth_check.py

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-05-19
 
 ### Added
+- **Phase 0 modernization guardrails** — CI now runs roadmap JSON validation,
+  docs truth checks, high-signal lint, and unit tests on pull requests;
+  `.dockerignore` keeps local env/cache/venv state out of Docker build
+  contexts; `.env.example` documents the required runtime knobs without
+  carrying secrets.
 - **Audio repo consolidation audit** —
   `docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md` records the canonical
   `spektorAI` decision, legacy repo salvage matrix, and archive plan.
@@ -158,6 +163,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   status/roadmap docs. Pull requests that touch docs run the same check in CI.
 
 ### Changed
+- Detailed transcription now reuses the chunk/cache-aware text path for
+  non-WhisperX backends, so the primary UI and transcription service routes
+  preserve large-file behavior instead of bypassing the chunker.
+- `make lint` now pairs compile checks with high-signal Ruff rules, leaving
+  full repo-wide style adoption as a deliberate follow-up instead of a noisy
+  one-shot migration.
+- The services frontend image now copies `ui/` alongside `app.py`, matching the
+  Streamlit entrypoint's actual imports.
 - Runs dialog reopen now restores the run manifest `capture_id`, and the Review
   tab feeds capture metadata into the Run Story timeline so reopened runs keep
   their source receipts and friendlier capture labels.

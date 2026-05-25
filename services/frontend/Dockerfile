@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY whisperforge_core ./whisperforge_core
 COPY shared ./shared
+COPY ui ./ui
 COPY prompts ./prompts
 COPY app.py styles.py ./
 

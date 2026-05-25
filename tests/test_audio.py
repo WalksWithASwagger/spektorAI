@@ -114,6 +114,28 @@ class TestTranscribe:
         text = audio.transcribe_audio(raw, suffix=".wav")
         assert text == "transcribed text"
 
+    def test_transcribe_audio_detailed_uses_chunk_aware_text_path(self, tmp_path, monkeypatch):
+        path = tmp_path / "large.wav"
+        path.write_bytes(b"0" * (audio.CHUNK_THRESHOLD_BYTES + 1))
+        calls = []
+
+        def fake_large_file(file_path, progress=None):
+            calls.append((file_path, progress))
+            return "chunked transcript"
+
+        def fail_single_chunk(_path):
+            raise AssertionError("large detailed transcription should not call transcribe_chunk")
+
+        monkeypatch.setattr(audio, "transcribe_large_file", fake_large_file)
+        monkeypatch.setattr(audio, "transcribe_chunk", fail_single_chunk)
+
+        details = audio.transcribe_audio_detailed(path, suffix=".wav")
+
+        assert details.text == "chunked transcript"
+        assert details.segments == []
+        assert details.language is None
+        assert calls == [(str(path), None)]
+
     def test_chunk_failure_yields_empty_string(self, silent_wav, monkeypatch):
         def boom(*a, **k):
             raise RuntimeError("whisper is down")

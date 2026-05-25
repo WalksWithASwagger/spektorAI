@@ -819,10 +819,9 @@ def transcribe_audio_detailed(
     ``segments`` — downstream code should check ``details.segments`` and
     fall back to text-only behavior when empty.
 
-    Skips the chunker/cache wrapping that ``transcribe_audio()`` applies. Meant
-    for short-to-medium audio where whole-file transcription is fine (WhisperX
-    handles long audio internally via its own VAD). For very long files on
-    non-WhisperX backends, call ``transcribe_audio()`` (text-only) instead.
+    WhisperX is the rich timestamp backend. Other backends reuse
+    ``transcribe_audio()`` so the primary UI/service path keeps the same
+    chunking and cache behavior as the CLI text-only path.
     """
     # Resolve source → temp file path.
     owns_tmp = False
@@ -838,8 +837,8 @@ def transcribe_audio_detailed(
     try:
         if backend == "whisperx":
             return _whisperx_detailed(audio_path)
-        # Non-rich backends: fall through to the text path. No segments.
-        text = transcribe_chunk(audio_path)
+        # Non-rich backends: use the chunk/cache-aware text path. No segments.
+        text = transcribe_audio(audio_path, suffix=suffix)
         return TranscriptionDetails(text=text, segments=[], language=None)
     except Exception as e:
         logger.warning("transcribe_audio_detailed failed (%s): %s", backend, e)

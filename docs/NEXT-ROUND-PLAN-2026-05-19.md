@@ -17,7 +17,7 @@ name remains WhisperForge.
 - Remote branches: `origin/main` plus the default `origin/HEAD` pointer.
 - Legacy audio repositories are archived as historical pointers.
 - Release target: local-first personal workbench.
-- Current verification baseline (2026-05-24): `make test` -> `301 passed`,
+- Current verification baseline (2026-05-24): `make test` -> `302 passed`,
   plus passing `make lint`, `make eval-fixture`, `make smoke`,
   `make browser-e2e`, `make browser-e2e-fresh`, `make digest`, and
   `git diff --check`.

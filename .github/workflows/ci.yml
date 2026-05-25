@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Validate roadmap registry
+        run: python -m json.tool ops/roadmap/features.json >/dev/null
+
+      - name: Check documentation truth
+        run: make docs-check PYTHON=python
+
+      - name: Lint
+        run: make lint PYTHON=python
+
+      - name: Test
+        run: make test PYTHON=python

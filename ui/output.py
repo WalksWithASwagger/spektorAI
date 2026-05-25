@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from pathlib import Path
 from typing import Optional
 
 import streamlit as st
@@ -210,7 +211,6 @@ def _notion_save_bar() -> None:
 
 def _export_markdown() -> Optional["Path"]:
     """Build a ContentBundle from session_state and write it as markdown."""
-    from pathlib import Path
     s = st.session_state
     bundle = _build_bundle()
     try:

@@ -164,7 +164,7 @@ services/
 └── frontend/Dockerfile       builds root app.py with DEPLOY_MODE=services
 
 shared/                       cross-service config + X-API-Key auth
-tests/                        301 tests + health/rendered UI smokes
+tests/                        302 tests + health/rendered UI smokes
 prompts/<user>/               profile.yaml, prompt .md files, knowledge_base,
                                personas, custom_prompts
 ```
@@ -461,7 +461,7 @@ handoff_targets:
 ```bash
 pip install -r requirements-dev.txt
 make test                 # unit tests
-make lint                 # dependency-light Python syntax check
+make lint                 # Python syntax + high-signal Ruff checks
 make docs-check           # docs links, Makefile refs, and freshness fields
 make eval-fixture         # credential-free editorial/source-receipt fixture
 make digest               # report-only resurfacing digest from local artifacts

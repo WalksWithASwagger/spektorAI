@@ -37,7 +37,7 @@ def model_id_hash() -> str:
     return hashlib.sha1(model_name().encode("utf-8")).hexdigest()[:10]
 
 
-def _load() -> "SentenceTransformer":  # type: ignore  # forward ref for lazy import
+def _load():
     global _MODEL, _MODEL_NAME
     name = model_name()
     if _MODEL is None or _MODEL_NAME != name:

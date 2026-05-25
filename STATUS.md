@@ -49,8 +49,8 @@ Last updated: 2026-05-24
 - `python3 -m json.tool ops/roadmap/features.json` passes.
 - `make docs-check` passes documentation link, command reference, and freshness
   checks.
-- `make lint` passes dependency-light Python syntax checks.
-- `make test` -> `301 passed`.
+- `make lint` passes Python syntax and high-signal Ruff checks.
+- `make test` -> `302 passed`.
 - `make browser-e2e` -> `browser-e2e: OK`.
 - `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
 - `make eval-fixture` -> editorial and SongForge fixtures pass.

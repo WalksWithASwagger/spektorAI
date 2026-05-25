@@ -2,6 +2,7 @@
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 httpx>=0.25.0
+ruff>=0.8.0
 
 # Optional: browser-driven localhost E2E smoke.
 # playwright>=1.54.0

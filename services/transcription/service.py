@@ -39,7 +39,7 @@ async def transcribe(
             detail=f"Invalid file format. Allowed: {sorted(ALLOWED_EXTENSIONS)}",
         )
 
-    # Spill to a temp file so audio.transcribe_audio can size-check + chunk.
+    # Spill to a temp file so detailed transcription can size-check + chunk.
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
         tmp.write(await file.read())
         tmp_path = tmp.name

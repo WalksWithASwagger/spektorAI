@@ -34,7 +34,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
   routing, and SongForge export polish on current `main`.
 - Open GitHub issues: none as of 2026-05-24 (`#49` through `#52` are shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `301 passed`.
+- Current unit baseline: `302 passed`.
 - Audio repo consolidation audit:
   [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
   Next round plan:
@@ -150,7 +150,7 @@ PR closeout. See
 ## Verification Defaults
 
 - Registry/docs: `python3 -m json.tool ops/roadmap/features.json`, `git diff --check`
-- Syntax rail: `make lint`
+- Syntax/high-signal static rail: `make lint`
 - Core Python: `make test`
 - Editorial/source receipts: `make eval-fixture`
 - Rendered Streamlit shell: `venv/bin/python tests/ui_smoke.py`
