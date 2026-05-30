@@ -1,6 +1,6 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-24
+Last reviewed: 2026-05-30
 
 The May 2026 reset wave is now complete. The strategic anchor remains
 [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md);
@@ -29,10 +29,11 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 
 - GitHub issues `#13` through `#24`: closed.
 - Audio consolidation issues `#37` through `#40`: closed.
-- Pull requests `#25` through `#35` and `#53` through `#56`: merged.
+- Pull requests `#25` through `#35` and `#53` through `#57`: merged.
 - Latest feature baseline: KB governance, router media planning, approved digest
   routing, and SongForge export polish on current `main`.
-- Open GitHub issues: none as of 2026-05-24 (`#49` through `#52` are shipped).
+- Latest ops baseline: lightweight company OS manifest merged in PR `#57`.
+- Open GitHub issues: none as of 2026-05-30 (`#49` through `#52` are shipped).
 - Open GitHub PRs: none.
 - Current unit baseline: `302 passed`.
 - Audio repo consolidation audit:
@@ -116,7 +117,7 @@ useful in real sessions.
 
 ## Most Recent Shipped Issue Wave (2026-05)
 
-As of 2026-05-24 there is no active open GitHub implementation wave. This table
+As of 2026-05-30 there is no active open GitHub implementation wave. This table
 tracks the latest shipped slice for traceability.
 
 | ID | Priority | Title | Gate |

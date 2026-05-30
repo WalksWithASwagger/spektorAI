@@ -1,10 +1,14 @@
 # WhisperForge Status
 
-Last updated: 2026-05-24
+Last updated: 2026-05-30
 
 ## Current State
 
-- Current branch: `main`, synced with `origin/main`.
+- Current branch: `main`, synced with `origin/main` at the start of the
+  shutdown pass.
+- Latest product/code baseline before this shutdown note:
+  `ca4355d26f5b3a452d504da9f420b8c9542b4f67` (`Add lightweight company OS
+  manifest`).
 - Latest feature baseline: the merged local-first reliability swarm for KB
   governance, transcription-router media planning, approved digest routing, and
   SongForge export polish on current `main`.
@@ -13,8 +17,11 @@ Last updated: 2026-05-24
   WhisperForge repo.
 - License posture: no open-source license is currently granted; do not inherit
   the archived `whisperforge` MIT license without an explicit owner decision.
-- Live GitHub queue: no open issues and no open PRs as of 2026-05-24 after
-  merging PRs `#53` through `#56`.
+- Live GitHub queue: no open issues and no open PRs as of 2026-05-30 after
+  merging PRs `#53` through `#57`.
+- Staging/deploy status: not applicable for this shutdown. No repo-defined
+  staging deployment command was found; `make smoke` is the local Streamlit
+  health check.
 - 2026 master-plan wave: GitHub `#13` through `#24` are closed and their
   corresponding Linear issues were moved to Done during delivery closeout.
 - Primary product surface: direct Streamlit mode via `make app`.
@@ -36,29 +43,63 @@ Last updated: 2026-05-24
 
 ## Verified Baseline
 
-- Verified on 2026-05-24.
-- `git status --short --branch` -> clean `main...origin/main`.
+- Verified on 2026-05-30 during shutdown closeout.
+- `git fetch origin --prune` completed successfully.
+- `git status --short --branch` -> clean `main...origin/main` before docs
+  edits.
 - `git rev-list --left-right --count HEAD...@{u}` -> `0 0`.
-- `gh issue list --state open --limit 100` -> no open issues.
-- `gh pr list --state open --limit 20` -> no open PRs.
-- `git branch -r` -> `origin/main` plus the default `origin/HEAD` pointer.
+- `git ls-remote origin refs/heads/main` ->
+  `ca4355d26f5b3a452d504da9f420b8c9542b4f67`.
+- `gh issue list --state open --limit 50 --json number,title,labels,updatedAt,url`
+  -> `[]`.
+- `gh pr list --state open --limit 20 --json number,title,headRefName,baseRefName,isDraft,mergeStateStatus,updatedAt,url`
+  -> `[]`.
+- `gh pr list --state all --head codex/add-company-os-manifest --limit 5`
+  -> PR `#57` is merged.
+- `git branch -r` -> `origin/main`, `origin/HEAD`, and the preserved merged
+  `origin/codex/add-company-os-manifest` branch.
+- `git worktree prune` completed successfully after a stale detached worktree
+  path was found missing.
 - `git worktree list --porcelain` -> only `/Users/kk/Code/spektorAI` remains
-  for this repo after removing stale detached Codex worktrees.
+  for this repo.
 - `git ls-files whisperforge-env venv .cache __pycache__ .pytest_cache | wc -l`
   -> `0`.
-- `python3 -m json.tool ops/roadmap/features.json` passes.
+- `python3.11 -m venv venv` restored the expected ignored local environment.
+- `venv/bin/python -m pip install --upgrade pip` passed.
+- `venv/bin/python -m pip install -r requirements-dev.txt` passed.
+- `git diff --check` passes.
+- `python3 -m json.tool ops/roadmap/features.json >/dev/null` passes.
 - `make docs-check` passes documentation link, command reference, and freshness
   checks.
 - `make lint` passes Python syntax and high-signal Ruff checks.
-- `make test` -> `302 passed`.
-- `make browser-e2e` -> `browser-e2e: OK`.
-- `make browser-e2e-fresh` -> `browser-e2e-fresh: OK`.
+- `make test` -> `302 passed, 2 warnings`.
+- `make pip-check` -> `No broken requirements found`.
 - `make eval-fixture` -> editorial and SongForge fixtures pass.
-- `venv/bin/python tests/ui_smoke.py` -> rendered Streamlit shell smoke passes
-  (bare-mode `ScriptRunContext` warnings are expected in this harness).
 - `make smoke` passes Streamlit health smoke on the default smoke port.
-- `make digest` -> `.cache/digests/2026-05-24-resurfacing-digest.md`.
-- `git diff --check` passes.
+
+## Shutdown Handoff - 2026-05-30
+
+- What changed today: restored the ignored `venv/` expected by the Makefile,
+  reran the closeout gates, and updated this shutdown handoff. No product code,
+  API, schema, runtime default, deployment, or user-facing behavior changed.
+- Completed: repo sync and live GitHub queue checks, stale worktree metadata
+  prune, local dependency repair, docs truth check, lint, unit tests, dependency
+  consistency check, fixture eval, Streamlit health smoke, and docs-only handoff
+  update.
+- Unfinished: no active repo work is intentionally left unfinished.
+- Known weirdness: before rebuilding `venv/`, default `make test` and
+  `make smoke` failed because `venv/bin/python` did not exist; the existing
+  ignored `whisperforge-env/` also lacked `pip`, `pytest`, `ruff`, and
+  `streamlit`. The repaired `venv/` is intentionally ignored.
+- Test warnings: `make test` reports the existing `pydub` `audioop`
+  deprecation warning for Python 3.13 and a Starlette `httpx` deprecation
+  warning. Both are non-blocking in the 2026-05-30 closeout.
+- Important files touched: `STATUS.md` and `ROADMAP.md`.
+- Decision/assumption: staging is not applicable; the local Streamlit health
+  smoke is the appropriate shutdown confidence check for this local-first app.
+- Recommended next step: start from this file, activate `venv/`, and rerun
+  `make docs-check && make lint && make test && make smoke` before opening a new
+  feature lane.
 
 ## Active Handles
 
