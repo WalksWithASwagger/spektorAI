@@ -1,0 +1,20 @@
+# spektorAI
+
+> WhisperForge: a local-first voice-to-knowledge workbench. talk or upload audio, get back a transcript, extracted wisdom, an article, social posts, and image prompts in your own voice, shipped to a structured Notion page.
+
+spektorAI is the canonical home of WhisperForge, a Streamlit app that runs on your own machine. Wispr Flow dictations, pasted notes, uploads, and browser recordings become durable captures, run through a draft-critique-revise pipeline with a source-grounded fact-check, and export to Notion, Markdown, or a GitHub/Linear handoff draft. voice comes from per-user prompts + a knowledge base. Python. built by Kris Krüg / BC + AI.
+
+License posture: no open-source license is currently granted. source-available for project collaboration only. do not treat the archived WalksWithASwagger/whisperforge MIT license as inherited.
+
+## Key files
+- [README](README.md): what spektorAI is, what WhisperForge does, and the one command that proves it
+- [AGENTS.md](AGENTS.md): how agents should operate in this repo
+- [WHISPERFORGE.md](WHISPERFORGE.md): detailed WhisperForge engine docs (features, architecture, setup, env reference)
+- [ROADMAP.md](ROADMAP.md): stabilization and product direction
+- [STATUS.md](STATUS.md): current handoff state
+- [changelog.md](changelog.md): release history
+
+## Links
+- Author: Kris Krüg · https://kriskrug.co
+- Community: BC + AI · https://bc-ai.ca
+- Repo: https://github.com/WalksWithASwagger/spektorAI
