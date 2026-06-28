@@ -10,7 +10,8 @@ from pathlib import Path
 
 
 PROJECT_DOCS = (
-    "readme.md",
+    "README.md",
+    "WHISPERFORGE.md",
     "STATUS.md",
     "ROADMAP.md",
     "changelog.md",

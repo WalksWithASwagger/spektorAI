@@ -4,7 +4,8 @@ on:
   pull_request:
     paths:
       - "Makefile"
-      - "readme.md"
+      - "README.md"
+      - "WHISPERFORGE.md"
       - "STATUS.md"
       - "ROADMAP.md"
       - "changelog.md"

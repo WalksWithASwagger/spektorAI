@@ -1,6 +1,6 @@
 project:
   id: "spektorai"
-  name: "WhisperForge"
+  name: "spektorAI"
   type: "repo"
   owner: "kk"
   production_surface: "local-first Streamlit voice-to-knowledge workbench; hosted service mode is optional"
