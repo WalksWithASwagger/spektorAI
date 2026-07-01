@@ -1,13 +1,10 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-05-30
+Last reviewed: 2026-07-01
 
-The May 2026 reset wave is now complete. The strategic anchor remains
-[`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md);
-the current audit and from-here plan is
-[`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md).
-The immediate next-round plan is
-[`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
+The May 2026 reset wave is now complete. The immediate next-round plan is
+[`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md); current
+state and verification live in [`STATUS.md`](STATUS.md).
 
 ## Current Product Shape
 
@@ -36,9 +33,7 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Open GitHub issues: none as of 2026-05-30 (`#49` through `#52` are shipped).
 - Open GitHub PRs: none.
 - Current unit baseline: `302 passed`.
-- Audio repo consolidation audit:
-  [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
-  Next round plan:
+- Next round plan:
   [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
 - Release target decision (owner): local-first personal workbench, recorded in
   issue `#42` and `ops/roadmap/features.json`.
@@ -137,8 +132,7 @@ tracks the latest shipped slice for traceability.
 
 The canonical repo is `WalksWithASwagger/spektorAI`; the product name remains
 WhisperForge. Legacy repos should be archived after README pointers and stale
-PR closeout. See
-[`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
+PR closeout.
 
 | ID | Priority | Title | Source |
 | --- | --- | --- | --- |

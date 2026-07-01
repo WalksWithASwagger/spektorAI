@@ -13,7 +13,7 @@ source_systems:
     - "README.md"
     - "ROADMAP.md"
     - "docs/LINEAR-GITHUB-PIPELINE.md"
-    - "docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md"
+    - "docs/NEXT-ROUND-PLAN-2026-05-19.md"
     - "ops/roadmap/features.json"
   analytics: []
   crm: []
@@ -49,7 +49,7 @@ memory:
     - "README.md"
     - "ROADMAP.md"
     - "docs/NEXT-ROUND-PLAN-2026-05-19.md"
-    - "docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md"
+    - "STATUS.md"
     - "open GitHub issues and PRs"
     - "Linear project: WhisperForge Roadmap"
   durable_artifacts:
