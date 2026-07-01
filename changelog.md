@@ -5,6 +5,31 @@ All notable changes to WhisperForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-07-01
+
+### Removed
+- **Unused vendored Fabric `patterns/` tree** — deleted 256 pattern files that
+  no code, `Makefile`, CI job, or doc referenced. The app's prompts and
+  knowledge base live under `prompts/<user>/` via `whisperforge_core/prompts.py`
+  and are unaffected.
+- **Superseded historical docs** — retired `docs/DOCUMENTATION-AUDIT-2026-05-17.md`,
+  `docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`,
+  `docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`, and
+  `docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`. Each already redirected readers
+  to the living `STATUS.md`/`ROADMAP.md`/`NEXT-ROUND-PLAN` set; git history
+  preserves the full record.
+
+### Added
+- **Short-horizon week plan** — `docs/WEEK-PLAN-2026-07-01.md` sequences the rest
+  of the week (land the cleanup, run fresh dogfood evidence, scope one next lane)
+  and is linked from `STATUS.md`.
+
+### Changed
+- **Doc cross-references rewired** — `STATUS.md`, `ROADMAP.md`,
+  `docs/LINEAR-GITHUB-PIPELINE.md`, `.company-os/project.yaml`, and
+  `ops/roadmap/features.json` now point at the living docs after the historical
+  snapshots were retired. `make docs-check` stays green.
+
 ## [Unreleased] - 2026-05-19
 
 ### Added

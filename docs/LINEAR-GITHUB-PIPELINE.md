@@ -1,6 +1,6 @@
 # Linear/GitHub Delivery Pipeline
 
-Last updated: 2026-05-24
+Last updated: 2026-07-01
 
 This repo follows the same delivery shape that worked for the kk-kb/cmvan
 workflow: a roadmap registry in git, implementation issues in GitHub, and
@@ -95,8 +95,9 @@ The initial project seed created:
 
 ## 2026 Master Plan Seed (Historical)
 
-The 2026 product reset lives in
-[`WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](WHISPERFORGE-MASTER-PLAN-2026-05-18.md).
+The 2026 product reset seeded the issue wave below; its current form lives in
+[`../ROADMAP.md`](../ROADMAP.md) and
+[`NEXT-ROUND-PLAN-2026-05-19.md`](NEXT-ROUND-PLAN-2026-05-19.md).
 The issue wave was created without the GitHub `agent:ready` label so the
 external trackers can be reviewed before starting a swarm.
 

@@ -10,7 +10,7 @@
     "lastSeededAt": "2026-05-18",
     "lastAuditedAt": "2026-05-20",
     "deliveryState": "active-dogfood",
-    "currentAudit": "docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md",
+    "currentAudit": "STATUS.md",
     "releaseTarget": "local-first personal workbench",
     "releaseTargetDecidedAt": "2026-05-20",
     "releaseTargetDecisionIssue": 42

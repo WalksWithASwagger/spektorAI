@@ -1,6 +1,6 @@
 # WhisperForge Status
 
-Last updated: 2026-05-30
+Last updated: 2026-07-01
 
 ## Current State
 
@@ -28,12 +28,6 @@ Last updated: 2026-05-30
 - Services mode: still present through `docker compose`; direct mode remains
   the product lead unless service parity is the explicit scope.
 - Release target decision (owner): local-first personal workbench (`#42`).
-- Strategy anchor:
-  [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md).
-- Current audit and from-here roadmap:
-  [`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md).
-- Audio repo consolidation audit:
-  [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md).
 - Next round plan:
   [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
 - Presentation runbook:
@@ -101,13 +95,31 @@ Last updated: 2026-05-30
   `make docs-check && make lint && make test && make smoke` before opening a new
   feature lane.
 
+## Docs And Structure Audit - 2026-07-01
+
+- Scope: documentation and directory-structure cleanup only. No product code,
+  API, schema, runtime default, or user-facing behavior changed.
+- Removed the unused vendored Fabric `patterns/` tree (256 files). Nothing in
+  the codebase, `Makefile`, CI, or docs referenced it; the app's prompts live
+  under `prompts/<user>/` via `whisperforge_core/prompts.py`.
+- Retired four superseded historical docs that already redirected readers to the
+  living `STATUS.md`/`ROADMAP.md`/`NEXT-ROUND-PLAN` set: the 2026-05-17
+  documentation audit, the audio-repo consolidation audit, the audit-and-roadmap
+  snapshot, and the 2026-05-18 master plan. Their record survives in
+  `changelog.md` and git history.
+- Rewired inbound links in `ROADMAP.md`, `STATUS.md`,
+  `docs/LINEAR-GITHUB-PIPELINE.md`, `.company-os/project.yaml`, and
+  `ops/roadmap/features.json` to the living docs so `make docs-check` stays green.
+- Delivery: shipped on branch `claude/docs-project-audit-tn76u2` as PR `#59`.
+  All checks green (`docs-check`, `python`; `review` skipped); awaiting owner
+  merge. Short-horizon sequencing lives in
+  [`docs/WEEK-PLAN-2026-07-01.md`](docs/WEEK-PLAN-2026-07-01.md).
+
 ## Active Handles
 
 - Roadmap: [`ROADMAP.md`](ROADMAP.md)
 - Status: [`STATUS.md`](STATUS.md)
-- Current audit: [`docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md`](docs/WHISPERFORGE-AUDIT-AND-ROADMAP-2026-05-18.md)
-- Audio repo consolidation: [`docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md`](docs/AUDIO-REPO-CONSOLIDATION-AUDIT-2026-05-18.md)
-- Master plan: [`docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md`](docs/WHISPERFORGE-MASTER-PLAN-2026-05-18.md)
+- This week: [`docs/WEEK-PLAN-2026-07-01.md`](docs/WEEK-PLAN-2026-07-01.md)
 - Delivery workflow: [`docs/LINEAR-GITHUB-PIPELINE.md`](docs/LINEAR-GITHUB-PIPELINE.md)
 - Backlog registry: [`ops/roadmap/features.json`](ops/roadmap/features.json)
 - Agentic contract: [`docs/AGENTIC-DELIVERY.md`](docs/AGENTIC-DELIVERY.md)
