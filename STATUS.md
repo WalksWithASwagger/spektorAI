@@ -110,11 +110,16 @@ Last updated: 2026-07-01
 - Rewired inbound links in `ROADMAP.md`, `STATUS.md`,
   `docs/LINEAR-GITHUB-PIPELINE.md`, `.company-os/project.yaml`, and
   `ops/roadmap/features.json` to the living docs so `make docs-check` stays green.
+- Delivery: shipped on branch `claude/docs-project-audit-tn76u2` as PR `#59`.
+  All checks green (`docs-check`, `python`; `review` skipped); awaiting owner
+  merge. Short-horizon sequencing lives in
+  [`docs/WEEK-PLAN-2026-07-01.md`](docs/WEEK-PLAN-2026-07-01.md).
 
 ## Active Handles
 
 - Roadmap: [`ROADMAP.md`](ROADMAP.md)
 - Status: [`STATUS.md`](STATUS.md)
+- This week: [`docs/WEEK-PLAN-2026-07-01.md`](docs/WEEK-PLAN-2026-07-01.md)
 - Delivery workflow: [`docs/LINEAR-GITHUB-PIPELINE.md`](docs/LINEAR-GITHUB-PIPELINE.md)
 - Backlog registry: [`ops/roadmap/features.json`](ops/roadmap/features.json)
 - Agentic contract: [`docs/AGENTIC-DELIVERY.md`](docs/AGENTIC-DELIVERY.md)

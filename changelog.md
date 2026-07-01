@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the living `STATUS.md`/`ROADMAP.md`/`NEXT-ROUND-PLAN` set; git history
   preserves the full record.
 
+### Added
+- **Short-horizon week plan** — `docs/WEEK-PLAN-2026-07-01.md` sequences the rest
+  of the week (land the cleanup, run fresh dogfood evidence, scope one next lane)
+  and is linked from `STATUS.md`.
+
 ### Changed
 - **Doc cross-references rewired** — `STATUS.md`, `ROADMAP.md`,
   `docs/LINEAR-GITHUB-PIPELINE.md`, `.company-os/project.yaml`, and
