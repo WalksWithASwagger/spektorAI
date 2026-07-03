@@ -8,6 +8,7 @@ Auth: X-API-Key: SERVICE_TOKEN header (see shared.security).
 """
 
 import os
+import shutil
 import tempfile
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
@@ -39,10 +40,7 @@ async def transcribe(
             detail=f"Invalid file format. Allowed: {sorted(ALLOWED_EXTENSIONS)}",
         )
 
-    # Spill to a temp file so detailed transcription can size-check + chunk.
-    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
-        tmp.write(await file.read())
-        tmp_path = tmp.name
+    tmp_path = _copy_upload_to_temp(file, ext)
 
     try:
         details = audio.transcribe_audio_detailed(tmp_path)
@@ -60,3 +58,18 @@ async def transcribe(
             os.unlink(tmp_path)
         except OSError:
             pass
+
+
+def _copy_upload_to_temp(file: UploadFile, suffix: str) -> str:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp_path = tmp.name
+        try:
+            file.file.seek(0)
+            shutil.copyfileobj(file.file, tmp, length=1 << 20)
+        except Exception:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+    return tmp_path

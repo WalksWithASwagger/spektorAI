@@ -28,13 +28,17 @@ class HttpTranscriber:
         # Accepts path (str/Path) or bytes; POSTs as multipart.
         if isinstance(source, (str, Path)):
             with open(source, "rb") as f:
-                files = {"file": (Path(source).name, f.read())}
+                files = {"file": (Path(source).name, f)}
+                r = requests.post(
+                    f"{TRANSCRIPTION_URL}/transcribe",
+                    headers=_HEADERS, files=files, timeout=_TIMEOUT,
+                )
         else:
             files = {"file": (f"upload{suffix}", source)}
-        r = requests.post(
-            f"{TRANSCRIPTION_URL}/transcribe",
-            headers=_HEADERS, files=files, timeout=_TIMEOUT,
-        )
+            r = requests.post(
+                f"{TRANSCRIPTION_URL}/transcribe",
+                headers=_HEADERS, files=files, timeout=_TIMEOUT,
+            )
         r.raise_for_status()
         return r.json()
 

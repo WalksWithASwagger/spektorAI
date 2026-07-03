@@ -366,13 +366,14 @@ def knowledge_base_manager() -> None:
                              key="kb_filename")
         if st.button("Save to knowledge base", type="primary",
                      use_container_width=True):
-            target_dir = prompts_mod.PROMPTS_DIR / user / "knowledge_base"
-            target_dir.mkdir(parents=True, exist_ok=True)
-            target = target_dir / f"{name}.md"
             try:
+                target = prompts_mod.knowledge_base_write_target(user, name)
+                target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(uploaded.getvalue())
                 st.toast(f"Saved {target.name}", icon=":material/check_circle:")
                 st.rerun()
+            except ValueError as e:
+                st.error(str(e))
             except OSError as e:
                 st.error(f"Save failed: {e}")
 

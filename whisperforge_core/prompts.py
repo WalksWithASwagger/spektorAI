@@ -13,6 +13,7 @@ work regardless of cwd — important because FastAPI services run from /app
 while streamlit runs from the project directory.
 """
 
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -32,6 +33,8 @@ SUPPORTED_PROFILE_DEFAULTS = {
     "chapters", "agentic", "fact_check", "images", "auto_save_notion",
     "auto_export_markdown",
 }
+
+_SAFE_KB_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._-]*$")
 
 
 def list_users() -> List[str]:
@@ -83,6 +86,39 @@ def knowledge_base_generation_warning(user: str) -> str:
     from . import kb_audit as kb_audit_mod
 
     return kb_audit_mod.generation_warning_summary(user, prompts_dir=PROMPTS_DIR)
+
+
+def knowledge_base_write_target(user: str, filename: str) -> Path:
+    """Return a safe write path under prompts/<user>/knowledge_base/."""
+    safe_name = safe_knowledge_base_filename(filename)
+    target_dir = PROMPTS_DIR / user / "knowledge_base"
+    root = target_dir.resolve()
+    target = (target_dir / safe_name).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("Knowledge base file must stay inside the profile folder.") from exc
+    return target
+
+
+def safe_knowledge_base_filename(filename: str) -> str:
+    raw = str(filename or "").strip()
+    if not raw:
+        raise ValueError("Filename cannot be empty.")
+    if "/" in raw or "\\" in raw:
+        raise ValueError("Filename cannot include folders or path separators.")
+
+    path = Path(raw)
+    if path.name != raw or raw in {".", ".."} or raw.startswith("."):
+        raise ValueError("Filename must be a visible file name, not a path.")
+
+    stem = path.stem if path.suffix.lower() in {".md", ".txt"} else raw
+    stem = stem.strip()
+    if not stem or stem.startswith(".") or stem in {".", ".."}:
+        raise ValueError("Filename cannot be empty or hidden.")
+    if not _SAFE_KB_NAME.fullmatch(stem):
+        raise ValueError("Filename can use letters, numbers, spaces, dots, underscores, or hyphens.")
+    return f"{stem}.md"
 
 
 def load_user_prompts(user: str) -> Dict[str, str]:

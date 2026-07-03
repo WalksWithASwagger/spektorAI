@@ -78,6 +78,40 @@ class TestKnowledgeBase:
         assert "private-token.md" in warning
 
 
+class TestKnowledgeBaseWriteTarget:
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("voice", "voice.md"),
+            ("voice guide", "voice guide.md"),
+            ("voice.md", "voice.md"),
+            ("notes.txt", "notes.md"),
+            ("release.v1", "release.v1.md"),
+        ],
+    )
+    def test_normalizes_safe_names(self, tmp_prompts_dir, name, expected):
+        target = prompts.knowledge_base_write_target("alice", name)
+
+        assert target == tmp_prompts_dir / "alice" / "knowledge_base" / expected
+
+    @pytest.mark.parametrize(
+        "name",
+        ["", "   ", "../evil", "folder/evil", "folder\\evil", ".hidden", "..", "bad:name"],
+    )
+    def test_rejects_unsafe_names(self, tmp_prompts_dir, name):
+        with pytest.raises(ValueError):
+            prompts.knowledge_base_write_target("alice", name)
+
+    def test_write_target_preserves_replace_behavior(self, tmp_prompts_dir):
+        target = prompts.knowledge_base_write_target("alice", "voice")
+        target.parent.mkdir(parents=True)
+
+        target.write_text("first")
+        prompts.knowledge_base_write_target("alice", "voice.md").write_text("second")
+
+        assert target.read_text() == "second"
+
+
 class TestPromptPrecedence:
     def test_custom_prompt_overrides_md(self, tmp_prompts_dir):
         user = tmp_prompts_dir / "alice"

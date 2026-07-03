@@ -1,6 +1,6 @@
 # WhisperForge Status
 
-Last updated: 2026-07-01
+Last updated: 2026-07-03
 
 ## Current State
 
@@ -12,6 +12,9 @@ Last updated: 2026-07-01
 - Latest feature baseline: the merged local-first reliability swarm for KB
   governance, transcription-router media planning, approved digest routing, and
   SongForge export polish on current `main`.
+- Current audit-hardening branch: `codex/audit-hardening-cleanup` adds
+  knowledge-base write path constraints, temp-file audio upload transcription,
+  services upload copy hygiene, and pickle cache trust guards.
 - GitHub repo: `WalksWithASwagger/spektorAI`.
 - GitHub metadata: description, topics, and homepage point to this canonical
   WhisperForge repo.
@@ -36,6 +39,22 @@ Last updated: 2026-07-01
   [`docs/dogfood/2026-05-20-wispr-flow-loop.md`](docs/dogfood/2026-05-20-wispr-flow-loop.md).
 
 ## Verified Baseline
+
+- Verified on 2026-07-03 during audit-hardening closeout.
+- `git rebase origin/main` completed successfully on
+  `codex/audit-hardening-cleanup`.
+- Ignored Python/test cache cruft was removed earlier in this lane:
+  `__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.mypy_cache/`, and
+  `.DS_Store` files. `.env`, `.cache/`, `venv/`, and `whisperforge-env/` were
+  intentionally preserved.
+- `git diff --check` passes.
+- `make docs-check` passes documentation link, command reference, and freshness
+  checks.
+- `make lint` passes Python syntax and high-signal Ruff checks.
+- `make test` -> `324 passed, 2 warnings`.
+- `make pip-check` -> `No broken requirements found`.
+- `make eval-fixture` -> editorial and SongForge fixtures pass.
+- `make smoke` passes Streamlit health smoke on the default smoke port.
 
 - Verified on 2026-05-30 during shutdown closeout.
 - `git fetch origin --prune` completed successfully.
