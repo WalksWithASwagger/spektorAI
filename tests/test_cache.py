@@ -5,6 +5,9 @@ cached_or_compute() is a straight passthrough. When enabled, identical calls
 return the stored value without re-running compute.
 """
 
+import os
+import pickle
+import stat
 from unittest.mock import MagicMock
 
 import pytest
@@ -107,3 +110,39 @@ class TestClear:
             cache.put(cache.make_key([str(i)]), f"value-{i}")
         assert cache.clear() == 3
         assert cache.clear() == 0
+
+
+class TestTrustedPickleLoading:
+    def test_loads_pickle_under_private_cache_root(self, tmp_path):
+        path = tmp_path / "value.pkl"
+        path.write_bytes(pickle.dumps({"ok": True}))
+
+        assert cache.load_pickle(path, root=tmp_path, label="test") == {"ok": True}
+
+    def test_rejects_pickle_outside_cache_root(self, tmp_path):
+        root = tmp_path / "cache"
+        root.mkdir()
+        outside = tmp_path / "outside.pkl"
+        outside.write_bytes(pickle.dumps("nope"))
+
+        assert cache.load_pickle(outside, root=root, label="outside") is None
+
+    def test_rejects_pickle_symlink(self, tmp_path):
+        if not hasattr(os, "symlink"):
+            pytest.skip("symlink unavailable")
+        target = tmp_path / "target.pkl"
+        target.write_bytes(pickle.dumps("secret"))
+        link = tmp_path / "link.pkl"
+        os.symlink(target, link)
+
+        assert cache.load_pickle(link, root=tmp_path, label="symlink") is None
+
+    def test_rejects_group_or_world_writable_cache_path(self, tmp_path):
+        path = tmp_path / "value.pkl"
+        path.write_bytes(pickle.dumps("secret"))
+        original = tmp_path.stat().st_mode
+        try:
+            tmp_path.chmod(original | stat.S_IWGRP)
+            assert cache.load_pickle(path, root=tmp_path, label="shared") is None
+        finally:
+            tmp_path.chmod(original)

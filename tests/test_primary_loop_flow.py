@@ -1,9 +1,12 @@
 """Integration coverage for the primary local run loop."""
 
+import io
+from pathlib import Path
 from types import SimpleNamespace
 
 from ui import dialogs, input as input_mod, output as output_mod, pipeline as pipeline_mod
 from whisperforge_core import adapters as adapters_mod
+from whisperforge_core import audio
 from whisperforge_core import captures
 from whisperforge_core import pipeline as core_pipeline
 from whisperforge_core import run_artifacts
@@ -153,6 +156,79 @@ def test_primary_loop_run_then_reopen_restores_output(tmp_path, monkeypatch):
     assert state["wisdom"] == "A grounded insight."
     assert state["compare_label"] == "OpenAI gpt-4o-mini"
     assert state["last_notion_url"] == "https://notion.so/primary-loop"
+
+
+def test_audio_upload_spools_to_temp_path_without_getvalue(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_artifacts, "RUNS_DIR", tmp_path / "runs")
+
+    class FakeUpload:
+        name = "clip.wav"
+
+        def __init__(self):
+            self._body = io.BytesIO(b"fake-audio")
+
+        def seek(self, *args):
+            return self._body.seek(*args)
+
+        def read(self, size=-1):
+            return self._body.read(size)
+
+        def getvalue(self):
+            raise AssertionError("getvalue should not be used for audio spooling")
+
+    state = FakeSessionState({
+        "pending_input": input_mod.PendingInput(
+            source="upload",
+            payload=FakeUpload(),
+            filename="clip.wav",
+        ),
+        "_submit_mode": "transcribe_only",
+        "pipeline_running": True,
+        "pipeline_stage_idx": 0,
+        "selected_user": None,
+        "ai_provider": "Anthropic",
+        "ai_model": "claude-haiku-4-5",
+        "cleanup_enabled": True,
+        "chapters_enabled": True,
+        "agentic_drafting": False,
+        "fact_check_enabled": False,
+        "images_enabled": False,
+        "rag_mode": "auto",
+        "compare_provider": None,
+        "compare_model": None,
+        "selected_personas": [],
+        "capture_id": None,
+    })
+
+    fake_st = SimpleNamespace(
+        session_state=state,
+        status=lambda *_args, **_kwargs: FakeStatus(),
+        toast=lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(pipeline_mod, "st", fake_st)
+    monkeypatch.setattr(pipeline_mod, "_ensure_capture", lambda _pending, _run_id: None)
+    seen = {}
+
+    def fake_transcribe_detailed(source, suffix=".mp3"):
+        path = Path(source)
+        seen["path"] = path
+        seen["suffix"] = suffix
+        assert path.exists()
+        assert path.read_bytes() == b"fake-audio"
+        return audio.TranscriptionDetails(text="Transcript body")
+
+    fake_adapters = adapters_mod.Adapters(
+        transcriber=SimpleNamespace(transcribe_detailed=fake_transcribe_detailed),
+        processor=SimpleNamespace(),
+        storage=SimpleNamespace(),
+    )
+    monkeypatch.setattr(pipeline_mod.adapters_mod, "get_adapters", lambda: fake_adapters)
+
+    pipeline_mod._execute_run()
+
+    assert state["transcription"] == "Transcript body"
+    assert seen["suffix"] == ".wav"
+    assert not seen["path"].exists()
 
 
 def test_mark_capture_status_refreshes_run_manifest_capture_metadata(tmp_path, monkeypatch):

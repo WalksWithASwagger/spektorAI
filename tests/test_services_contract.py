@@ -1,3 +1,7 @@
+import io
+import os
+from types import SimpleNamespace
+
 from fastapi.testclient import TestClient
 
 from services.processing import service as processing_service
@@ -37,6 +41,19 @@ def test_transcription_service_returns_detailed_payload(monkeypatch):
         "language": "en",
         "filename": "sample.wav",
     }
+
+
+def test_transcription_service_copy_upload_uses_file_stream_not_async_read():
+    async def fail_read():
+        raise AssertionError("UploadFile.read should not be used for spooling")
+
+    upload = SimpleNamespace(file=io.BytesIO(b"fake-audio"), read=fail_read)
+    path = transcription_service._copy_upload_to_temp(upload, ".wav")
+    try:
+        with open(path, "rb") as handle:
+            assert handle.read() == b"fake-audio"
+    finally:
+        os.unlink(path)
 
 
 def test_processing_pipeline_accepts_modern_options_and_returns_full_result(monkeypatch):

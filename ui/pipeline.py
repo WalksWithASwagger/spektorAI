@@ -7,7 +7,10 @@ paths (Transcribe-only, Full-pipeline) funnel through.
 
 from __future__ import annotations
 
+import os
+import tempfile
 import time
+from pathlib import Path
 from typing import Optional
 
 import streamlit as st
@@ -121,9 +124,16 @@ def _execute_run() -> None:
                     "." + pending.filename.rsplit(".", 1)[-1]
                     if "." in pending.filename else ".mp3"
                 )
-                details = adapters.transcriber.transcribe_detailed(
-                    source.getvalue(), suffix=suffix,
-                )
+                tmp_audio_path = _spool_audio_upload(source, suffix)
+                try:
+                    details = adapters.transcriber.transcribe_detailed(
+                        tmp_audio_path, suffix=suffix,
+                    )
+                finally:
+                    try:
+                        os.unlink(tmp_audio_path)
+                    except OSError:
+                        pass
                 s.transcription = details.text
                 s.transcription_segments = details.segments or []
                 s.audio_file = pending.payload          # for Notion "Original Audio" bundle slot
@@ -452,3 +462,28 @@ def _mark_capture_status(s, status: str) -> None:
             )
     except Exception as e:
         logger.warning("failed to mark capture status %s: %s", status, e)
+
+
+def _spool_audio_upload(upload, suffix: str) -> str:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp_path = tmp.name
+        try:
+            if hasattr(upload, "seek"):
+                upload.seek(0)
+            while True:
+                chunk = upload.read(1 << 20)
+                if not chunk:
+                    break
+                tmp.write(chunk)
+        except Exception:
+            try:
+                Path(tmp_path).unlink()
+            except OSError:
+                pass
+            raise
+    if hasattr(upload, "seek"):
+        try:
+            upload.seek(0)
+        except Exception:
+            pass
+    return tmp_path

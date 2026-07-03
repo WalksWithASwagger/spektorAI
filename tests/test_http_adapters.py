@@ -37,6 +37,30 @@ def test_http_transcribe_detailed_round_trips_segments_and_language(monkeypatch)
     assert calls[0]["kwargs"]["files"]["file"][0] == "upload.wav"
 
 
+def test_http_transcribe_path_posts_file_object_without_prereading(monkeypatch, tmp_path):
+    path = tmp_path / "clip.wav"
+    path.write_bytes(b"fake-audio")
+    inspected = {}
+
+    def fake_post(*args, **kwargs):
+        file_name, file_obj = kwargs["files"]["file"]
+        inspected["file_name"] = file_name
+        inspected["is_bytes"] = isinstance(file_obj, bytes)
+        inspected["body"] = file_obj.read()
+        return FakeResponse({"text": "Transcript body", "segments": [], "language": None})
+
+    monkeypatch.setattr(http_adapters.requests, "post", fake_post)
+
+    details = http_adapters.HttpTranscriber().transcribe_detailed(path, suffix=".wav")
+
+    assert details.text == "Transcript body"
+    assert inspected == {
+        "file_name": "clip.wav",
+        "is_bytes": False,
+        "body": b"fake-audio",
+    }
+
+
 def test_http_generate_forwards_modern_options(monkeypatch):
     calls = []
 

@@ -1,6 +1,6 @@
 # WhisperForge Roadmap
 
-Last reviewed: 2026-07-01
+Last reviewed: 2026-07-03
 
 The May 2026 reset wave is now complete. The immediate next-round plan is
 [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md); current
@@ -20,7 +20,9 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - local run workspace with manifests, stage artifacts, reopen, and downstream
   export retry;
 - local report-only resurfacing digest;
-- text-first SongForge creative pack mode.
+- text-first SongForge creative pack mode;
+- audit hardening for knowledge-base writes, audio upload spooling, and trusted
+  local cache reads.
 
 ## Delivery State
 
@@ -32,7 +34,10 @@ WhisperForge is now a single-user voice-to-knowledge workbench:
 - Latest ops baseline: lightweight company OS manifest merged in PR `#57`.
 - Open GitHub issues: none as of 2026-05-30 (`#49` through `#52` are shipped).
 - Open GitHub PRs: none.
-- Current unit baseline: `302 passed`.
+- Current unit baseline: `324 passed`.
+- Current audit-hardening branch: `codex/audit-hardening-cleanup` covers KB
+  write path constraints, temp-file upload transcription, services upload copy
+  hygiene, and pickle cache trust guards.
 - Next round plan:
   [`docs/NEXT-ROUND-PLAN-2026-05-19.md`](docs/NEXT-ROUND-PLAN-2026-05-19.md).
 - Release target decision (owner): local-first personal workbench, recorded in

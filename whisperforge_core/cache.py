@@ -11,6 +11,7 @@ Disabled by default so runs stay fresh. Enable by setting
 import hashlib
 import os
 import pickle
+import stat
 from pathlib import Path
 from typing import Any, Callable, Optional, TypeVar
 
@@ -57,14 +58,53 @@ def _cache_path(key: str) -> Path:
 
 def get(key: str) -> Optional[Any]:
     path = _cache_path(key)
+    return load_pickle(path, root=_ensure_cache_dir(), label=f"cache {key[:8]}")
+
+
+def load_pickle(path: str | Path, *, root: str | Path, label: str = "pickle") -> Optional[Any]:
+    path = Path(path)
     if not path.exists():
+        return None
+    if not _trusted_pickle_path(path, Path(root), label):
         return None
     try:
         with open(path, "rb") as f:
             return pickle.load(f)
-    except (OSError, pickle.PickleError) as e:
-        logger.warning("Cache read failed for %s: %s", key[:8], e)
+    except (OSError, pickle.PickleError, AttributeError, EOFError, ImportError, ValueError) as e:
+        logger.warning("Pickle read failed for %s: %s", label, e)
         return None
+
+
+def _trusted_pickle_path(path: Path, root: Path, label: str) -> bool:
+    try:
+        root_resolved = root.resolve()
+        path_resolved = path.resolve()
+        path_resolved.relative_to(root_resolved)
+    except (OSError, ValueError) as e:
+        logger.warning("Refusing %s pickle outside cache root: %s", label, e)
+        return False
+
+    if path.is_symlink():
+        logger.warning("Refusing %s pickle symlink: %s", label, path)
+        return False
+    if _has_shared_write_bits(path_resolved, root_resolved):
+        logger.warning("Refusing %s pickle from group/world-writable cache path: %s", label, path)
+        return False
+    return True
+
+
+def _has_shared_write_bits(path: Path, root: Path) -> bool:
+    current = path
+    while True:
+        try:
+            mode = current.stat().st_mode
+        except OSError:
+            return True
+        if mode & (stat.S_IWGRP | stat.S_IWOTH):
+            return True
+        if current == root or current == current.parent:
+            return False
+        current = current.parent
 
 
 def put(key: str, value: Any) -> None:

@@ -6,6 +6,7 @@ results are deterministic.
 """
 
 import hashlib
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -98,6 +99,26 @@ class TestPersistence:
             s2.ensure_built()
             assert build_spy.call_count == 0
         assert s2.chunk_count() == s1.chunk_count()
+
+    def test_untrusted_chunks_pickle_triggers_rebuild(self, tmp_path):
+        if not hasattr(os, "symlink"):
+            pytest.skip("symlink unavailable")
+        _seed_kb(tmp_path / "prompts", "alice", {
+            "voice.md": "# Voice\n" + " ".join(f"word{i}" for i in range(200)),
+        })
+        s1 = KBStore("alice")
+        s1.ensure_built()
+        chunks_path = s1.dir / "chunks.pkl"
+        target = tmp_path / "outside.pkl"
+        target.write_bytes(b"not trusted")
+        chunks_path.unlink()
+        os.symlink(target, chunks_path)
+
+        s2 = KBStore("alice")
+        with patch.object(s2, "_build") as build_spy:
+            s2.ensure_built()
+
+        assert build_spy.called
 
 
 class TestInvalidation:

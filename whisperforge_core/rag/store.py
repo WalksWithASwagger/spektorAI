@@ -26,6 +26,7 @@ from typing import List
 
 import numpy as np
 
+from .. import cache as cache_mod
 from ..config import CACHE_DIR, PROMPTS_DIR
 from ..logging import get_logger
 from . import chunker, embedder
@@ -120,12 +121,18 @@ class KBStore:
     def _load(self) -> None:
         try:
             self.index = np.load(self.dir / "index.npy")
-            with open(self.dir / "chunks.pkl", "rb") as f:
-                self.chunks = pickle.load(f)
+            chunks = cache_mod.load_pickle(
+                self.dir / "chunks.pkl",
+                root=CACHE_DIR,
+                label=f"KB chunks for {self.user}",
+            )
+            if chunks is None:
+                raise OSError("KB chunks pickle was missing, unreadable, or untrusted")
+            self.chunks = chunks
             self._loaded = True
             logger.info("loaded %d KB chunks from %s",
                         len(self.chunks), self.dir)
-        except (OSError, pickle.PickleError) as e:
+        except (OSError, pickle.PickleError, ValueError) as e:
             logger.warning("load failed (%s); rebuilding", e)
             self._build()
 
