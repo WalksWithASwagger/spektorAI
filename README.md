@@ -36,6 +36,25 @@ cp .env.example .env   # add OPENAI_API_KEY + NOTION keys, ANTHROPIC_API_KEY rec
 make app               # → http://localhost:8501
 ```
 
+## environment contract
+
+`.env.example` is the human setup template. `.env.schema` is the Varlock contract agents can read for env names, defaults, and sensitivity. Do not read, print, copy, or commit real `.env` or `.env.local` values.
+
+Use `make env-check` to run Varlock's agent-safe schema check. If Varlock is not on `PATH`, point the Makefile at the CLI:
+
+```bash
+VARLOCK=/path/to/varlock make env-check
+```
+
+Run real provider or service commands through Varlock so resolved values stay behind the runtime boundary:
+
+```bash
+varlock run --inject vars -- make services-run
+varlock run --inject vars -- python scripts/resurfacing_digest.py
+```
+
+`make app` still supplies dummy env values when real keys are absent, so offline local UI checks keep working without provider calls.
+
 full setup, the provider matrix, and the run-recovery flow live in the engine handbook, [`WHISPERFORGE.md`](WHISPERFORGE.md). roadmap: `ROADMAP.md`. current handoff state: `STATUS.md`.
 
 ## these repos run on agents

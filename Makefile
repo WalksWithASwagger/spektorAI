@@ -2,8 +2,9 @@ PYTHON ?= venv/bin/python
 PORT ?= 8501
 SMOKE_PORT ?= 8599
 COMPOSE ?= docker compose
+VARLOCK ?= varlock
 
-.PHONY: help lint test pip-check docs-check eval-fixture digest smoke browser-e2e browser-e2e-fresh app services-run services-smoke services-down
+.PHONY: help lint test pip-check docs-check env-check eval-fixture digest smoke browser-e2e browser-e2e-fresh app services-run services-smoke services-down
 
 help:
 	@printf "WhisperForge operations commands\n\n"
@@ -11,6 +12,7 @@ help:
 	@printf "  make test            Run unit tests\n"
 	@printf "  make pip-check       Check installed package dependency consistency\n"
 	@printf "  make docs-check      Run documentation truth checks\n"
+	@printf "  make env-check       Run Varlock's agent-safe env schema check\n"
 	@printf "  make eval-fixture    Run credential-free editorial fixture eval\n"
 	@printf "  make digest          Generate local resurfacing digest\n"
 	@printf "  make smoke           Boot Streamlit and check /_stcore/health\n"
@@ -33,6 +35,9 @@ pip-check:
 
 docs-check:
 	$(PYTHON) scripts/docs_truth_check.py
+
+env-check:
+	$(VARLOCK) load --agent --show-all
 
 eval-fixture:
 	$(PYTHON) scripts/editorial_eval_fixture.py
