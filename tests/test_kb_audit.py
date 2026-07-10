@@ -1,5 +1,6 @@
 """Tests for knowledge-base inventory and health signals."""
 
+import os
 from datetime import datetime, timezone
 
 import pytest
@@ -41,6 +42,9 @@ def test_duplicate_empty_private_and_stale_warnings(tmp_prompts_dir):
     (kb / "private-token.md").write_text("same")
     (kb / "copy.md").write_text("same")
     (kb / "empty.md").write_text("")
+    stale_timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc).timestamp()
+    for path in kb.iterdir():
+        os.utime(path, (stale_timestamp, stale_timestamp))
 
     audit = kb_audit.audit_profile(
         "alice",
