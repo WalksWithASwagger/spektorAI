@@ -15,3 +15,7 @@ spektorAI is the home of WhisperForge, a local-first Streamlit voice-to-knowledg
 
 ## the maker
 Kris Krüg (@WalksWithASwagger) · https://kriskrug.co · BC + AI
+
+## Secrets (Varlock)
+
+Inspect: `varlock load --agent`. Run tools: `varlock run --inject vars -- <command>`. Shared keys use Keychain accounts `kk-shared:local:<NAME>`. Do not read `.env*` value files in agent sessions.
