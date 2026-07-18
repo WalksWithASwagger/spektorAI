@@ -38,13 +38,15 @@ make app               # → http://localhost:8501
 
 ## environment contract
 
-`.env.example` is the human setup template. `.env.schema` is the Varlock contract agents can read for env names, defaults, and sensitivity. Do not read, print, copy, or commit real `.env` or `.env.local` values.
+`.env.example` is the human setup template. `.env.schema` is the authoritative Varlock contract agents can read for env names, defaults, and sensitivity. It selectively imports reusable values from `~/.agents/env/values/.env.shared.local` and optional SpektorAI overrides from `~/.agents/env/values/.env.spektorai.local`; both imports allow missing files so CI and other machines stay portable. The user owns those local files. Agents must not create or inspect that directory, any `.env*` value file, the process environment, Keychain, or another credential store.
 
 Use `make env-check` to run Varlock's agent-safe schema check. The command uses agent mode so runtime values stay redacted. If Varlock is not on `PATH`, point the Makefile at the CLI:
 
 ```bash
 VARLOCK=/path/to/varlock make env-check
 ```
+
+Keep the application runtime unchanged. Varlock 1.10 validation requires Node 22.3+ or the standalone CLI.
 
 Run a credential-free fixture check through the same runtime injection boundary:
 
@@ -55,6 +57,8 @@ varlock run --inject vars -- make eval-fixture
 `make app` still supplies dummy env values when real keys are absent, so offline local UI checks keep working without provider calls.
 
 The schema covers the providers and transcription backends implemented in this repository. Candidate providers stay outside the runtime contract until their integrations exist.
+
+GitHub-owned `GH_TOKEN`, `GITHUB_*`, and `RUNNER_*` names plus container-only `PYTHONPATH` and `PYTHONUNBUFFERED` settings are intentionally external to the application schema. Make-only `PYTHON`, `PORT`, `SMOKE_PORT`, `COMPOSE`, and `VARLOCK` overrides are command-surface controls and stay external too.
 
 full setup, the provider matrix, and the run-recovery flow live in the engine handbook, [`WHISPERFORGE.md`](WHISPERFORGE.md). roadmap: `ROADMAP.md`. current handoff state: `STATUS.md`.
 
