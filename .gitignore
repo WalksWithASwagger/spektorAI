@@ -3,6 +3,7 @@
 .env*
 !.env.example
 !.env.schema
+!tests/agentic/fixtures/varlock/values/.env.fixture-sanitized
 
 # Python
 __pycache__/
